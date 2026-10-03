@@ -53,6 +53,8 @@ que sea entretenido, pero que **cada partida deje evidencia real** en el motor a
 
 ## Ideas en cola
 
+- **Batalla con esquiva (género Undertale, diseño propio)** — en curso, ver `docs/juegos-batalla/SPEC.md`.
+
 - **Juego de cartas por carriles (estilo PvZ Heroes, diseño propio)** — idea de Niquito, 3 oct 2026. Condición: la química es la mecánica (integración intrínseca,
   Habgood y Ainsworth 2011), no un peaje de preguntas. Ej.: poder de carta = pKaH real; el carril se resuelve por basicidad/inducción; el jugador predice el resultado
   y el validador lo verifica (evidencia real); las jugadas falladas alimentan errores y FSRS. MVP: 3 carriles, ~12 cartas, solo Basicidad de aminas, rival simple, sin mazos.
