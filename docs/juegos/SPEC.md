@@ -51,6 +51,13 @@ que sea entretenido, pero que **cada partida deje evidencia real** en el motor a
 - Jugar sin errores a toda velocidad **no** cambia el estado de conocimiento sin evidencia independiente.
 - Pruebas rápidas existentes siguen pasando.
 
+## Ideas en cola
+
+- **Juego de cartas por carriles (estilo PvZ Heroes, diseño propio)** — idea de Niquito, 3 oct 2026. Condición: la química es la mecánica (integración intrínseca,
+  Habgood y Ainsworth 2011), no un peaje de preguntas. Ej.: poder de carta = pKaH real; el carril se resuelve por basicidad/inducción; el jugador predice el resultado
+  y el validador lo verifica (evidencia real); las jugadas falladas alimentan errores y FSRS. MVP: 3 carriles, ~12 cartas, solo Basicidad de aminas, rival simple, sin mazos.
+  Encaja como **Boss Arena**; va después de un primer juego chico. Sin plantas/zombies ni arte de PvZ.
+
 ## Pendiente (preguntas para Niquito)
 
 - ¿Cuál es el **primer juego**? Recomendación: **Error Hunter** (usa errores reales y es lo más distintivo de Nexo).
