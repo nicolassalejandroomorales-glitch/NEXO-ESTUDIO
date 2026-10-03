@@ -193,6 +193,11 @@ Cada actividad lleva: tipo, enunciado, respuesta esperada, distractores con su `
 - Mascota → **reacciona y da pistas cuando tú las pides**; usar pista queda registrado y ese intento no cuenta como "sin ayuda".
 - Grabaciones → **sí, transcribir**. Bloqueado por ahora: la red del entorno en la nube rechaza `drive.usercontent.google.com` (bajar el audio) y `huggingface.co` (modelo de voz a texto). Se retoma cuando se permitan esos dominios.
 
+## Avance
+
+- **Paso 1 hecho (4 oct)**: reproductor del aula (`dist/classes/player.js`, `classroom.css`), catálogo (`classes/catalog.js`, va en el arranque) y borrador de la Misión 1 de Aminas (`classes/org-01.js`). Caminos, 7 etapas, rescate con repaso, pistas de la mascota y panel de fuente funcionando. Fondo provisional: la sala de Aprender. Prueba: `tools/classroom-test.cjs`.
+- Se borraron los restos de la clase vieja (lámina del índice y funciones sin uso).
+
 ## Pendiente
 
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
