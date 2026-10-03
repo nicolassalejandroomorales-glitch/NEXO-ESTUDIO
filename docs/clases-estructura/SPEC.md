@@ -188,10 +188,12 @@ Cada actividad lleva: tipo, enunciado, respuesta esperada, distractores con su `
 - Aspecto → **aula inmersiva con mascota**, todo sobre fondo inmersivo.
 - Material → Drive "Material Nexo (2026)" (ver arriba).
 
-## Pendiente por decidir
+- Dibujo → empezamos con **nivel 1: completar el esqueleto**.
+- Fondo → **aula nueva pintada por script** (en `tools/`, reproducible, diseño propio).
+- Mascota → **reacciona y da pistas cuando tú las pides**; usar pista queda registrado y ese intento no cuenta como "sin ayuda".
+- Grabaciones → **sí, transcribir**. Bloqueado por ahora: la red del entorno en la nube rechaza `drive.usercontent.google.com` (bajar el audio) y `huggingface.co` (modelo de voz a texto). Se retoma cuando se permitan esos dominios.
 
-1. Nivel de dibujo para empezar (1, 2 o 3).
-2. Fondo del aula: reutilizar `dist/assets/rooms/learn.webp` o pintar un aula nueva por script.
-3. Qué hace la mascota en el aula (solo reacciona, o también da pistas cuando las pides).
-4. Transcribir las grabaciones de clase para citar "minuto de clase" como fuente.
-5. Restos de la clase vieja (lámina "Anilina y bencilamina", `richLesson`, `questionsFor`): se borran en el paso 1.
+## Pendiente
+
+- Habilitar los dominios para transcribir, o transcribir fuera de la nube.
+- Diseño del aula (boceto antes de pintar).
