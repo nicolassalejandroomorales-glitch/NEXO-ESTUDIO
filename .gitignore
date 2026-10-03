@@ -1,0 +1,10 @@
+.sites-runtime/
+generated_images/
+tmp/
+node_modules/
+.env
+.env.local
+*.zip
+*.tar.gz
+rive/cli/
+rive/companion-v2/build/

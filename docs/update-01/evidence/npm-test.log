@@ -1,0 +1,27 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> nexo-estudio@14.0.0 test
+> node smoke-test.cjs && node tools/state-test.cjs && node tools/amine-lesson-test.cjs && node tools/organic-content-test.cjs && node tools/cloud-test.cjs && node tools/avatar-test.cjs && node tools/game-test.cjs && node tools/mascot-controller-test.cjs && node tools/audio-test.cjs && node tools/ambient-event-test.cjs && node tools/academic-test.cjs && node tools/structured-test.cjs && node tools/training-test.cjs && node tools/rescue-test.cjs && node tools/rank-test.cjs && node tools/active-time-test.cjs && node tools/priority-test.cjs && node tools/lab-test.cjs && node tools/grade-test.cjs && node tools/room-test.cjs && node tools/security-audit.cjs && node tools/database-test.cjs
+
+OK: cuatro destinos, perfil, Rive+Canvas, 40 clases del catálogo base, 156 ejercicios de la base anterior y 66 skins integradas. El aula nueva de Orgánica se valida por separado.
+OK: migración explícita, respaldo previo, datos académicos y guardado diferido/flush.
+OK: clase 1, migración sin falso dominio, revisión diferida, variante, transferencia y bloqueo por pista.
+18 clases de Orgánica y sus estructuras verificadas.
+OK: mapeo por entidad, progreso, merge, privacidad y watermark atómico.
+OK: migración de compras, siete ranuras, preview puro, equipamiento y arte propio.
+OK: Phaser lazy, registro, pausa, reanudación y liberación.
+OK: contrato de rig, especies×ranuras×habitaciones y contexto sin perder cosméticos.
+Audio: opt-in, canales separados, habitaciones, silencio académico y pausa oculta OK
+Eventos ambientales: selección estable, contexto, noche y lifecycle OK
+OK: modelo org-01, DAG, familias, clasificadores, evidencia, diagnóstico, FSRS y fuentes.
+OK: 7 casos estructurados, errores por primer eslabón, decimales y formulario.
+OK: modos de entrenamiento usan errores, revisiones, tema y evaluación sin inventar banco.
+OK: Rescate requiere confirmación, enseña contraste y bloquea avance sin intento correcto.
+Rangos: tiempo, evidencia, familias, error crítico y recuerdo diferido OK
+Tiempo académico: visible, inactividad, ruta no académica y persistencia OK
+Priority Engine: orden, razones, atrasos y exclusiones OK
+Laboratorios: etapas, fechas y edición OK
+Notas: ponderaciones, mínimo, pendientes, decimales e importaciones inválidas OK.
+Habitaciones, cuatro temas, luz y perfiles gráficos OK
+OK: auditoría estática de límites cliente/servidor; no sustituye pruebas RLS sobre PostgreSQL.
+OK: SQL real, RLS A/B, economía protegida, compra atómica, recompensa idempotente y versión de sync.

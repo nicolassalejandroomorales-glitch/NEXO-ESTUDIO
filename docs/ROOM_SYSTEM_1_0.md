@@ -1,0 +1,7 @@
+# Habitaciones — contrato actual
+
+`dist/design-system/rooms.js` expone `NexoRooms.rooms`, `NexoRooms.courses`, `resolve(route)` y `apply(route)`. Toda nueva habitación debe añadirse ahí antes de crear excepciones CSS por ruta. `apply` fija `data-nexo-room`, `data-nexo-material`, `data-nexo-course` cuando procede, y `--room-accent`. Las rutas heredadas V14 siguen funcionando: `subjects/subject/lesson` entran a Aprender; `practice/reviews` a Entrenar; `hub/planner/timer` a Bitácora. Se añadieron `#/learn`, `#/train`, `#/games` y rutas de curso en Aprender sin borrar las anteriores.
+
+Inicio usa refugio; Aprender, grimorio; Entrenar, taller; Juegos, arcade; Perfil, habitación; Tienda, mercado; Bitácora, escritorio. Los cuatro ramos tienen nombre, símbolo, material y acento en el registro. El shell de escritorio es una barra lateral; en móvil hay cinco destinos abajo. Bitácora, saldo y Tienda son globales arriba. Juegos muestra únicamente cuatro próximos modos, sin cargar Phaser.
+
+El contenido V14 mantiene subrutas antiguas mientras se migra gradualmente. Se añadieron aliases canónicos `#/learn/map`, `#/learn/library`, `#/learn/course/:id/lesson/:id`, `#/learn/course/:id/concept/:id`, `#/train/practice`, `#/train/reviews`, `#/train/errors` y `#/train/pep`; todas se verifican en E2E. `dist/app.js` aplica una transición breve únicamente al cambiar de familia de habitación; no pasa página por cada clic. El perfil gráfico y el movimiento reducido ajustan el ambiente. Este contrato no significa que cada pantalla heredada ya tenga el acabado visual definitivo.

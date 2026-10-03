@@ -1,0 +1,10 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const dist = path.join(__dirname, '..', 'dist');
+const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
+const scripts = [...html.matchAll(/<script\s+(?:defer\s+)?src="([^"]+)"/g)].map(match => match[1].split('?')[0].replace(/^\.\//, ''));
+const styles = [...html.matchAll(/<link\s+rel="stylesheet"\s+href="([^"]+)"/g)].map(match => match[1].split('?')[0].replace(/^\.\//, ''));
+const sum = files => files.reduce((total, file) => total + fs.statSync(path.join(dist, file)).size, 0);
+const result = { scriptCount: scripts.length, initialJsBytes: sum(scripts), stylesheetCount: styles.length, initialCssBytes: sum(styles), scripts, styles };
+console.log(JSON.stringify(result, null, 2));
+if (scripts.some(file => /phaser|howler|gsap|rdkit|ketcher|pdfjs|organic-pep|organic-studio|amine-lesson|vendor\/rive/.test(file))) throw new Error('Un módulo pesado sigue bloqueando la carga inicial');

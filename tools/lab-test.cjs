@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict');
+require('../dist/planner/labs.js');
+const lab = globalThis.NexoLabPlan;
+const form = new FormData();
+form.set('labManual', 'Manual oficial');
+form.set('labPrelabDate', '2026-10-14');
+form.set('labReportDate', '2026-10-22');
+form.set('labChecklist', ' Anotar mediciones \n Registrar observaciones ');
+const value = lab.fromForm(form, { prelab: { done: true }, after: { reportDone: false } });
+assert.equal(value.manual, 'Manual oficial');
+assert.equal(value.prelab.dueDate, '2026-10-14');
+assert.equal(value.prelab.done, true);
+assert.deepEqual(value.during.checklist, ['Anotar mediciones', 'Registrar observaciones']);
+assert.equal(value.after.reportDueDate, '2026-10-22');
+assert.equal(lab.validDate('2026-02-30'), false);
+assert.equal(lab.normalize({ prelab: { dueDate: '2026-02-30' } }).prelab.dueDate, '');
+console.log('Laboratorios: etapas, fechas y edición OK');

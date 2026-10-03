@@ -1,0 +1,16 @@
+{
+  "passed": true,
+  "unchangedOriginalFiles": 285,
+  "changedOriginalFiles": [
+    "dist/app.js",
+    "dist/design-system/rooms.js",
+    "dist/index.html",
+    "dist/platform/animation.js",
+    "dist/startup-bundle.js",
+    "IMPLEMENTATION_STATUS.md",
+    "smoke-test.cjs",
+    "tools/build.cjs"
+  ],
+  "removedFiles": 0,
+  "backupUnchanged": true
+}

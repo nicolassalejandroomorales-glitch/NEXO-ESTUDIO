@@ -1,0 +1,5 @@
+# Ambiente — implementación inicial
+
+`dist/ambient/time.js` calcula una luz local interpolada entre puntos del día; no usa GPS ni llamadas de red. Se actualiza cada cinco minutos y al cambiar la visibilidad de la pestaña. `dist/design-system/arcane.css` compone cuatro capas CSS separadas: cielo, ventana, vegetación y luz. La capa de luz respira lentamente; se pausa con la pestaña oculta y se detiene con `prefers-reduced-motion`.
+
+El registro de habitaciones selecciona variantes de color y material; el fondo cambia de forma continua con la luz local. `dist/ambient/events.js` selecciona un evento de utilería e intención de mascota estable para cada tramo de tres horas, habitación, día y perfil. La noche elige descanso en Inicio/Perfil. La escena vuelve a evaluarse al mostrar la pestaña y no corre un timer por habitación. `dist/platform/performance.js` aplica perfiles gráficos y controles de partículas; el movimiento reducido desactiva las animaciones importantes. No se afirma clima real: no se consulta ubicación, GPS ni meteorología.

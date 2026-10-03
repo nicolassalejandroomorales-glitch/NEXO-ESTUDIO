@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#10171a" />
+    <meta name="description" content="Nexo Estudio: clases, práctica, reloj y calendario para estudiar tus ramos." />
+    <title>Nexo · Laboratorio de estudio</title>
+
+    <link rel="stylesheet" href="./styles.css?v=14-foundation" />
+    <link rel="stylesheet" href="./design-system/arcane.css?v=1-0-companion" />
+    <link rel="stylesheet" href="./design-system/update01.css?v=update-01-3-window-view" />
+  </head>
+  <body>
+    <a class="skip-link" href="#app">Saltar al contenido</a>
+    <div class="ambient-world" aria-hidden="true"><span class="ambient-sky"></span><span class="ambient-window"></span><span class="ambient-foliage"></span><span class="ambient-light"></span><span class="ambient-prop"></span><span class="ambient-particles"></span></div>
+    <div class="app-shell">
+      <header class="top-bar">
+        <button class="brand" data-route="home" aria-label="Ir al inicio"><span class="brand-mark">✦</span><span>NEXO</span></button>
+        <nav class="rail-nav" aria-label="Navegación principal">
+          <button class="nav-btn" data-route="home"><span aria-hidden="true">⌂</span><b>Inicio</b></button>
+          <button class="nav-btn" data-route="learn"><span aria-hidden="true">▤</span><b>Aprender</b></button>
+          <button class="nav-btn" data-route="train"><span aria-hidden="true">✧</span><b>Entrenar</b></button>
+          <button class="nav-btn" data-route="games"><span aria-hidden="true">◈</span><b>Juegos</b></button>
+          <button class="nav-btn" data-route="profile"><span aria-hidden="true">◇</span><b>Perfil</b></button>
+        </nav>
+        <aside class="companion-presence" id="companionPresence" aria-label="Tu compañero" hidden></aside>
+        <div class="header-actions"><button class="header-action" data-route="planner" data-route-sub="calendar" aria-label="Abrir Bitácora" title="Bitácora">▦</button><span class="header-wallet" aria-label="Átomos disponibles">✦ <b id="headerCoins">120</b></span><button class="header-action" data-route="shop" aria-label="Abrir Tienda" title="Tienda">♧</button></div>
+      </header>
+
+      <main id="app" tabindex="-1"><div class="app-loader" role="status"><span></span><p>Preparando tu rincón de estudio…</p></div></main>
+
+      <nav class="mobile-nav" aria-label="Navegación móvil">
+        <button class="nav-btn" data-route="home"><span aria-hidden="true">⌂</span><b>Inicio</b></button>
+        <button class="nav-btn" data-route="learn"><span aria-hidden="true">▤</span><b>Aprender</b></button>
+        <button class="nav-btn" data-route="train"><span aria-hidden="true">✧</span><b>Entrenar</b></button>
+        <button class="nav-btn" data-route="games"><span aria-hidden="true">◈</span><b>Juegos</b></button>
+        <button class="nav-btn" data-route="profile"><span aria-hidden="true">◇</span><b>Perfil</b></button>
+      </nav>
+      <div class="more-sheet" id="moreSheet" hidden></div>
+    </div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <div id="modalRoot"></div>
+    <input id="importFile" type="file" accept="application/json" hidden />
+    <script defer src="./data.js?v=14"></script>
+    <script defer src="./semester-2026.js?v=14"></script>
+    <script defer src="./config.js?v=12"></script>
+    <script defer src="./startup-bundle.js?v=update-01-3-window-view"></script>
+    <script defer src="./app.js?v=update-01-3-window-cp1"></script>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "scriptCount": 5,
+  "initialJsBytes": 476308,
+  "stylesheetCount": 3,
+  "initialCssBytes": 141478,
+  "scripts": [
+    "data.js",
+    "semester-2026.js",
+    "config.js",
+    "startup-bundle.js",
+    "app.js"
+  ],
+  "styles": [
+    "styles.css",
+    "design-system/arcane.css",
+    "design-system/update01.css"
+  ]
+}

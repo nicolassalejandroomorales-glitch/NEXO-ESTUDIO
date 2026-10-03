@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const vm = require('node:vm');
+const window = {};
+vm.runInNewContext(fs.readFileSync('dist/design-system/home-scene.js','utf8'), { window });
+vm.runInNewContext(fs.readFileSync('dist/design-system/rooms.js','utf8'), { window });
+const rooms = window.NexoRooms;
+assert.equal(rooms.resolve(['home']).id,'home');
+assert.equal(rooms.resolve(['lesson','org-01']).id,'learn');
+assert.equal(rooms.resolve(['subject','analitica']).courseId,'analitica');
+assert.equal(rooms.resolve(['learn','course','fisico']).courseId,'fisico');
+assert.equal(rooms.resolve(['practice','errors']).id,'train');
+assert.equal(rooms.resolve(['hub','calendar']).id,'planner');
+assert.equal(Object.keys(rooms.courses).length,4);
+for(const id of ['home','learn','train','games','profile']) {
+  const asset=rooms.rooms[id].art;
+  assert.match(asset,/\.(webp|png)$/);
+  assert.ok(fs.existsSync(`dist/${asset}`),`Falta el escenario de ${id}`);
+  assert.ok(fs.statSync(`dist/${asset}`).size<(asset.endsWith('.png')?3000000:700000),`Escenario de ${id} demasiado pesado`);
+}
+const ambientWindow={};
+vm.runInNewContext(fs.readFileSync('dist/ambient/time.js','utf8'),{window:ambientWindow});
+const color=ambientWindow.NexoAmbientTime.colorAt;
+assert.equal(color(5).join(','),'36,46,64');
+assert.notEqual(color(7).join(','),color(10).join(','));
+assert.deepEqual(Array.from(color(23)),Array.from(color(-1)));
+const perfWindow={};
+vm.runInNewContext(fs.readFileSync('dist/platform/performance.js','utf8'),{window:perfWindow});
+const perf=perfWindow.NexoPerformance;
+assert.equal(perf.resolve({graphicsQuality:'auto'},{cores:2,memory:2,width:360}).quality,'low');
+assert.equal(perf.resolve({graphicsQuality:'high'},{cores:2,memory:2,width:360}).quality,'high');
+assert.equal(perf.resolve({mascotMotion:'full',ambientMotion:'rich'},{reducedMotion:true}).mascotMotion,'reduced');
+assert.equal(perf.resolve({mascotMotion:'full',ambientMotion:'rich'},{reducedMotion:true}).ambientMotion,'reduced');
+console.log('Habitaciones, cuatro temas, luz y perfiles gráficos OK');

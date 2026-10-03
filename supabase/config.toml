@@ -1,0 +1,8 @@
+# Identificador de la pila local del CLI; el proyecto remoto se enlaza por su ref
+# `dcafrpmzpaosgmqyukjs` y no se cambia con este archivo.
+project_id = "nexo-studyapp-1-0-local"
+
+[auth]
+site_url = "http://127.0.0.1:8765"
+additional_redirect_urls = ["http://127.0.0.1:8765"]
+
