@@ -1098,19 +1098,8 @@
     { id: 'lab-fis-2', subject: 'fisio', title: 'Registro de señales y discusión', status: 'provisional', objective: 'Separar dato observado, mecanismo inferido y conclusión.', calculation: 'Promedio, cambio relativo y rango de referencia sólo si la guía lo entrega.', safety: 'Privacidad de datos y límites de interpretación.', evidence: ['Tabla original', 'Gráfico legible', 'Mecanismo esperado', 'Alternativas y limitaciones'] }
   ];
 
-  function generatedExercises() {
-    return Object.keys(LESSONS).filter(id => !ORGANIC[id]).flatMap(id => {
-      const lesson = richLesson(id), q0 = lesson.questions[0], q2 = lesson.questions[2];
-      return [
-        { id: `${id}-basic`, lessonId: id, subject: lesson.subject, level: 'basic', format: 'choice', title: `Base · ${lesson.title}`, prompt: q0.prompt, choices: q0.choices, answer: q0.answer, why: q0.why, lookFor: q0.lookFor, hint: lesson.note },
-        { id: `${id}-intermediate`, lessonId: id, subject: lesson.subject, level: 'intermediate', format: 'text', title: `Razonamiento · ${lesson.title}`, prompt: `Reconstruye ${lesson.map.join(' → ')} y explica por qué el primer eslabón conduce al último.`, why: lesson.explanation, lookFor: lesson.map.join(' · '), hint: `Empieza con “${lesson.map[0]}” y usa al menos dos conectores causales.`, keys: lesson.recallKeys },
-        { id: `${id}-pep`, lessonId: id, subject: lesson.subject, level: 'pep', format: 'choice', title: `Nivel PEP · ${lesson.title}`, prompt: q2.prompt, choices: q2.choices, answer: q2.answer, why: q2.why, lookFor: q2.lookFor, hint: lesson.trap }
-      ];
-    });
-  }
   const EXERCISES = [
-    ...DATA.exercises.map((item, index) => ({ ...item, format: 'choice', lessonId: allLessons(item.subject)[index % allLessons(item.subject).length] })),
-    ...generatedExercises()
+    ...DATA.exercises.map((item, index) => ({ ...item, format: 'choice', lessonId: allLessons(item.subject)[index % allLessons(item.subject).length] }))
   ];
 
   function renderPractice(tab = 'exercises', detailId = '') {
