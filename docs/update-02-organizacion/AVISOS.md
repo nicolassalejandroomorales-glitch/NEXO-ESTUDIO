@@ -66,11 +66,11 @@ Nunca se piden permisos de Gmail ni de Drive (son "restringidos" y exigen audito
 1. Crear un proyecto nuevo (sin activar facturación ni prueba gratuita).
 2. Activar la API de Google Classroom.
 3. Pantalla de consentimiento: tipo "Externo", modo "En pruebas", y agregarte a ti como usuario de prueba.
-4. Crear un "ID de cliente de OAuth" tipo web, con origen `http://localhost:8765`. El ID de cliente es público (no es secreto); no se usa ni se guarda ninguna clave secreta.
+4. Crear un "ID de cliente de OAuth" tipo web, con origen `http://127.0.0.1:8766`. El ID de cliente es público (no es secreto); no se usa ni se guarda ninguna clave secreta.
 
 **Fase 1 · página de prueba suelta** (`tools/classroom-test/`, fuera de `dist/`)
 - Un botón "Conectar con Google" y una lista con los nombres de tus cursos. Nada más.
-- Se corre con `node tools/static-server.cjs`, como el resto de la app.
+- Se corre con `node tools/classroom-test/server.cjs` y se abre en `http://127.0.0.1:8766` (mini servidor propio: `static-server.cjs` solo sirve `dist/`, y no queremos meter la prueba ahí).
 
 **Fase 2 · solo si la Fase 1 funciona**
 - Pedir los otros tres permisos y mostrar **solo conteos y títulos** (por ejemplo "5 anuncios, 2 tareas con fecha"), para ver que los datos llegan completos.
@@ -93,4 +93,5 @@ Nunca se piden permisos de Gmail ni de Drive (son "restringidos" y exigen audito
 ## Pendiente
 
 - Aprobación de Niquito de este diseño.
-- Decidir dónde se guarda el ID de cliente (propuesta: un archivo `tools/classroom-test/config.js` con una sola línea).
+- ID de cliente: va en `tools/classroom-test/config.js` (una línea, público).
+- Estado: **Fase 1 escrita** (aprobada el 3 oct 2026). Falta la Fase 0 en Google Cloud para poder probarla.
