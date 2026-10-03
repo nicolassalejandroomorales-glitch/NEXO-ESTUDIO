@@ -705,11 +705,14 @@
       ${recoveryNotice ? `<div class="notice warning"><b>Respaldo</b><span>${esc(recoveryNotice)}</span><button data-route="profile" data-route-sub="settings">Revisar</button></div>` : ''}
       <div class="refuge">
         <div class="refuge-room" aria-label="Habitación con ventana, biblioteca, escritorio y rincón de descanso">
+          <div class="home-pan" data-pan="start">
           <div class="home-art-plane ${composition.debug?'scene-debug':''}" data-scene-id="${profile.sceneId}" style="--room-art:url('${sceneBackground}');--scene-aspect:${profile.referenceWidth}/${profile.referenceHeight};--mascot-depth:${profile.layers.mascot}">
             ${composition.markup}
             ${zones}
             <section class="rpg-stage refuge-perch" data-scene-anchor="desk-area" style="--seat-x:${seat.x*100}%;--seat-y:${seat.y*100}%;--seat-width:${seat.width*100}%;--seat-foot:${seat.foot*100}%" aria-label="Tu compañero sobre el escritorio"><div class="stage-companion">${avatarMarkup({large:true})}</div></section>
           </div>
+          </div>
+          <span class="home-pan-hint" aria-hidden="true">Desliza para explorar ⟷</span>
           <header class="refuge-welcome"><p class="eyebrow">NEXO · TU REFUGIO</p><h1>Un lugar para aprender.</h1><p>Abre la ventana. Prepara tu siguiente paso.</p></header>
           <div class="home-room-hud"><span class="streak-hud">✦ ${streak()} días de racha</span></div>
         </div>
@@ -727,6 +730,7 @@
         <footer class="refuge-caption">Un lugar donde el conocimiento florece.</footer>
       </div>
     </section>`;
+    window.NexoHomeScene.enhancePan?.(app);
   }
 
   function renderTimer() {
@@ -1974,7 +1978,7 @@
 
   document.addEventListener('click', event => {
     const button = event.target.closest('button, [data-route]'); if (!button) return;
-    if(button.dataset.sceneHotspot)return window.NexoHomeScene.activate(button.dataset.sceneHotspot,app);
+    if(button.dataset.sceneHotspot&&!button.dataset.route)return window.NexoHomeScene.activate(button.dataset.sceneHotspot,app);
     if (button.closest('.modal-backdrop') && button.classList.contains('modal-backdrop') && event.target !== button) return;
     if (button.dataset.devRoute && new URLSearchParams(location.search).get('nexoDev') === '1') return routeTo(...button.dataset.devRoute.split('/'));
     if (button.dataset.grimoireEvaluation) return routeTo('learn','course',button.dataset.grimoireCourse,'evaluation',button.dataset.grimoireEvaluation,...(button.dataset.grimoireNode?[button.dataset.grimoireNode]:[]));

@@ -442,10 +442,228 @@ body[data-nexo-time="night"] .refuge-room .stage-companion { filter:brightness(.
 @media(prefers-reduced-motion:reduce) { .home-art-plane[data-scene-id] .home-window-tone { transition:none; } }
 body.reduce-motion .home-art-plane[data-scene-id] .home-window-tone { transition:none; }
 
-/* UPDATE 01.3 — vista exterior por hora: sólo cambia lo que se ve tras el vidrio; marco y plantas quedan en el fondo. */
-.home-window-view { pointer-events:none;background:center / 100% 100% no-repeat;opacity:0;transition:opacity 1.2s ease; }
-body[data-nexo-time="morning"] .home-window-view { background-image:url('../assets/home-scenes/window-view-morning.png');opacity:1; }
-body[data-nexo-time="dusk"] .home-window-view { background-image:url('../assets/home-scenes/window-view-dusk.png');opacity:1; }
-body[data-nexo-time="night"] .home-window-view { background-image:url('../assets/home-scenes/window-view-night.png');opacity:1; }
-@media(prefers-reduced-motion:reduce) { .home-window-view { transition:none; } }
-body[data-nexo-time="night"] .home-art-plane[data-scene-id] .home-window-tone { opacity:.35; }
+/* UPDATE 01.3 — luz continua del Inicio.
+   NexoAmbientTime escribe --w-dawn/--w-day/--w-dusk/--w-night (suman 1) según la hora.
+   Cada capa usa esos pesos: la sala pasa de una luz a otra sin saltos. */
+body { --w-dawn:0;--w-day:1;--w-dusk:0;--w-night:0;
+  --sun:calc(var(--w-day) + var(--w-dawn) * .85 + var(--w-dusk) * .5);
+  --lamps:calc(var(--w-night) + var(--w-dusk) * .55 + var(--w-dawn) * .25); }
+.home-light-layer { pointer-events:none;background:center / 100% 100% no-repeat; }
+body.ambient-live .home-light-layer,body.ambient-live .home-art-plane[data-scene-id] .home-window-tone { transition:opacity 300s linear; }
+body.ambient-preview .home-light-layer,body.ambient-preview .home-art-plane[data-scene-id] .home-window-tone { transition:opacity 1.2s ease; }
+body.ambient-timelapse .home-light-layer,body.ambient-timelapse .home-art-plane[data-scene-id] .home-window-tone { transition:opacity .25s linear; }
+/* Vista exterior: tres imágenes que se funden entre sí; de día se ve el original. */
+.home-view-dawn { background-image:url('../assets/home-scenes/window-view-morning.png');opacity:var(--w-dawn); }
+.home-view-dusk { background-image:url('../assets/home-scenes/window-view-dusk.png');opacity:var(--w-dusk); }
+.home-view-night { background-image:url('../assets/home-scenes/window-view-night.png');opacity:var(--w-night); }
+/* Sin manchas de sol cuando el sol se va. */
+.home-floor-night { background-image:url('../assets/home-scenes/floor-night.webp');opacity:calc(var(--w-night) + var(--w-dusk) * .55); }
+/* Tinte de toda la sala por momento del día. */
+.home-tint-dawn { background:linear-gradient(120deg,#f2c3a226,#5a4a7a1f);opacity:var(--w-dawn); }
+.home-tint-dusk { background:linear-gradient(120deg,#6a35293b,#52342633);opacity:var(--w-dusk); }
+.home-tint-night { background:linear-gradient(120deg,#152137a3,#14253470 50%,#14203155);opacity:var(--w-night); }
+/* Faroles y velas: más presentes mientras menos sol hay. */
+.home-lamp-glow { mix-blend-mode:screen;opacity:var(--lamps);
+  --glow:
+    radial-gradient(5.68% 10.10% at 21.05% 38.47%,rgb(255 190 105 / 0.715),rgb(255 160 70 / 0.251) 45%,transparent 100%),
+    radial-gradient(3.59% 6.38% at 9.87% 49.73%,rgb(255 190 105 / 0.585),rgb(255 160 70 / 0.205) 45%,transparent 100%),
+    radial-gradient(4.19% 7.44% at 36.84% 17.53%,rgb(255 190 105 / 0.585),rgb(255 160 70 / 0.205) 45%,transparent 100%),
+    radial-gradient(3.59% 6.38% at 68.18% 21.79%,rgb(255 190 105 / 0.520),rgb(255 160 70 / 0.182) 45%,transparent 100%),
+    radial-gradient(5.08% 9.03% at 94.32% 48.78%,rgb(255 190 105 / 0.650),rgb(255 160 70 / 0.227) 45%,transparent 100%),
+    radial-gradient(2.99% 5.31% at 37.20% 53.56%,rgb(255 190 105 / 0.520),rgb(255 160 70 / 0.182) 45%,transparent 100%),
+    radial-gradient(4.78% 8.50% at 83.85% 35.60%,rgb(255 190 105 / 0.520),rgb(255 160 70 / 0.182) 45%,transparent 100%),
+    radial-gradient(2.39% 4.25% at 27.51% 36.88%,rgb(255 190 105 / 0.520),rgb(255 160 70 / 0.182) 45%,transparent 100%),
+    radial-gradient(2.39% 4.25% at 53.47% 37.09%,rgb(255 190 105 / 0.455),rgb(255 160 70 / 0.159) 45%,transparent 100%),
+    radial-gradient(2.69% 4.78% at 52.03% 34.43%,rgb(255 190 105 / 0.390),rgb(255 160 70 / 0.137) 45%,transparent 100%),
+    radial-gradient(2.39% 4.25% at 95.39% 27.74%,rgb(255 190 105 / 0.455),rgb(255 160 70 / 0.159) 45%,transparent 100%),
+    radial-gradient(2.09% 3.72% at 85.53% 39.53%,rgb(255 190 105 / 0.390),rgb(255 160 70 / 0.137) 45%,transparent 100%); }
+.home-lamp-glow::before { content:"";position:absolute;inset:0;background:var(--glow);animation:nexoFlicker 3.7s ease-in-out infinite; }
+/* Las reglas antiguas por estado (saltos) quedan neutralizadas en el Inicio. */
+body[data-nexo-time] .home-art-plane::after { background:linear-gradient(180deg,#21271918,transparent 50%,#30291f33); }
+body[data-nexo-time] .home-art-plane[data-scene-id] .home-window-tone { background:linear-gradient(120deg,#f8fbdd88,#bdddb23b);mix-blend-mode:soft-light;opacity:var(--sun); }
+body[data-nexo-time] .home-art-plane .refuge-light { background:
+    radial-gradient(ellipse at 15% 35%,rgb(249 215 136 / calc(.2 * var(--sun))),transparent 36%),
+    radial-gradient(ellipse at 77% 40%,rgb(240 173 55 / calc(.13 * var(--sun))),transparent 19%),
+    radial-gradient(ellipse at 15% 35%,rgb(135 158 193 / calc(.19 * var(--w-night))),transparent 31%); }
+body[data-nexo-time] .refuge-room .stage-companion { filter:brightness(calc(1 - .17 * var(--w-night))) saturate(calc(1 - .16 * var(--w-night))) drop-shadow(0 5px 3px #1e22164d); }
+@media(prefers-reduced-motion:reduce) { body.ambient-preview .home-light-layer { transition:none; } }
+
+/* UPDATE 01.3 — objetos tocables: sin etiquetas ni bordes; sólo un brillo suave al pasar o enfocar. */
+.scene-hotspot,.scene-hotspot:hover,.scene-hotspot:focus-visible { box-shadow:none; }
+.scene-hotspot::after { content:"";position:absolute;inset:-10%;border-radius:50%;pointer-events:none;background:radial-gradient(closest-side,#ffe9b066,#ffd98a24 60%,transparent);opacity:0;transform:scale(.92);transition:opacity .35s ease,transform .35s ease; }
+.scene-hotspot:hover::after,.scene-hotspot:focus-visible::after { opacity:1;transform:scale(1); }
+.scene-hotspot:focus-visible { outline:2px solid #e3d094b3;outline-offset:2px;border-radius:14px; }
+.scene-hotspot:active::after { opacity:1;background:radial-gradient(closest-side,#fff0c466,#ffd98a22 60%,transparent); }
+@media(prefers-reduced-motion:reduce) { .scene-hotspot::after { transition:none;transform:none; } }
+
+/* UPDATE 01.3 — objetos nuevos pintados: báculo (Tienda) y mapa enrollado (Bitácora). */
+.home-staff { background-image:url('../assets/home-scenes/staff.png'); }
+.home-map { background-image:url('../assets/home-scenes/map.png'); }
+.home-staff-glow { mix-blend-mode:screen;opacity:calc(.3 + .5 * var(--lamps)); }
+.home-staff-glow::before { content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(closest-side,rgb(255 226 150 / .6),rgb(255 190 90 / .16) 55%,transparent);animation:nexoOrb 4.6s ease-in-out infinite; }
+.home-staff-star { background-image:url('../assets/home-scenes/staff-star.png');transform-origin:50% 0;animation:nexoSwing 5.6s ease-in-out infinite; }
+@keyframes nexoSwing { 0%,100% { transform:rotate(-7deg); } 50% { transform:rotate(7deg); } }
+
+/* UPDATE 01.3 — paso 3, vida: llamas que titilan, orbe que respira, polvo en la luz del sol. */
+@keyframes nexoFlicker { 0%,100% { opacity:1; } 17% { opacity:.84; } 31% { opacity:.97; } 52% { opacity:.88; } 68% { opacity:1; } 84% { opacity:.9; } }
+@keyframes nexoOrb { 0%,100% { opacity:.75;transform:scale(.94); } 50% { opacity:1;transform:scale(1.05); } }
+@keyframes nexoDust { from { background-position:0 0,0 0; } to { background-position:-180px -220px,-260px -310px; } }
+.home-dust { pointer-events:none;mix-blend-mode:screen;opacity:calc(var(--sun) * .85);
+  background:
+    radial-gradient(circle at 18% 22%,#fff3cc 0 1px,transparent 1.8px),radial-gradient(circle at 64% 41%,#ffeab0 0 .8px,transparent 1.5px),
+    radial-gradient(circle at 37% 77%,#fff6d8 0 1.1px,transparent 1.9px),radial-gradient(circle at 82% 12%,#ffe9b0 0 .7px,transparent 1.4px);
+  background-size:180px 220px,260px 310px,180px 220px,260px 310px;
+  mask-image:linear-gradient(118deg,transparent 8%,#000 26%,#000 55%,transparent 82%);
+  animation:nexoDust 70s linear infinite; }
+body.ambient-paused :is(.home-lamp-glow,.home-staff-glow)::before,body.ambient-paused :is(.home-dust,.home-staff-star) { animation-play-state:paused; }
+body[data-nexo-ambient-motion="reduced"] :is(.home-lamp-glow,.home-staff-glow)::before,body[data-nexo-quality="low"] :is(.home-lamp-glow,.home-staff-glow)::before { animation:none; }
+body[data-nexo-ambient-motion="reduced"] .home-dust,body[data-nexo-quality="low"] .home-dust { display:none; }
+body[data-nexo-ambient-motion="reduced"] .home-staff-star,body[data-nexo-quality="low"] .home-staff-star { animation:none; }
+@media(prefers-reduced-motion:reduce) { :is(.home-lamp-glow,.home-staff-glow)::before,.home-staff-star { animation:none; } .home-dust { display:none; } }
+
+/* UPDATE 01.4 — encuadre móvil: la sala completa se desliza de lado en vez de cortarse a la derecha.
+   En escritorio .home-pan sólo envuelve la escena (no cambia nada). */
+.home-pan { position:absolute;inset:0;overflow:hidden; }
+.home-pan-hint { display:none; }
+@media(max-width:700px) {
+  .refuge-room { aspect-ratio:1.2; }
+  .home-pan { overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch; }
+  .home-pan::-webkit-scrollbar { display:none; }
+  .home-pan .home-art-plane { left:0;min-width:0; }
+  .home-pan-hint { display:block;position:absolute;z-index:6;right:14px;bottom:20%;padding:5px 11px;border:1px solid #ceb97966;border-radius:999px;background:#27372dc4;color:#f3e6c0;font:.72rem/1.3 var(--font-ui);pointer-events:none;opacity:0;transition:opacity .5s ease; }
+  .home-pan-hint[data-visible="true"] { opacity:1; }
+  .home-room-hud { bottom:20%; }
+}
+@media(max-width:700px) and (prefers-reduced-motion:reduce) { .home-pan-hint { transition:none; } }
+
+/* UPDATE 01.4 — hojas con vida: cuatro enredaderas recortadas del arte se mecen desde arriba.
+   Debajo de cada una va su "fondo reconstruido" para que al moverse no se vea doble. Quedan bajo el tinte, así que toman la luz de cada hora. */
+.home-leaf { transform-origin:50% 0;animation:nexoLeafSway var(--sway-time,8s) ease-in-out var(--sway-delay,0s) infinite;will-change:transform; }
+.home-leaf-plate-a { background-image:url('../assets/home-scenes/leaf-a-plate.png'); } .home-leaf-a { background-image:url('../assets/home-scenes/leaf-a.png');--sway-time:9.4s;--sway-delay:-2.1s;--sway:1.1deg; }
+.home-leaf-plate-b { background-image:url('../assets/home-scenes/leaf-b-plate.png'); } .home-leaf-b { background-image:url('../assets/home-scenes/leaf-b.png');--sway-time:7.6s;--sway-delay:-4.8s;--sway:1.4deg; }
+.home-leaf-plate-c { background-image:url('../assets/home-scenes/leaf-c-plate.png'); } .home-leaf-c { background-image:url('../assets/home-scenes/leaf-c.png');--sway-time:10.8s;--sway-delay:-1.2s;--sway:0.9deg; }
+.home-leaf-plate-d { background-image:url('../assets/home-scenes/leaf-d-plate.png'); } .home-leaf-d { background-image:url('../assets/home-scenes/leaf-d.png');--sway-time:8.3s;--sway-delay:-6.0s;--sway:1.2deg; }
+@keyframes nexoLeafSway { 0%,100% { transform:rotate(calc(var(--sway,1deg) * -1)); } 50% { transform:rotate(var(--sway,1deg)) skewX(calc(var(--sway,1deg) * -.4)); } }
+body.ambient-paused .home-leaf { animation-play-state:paused; }
+body[data-nexo-ambient-motion="reduced"] .home-leaf,body[data-nexo-quality="low"] .home-leaf { animation:none; }
+@media(prefers-reduced-motion:reduce) { .home-leaf { animation:none; } }
+
+/* UPDATE 01.4 — iconos propios de Bitácora (almanaque con luna) y Tienda (cabeza del báculo estelar). */
+.header-action { display:inline-grid;place-items:center; }
+.nexo-icon { width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round; }
+.nexo-icon .nexo-icon-fill { fill:#e9c77a;stroke:#e9c77a;stroke-width:.6; }
+.header-action:hover .nexo-icon .nexo-icon-fill { fill:#ffdf96;stroke:#ffdf96; }
+@media(max-width:700px) { .nexo-icon { width:19px;height:19px; } }
+
+/* UPDATE 01.5 — intro del grimorio (portada pintada por tools/grimoire-cover/build_cover.py).
+   La coreografía está en platform/animation.js; aquí sólo vive el "objeto": portada, guardas, páginas y brillos. */
+@property --sweep { syntax:'<angle>';inherits:false;initial-value:0deg; }
+.grimoire-intro { position:fixed;inset:0;z-index:80;display:grid;place-items:center;cursor:pointer;
+  --gi-h:min(76vh,680px);--gi-w:min(calc(var(--gi-h) * .75),44vw); }
+.gi-backdrop { position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,rgb(74 58 30 / .62),rgb(10 14 12 / .93) 68%);opacity:0; }
+.gi-stage { position:relative;perspective:2400px;perspective-origin:50% 42%; }
+.gi-book { position:relative;width:var(--gi-w);aspect-ratio:3/4;transform-style:preserve-3d; }
+.gi-block { position:absolute;inset:1.1% 1.8% 1.1% 0;transform-style:preserve-3d;border-radius:3px 8px 8px 3px;background:#eddab2;
+  box-shadow:3px 3px 0 -1px #d8bf8c,6px 6px 0 -2px #c7aa75,9px 9px 0 -3px #b99a64,0 34px 60px rgb(0 0 0 / .55); }
+.gi-block::after { content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(90deg,rgb(92 60 30 / .38),transparent 7%),radial-gradient(ellipse at 60% 40%,transparent 55%,rgb(120 86 40 / .18)); }
+.gi-page { position:absolute;inset:0;transform-origin:left center;border-radius:2px 6px 6px 2px;
+  background:linear-gradient(90deg,#d6bf94,#f2e2bd 10%,#f7e9c9 62%,#e9d4a9);box-shadow:inset 7px 0 12px -8px rgb(80 50 20 / .5); }
+.gi-cover { position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d; }
+.gi-front,.gi-back { position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;border-radius:9px 14px 14px 9px;overflow:hidden; }
+.gi-front { background:#1f3a2e;box-shadow:0 30px 55px rgb(0 0 0 / .5); }
+.gi-art { position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block; }
+.gi-back { transform:rotateY(180deg);background:#1d362b;
+  border:calc(var(--gi-w) * .04) solid #1d362b;box-shadow:inset 0 0 0 2px #b8995a66,inset 0 0 34px rgb(0 0 0 / .5); }
+.gi-glow { position:absolute;inset:0;opacity:0;mix-blend-mode:screen;background:url('../assets/grimoire/grimoire-cover-glow.webp') center / 100% 100% no-repeat;
+  -webkit-mask-image:conic-gradient(from 0deg at 50% 50%,#000 var(--sweep),transparent calc(var(--sweep) + 34deg));
+  mask-image:conic-gradient(from 0deg at 50% 50%,#000 var(--sweep),transparent calc(var(--sweep) + 34deg)); }
+.gi-gem { position:absolute;left:52.83%;top:48.13%;width:28%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(closest-side,rgb(190 255 244 / .85),rgb(90 225 205 / .3) 32%,rgb(255 214 140 / .12) 60%,transparent 74%); }
+.gi-sheen { position:absolute;inset:0;opacity:0;mix-blend-mode:overlay;background-image:linear-gradient(105deg,transparent 38%,rgb(255 236 190 / .45) 47%,rgb(255 250 232 / .75) 50%,rgb(255 236 190 / .4) 53%,transparent 62%);background-size:260% 100%;background-position:130% 0; }
+.gi-clasp { position:absolute;inset:0;transform-origin:92% 50%;background:url('../assets/grimoire/grimoire-cover-clasp.png') center / 100% 100% no-repeat; }
+.gi-sparks { position:absolute;inset:0;pointer-events:none; }
+.gi-spark { position:absolute;left:calc(44% + var(--i) * 2.2%);top:calc(56% - var(--i) * 1.4%);width:7px;height:7px;border-radius:50%;opacity:0;
+  background:radial-gradient(#fff7d6,#f3c76d 45%,transparent 72%);box-shadow:0 0 12px 2px rgb(245 205 120 / .7); }
+.gi-hint { position:absolute;bottom:4.5vh;left:0;right:0;margin:0;text-align:center;color:#efdcae;font:.8rem/1.4 var(--font-ui);letter-spacing:.08em;opacity:0; }
+@media(max-width:760px) { .grimoire-intro { --gi-h:min(68vh,560px);--gi-w:min(calc(var(--gi-h) * .75),76vw); } }
+@media(prefers-reduced-motion:reduce) { .grimoire-intro { display:none; } }
+
+.gi-hint-touch { display:none; }
+@media(hover:none) { .gi-hint-mouse { display:none; } .gi-hint-touch { display:inline; } }
+/* UPDATE 01.5 — cambio entre secciones principales: "nuevo capítulo" sutil (antes partía en 72 % de opacidad). */
+#app[data-chapter-transition="1"]>.page { animation:nexoChapter .34s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes nexoChapter { from { opacity:0;transform:translateY(12px); } 60% { opacity:1; } to { opacity:1;transform:none; } }
+#app[data-world-transition="book-first"]>.page,#app[data-world-transition="book-return"]>.page,#app[data-world-transition="book-close"]>.page,#app[data-world-transition="page-turn"]>.page { animation:none; }
+@media(prefers-reduced-motion:reduce) { #app[data-chapter-transition="1"]>.page { animation:none; } }
+body.reduce-motion #app>.page { animation:none!important; }
+
+/* UPDATE 01.7 — páginas llenas de dibujos según el ramo (tools/grimoire-pages/build_decor.py).
+   Cada SVG trae su opacidad "horneada", así una sola capa apila: volutas en las 4 esquinas, ilustración grande,
+   escena al pie y el fondo de motivos pequeños. isolation + z-index:-1: sobre el papel, bajo el texto. */
+.grimoire { --decor-tile:url('../assets/grimoire/decor/index-tile.svg');--decor-hero:url('../assets/grimoire/decor/index-hero.svg');--decor-foot:url('../assets/grimoire/decor/index-foot.svg');--decor-scene:url('../assets/grimoire/decor/index-scene.svg');--c-tl:url('../assets/grimoire/decor/index-corner-tl.svg');--c-tr:url('../assets/grimoire/decor/index-corner-tr.svg');--c-bl:url('../assets/grimoire/decor/index-corner-bl.svg');--c-br:url('../assets/grimoire/decor/index-corner-br.svg'); }
+.grimoire[data-book-course="organica"] { --decor-tile:url('../assets/grimoire/decor/organica-tile.svg');--decor-hero:url('../assets/grimoire/decor/organica-hero.svg');--decor-foot:url('../assets/grimoire/decor/organica-foot.svg');--decor-scene:url('../assets/grimoire/decor/organica-scene.svg');--c-tl:url('../assets/grimoire/decor/organica-corner-tl.svg');--c-tr:url('../assets/grimoire/decor/organica-corner-tr.svg');--c-bl:url('../assets/grimoire/decor/organica-corner-bl.svg');--c-br:url('../assets/grimoire/decor/organica-corner-br.svg'); }
+.grimoire[data-book-course="analitica"] { --decor-tile:url('../assets/grimoire/decor/analitica-tile.svg');--decor-hero:url('../assets/grimoire/decor/analitica-hero.svg');--decor-foot:url('../assets/grimoire/decor/analitica-foot.svg');--decor-scene:url('../assets/grimoire/decor/analitica-scene.svg');--c-tl:url('../assets/grimoire/decor/analitica-corner-tl.svg');--c-tr:url('../assets/grimoire/decor/analitica-corner-tr.svg');--c-bl:url('../assets/grimoire/decor/analitica-corner-bl.svg');--c-br:url('../assets/grimoire/decor/analitica-corner-br.svg'); }
+.grimoire[data-book-course="fisico"] { --decor-tile:url('../assets/grimoire/decor/fisico-tile.svg');--decor-hero:url('../assets/grimoire/decor/fisico-hero.svg');--decor-foot:url('../assets/grimoire/decor/fisico-foot.svg');--decor-scene:url('../assets/grimoire/decor/fisico-scene.svg');--c-tl:url('../assets/grimoire/decor/fisico-corner-tl.svg');--c-tr:url('../assets/grimoire/decor/fisico-corner-tr.svg');--c-bl:url('../assets/grimoire/decor/fisico-corner-bl.svg');--c-br:url('../assets/grimoire/decor/fisico-corner-br.svg'); }
+.grimoire[data-book-course="fisio"] { --decor-tile:url('../assets/grimoire/decor/fisio-tile.svg');--decor-hero:url('../assets/grimoire/decor/fisio-hero.svg');--decor-foot:url('../assets/grimoire/decor/fisio-foot.svg');--decor-scene:url('../assets/grimoire/decor/fisio-scene.svg');--c-tl:url('../assets/grimoire/decor/fisio-corner-tl.svg');--c-tr:url('../assets/grimoire/decor/fisio-corner-tr.svg');--c-bl:url('../assets/grimoire/decor/fisio-corner-bl.svg');--c-br:url('../assets/grimoire/decor/fisio-corner-br.svg'); }
+.grimoire-frontispiece,.grimoire-folio { isolation:isolate; }
+.grimoire-frontispiece::before,.grimoire-folio::before { content:"";position:absolute;inset:10px;z-index:-1;pointer-events:none;
+  background:var(--c-tl) top left / 78px no-repeat,var(--c-tr) top right / 78px no-repeat,var(--c-bl) bottom left / 78px no-repeat,var(--c-br) bottom right / 78px no-repeat,
+    var(--decor-tile) 0 0 / 500px auto repeat; }
+.grimoire-folio::before { background-position:top left,top right,bottom left,bottom right,150px 40px; }
+.grimoire-frontispiece::after,.grimoire-folio::after { content:"";position:absolute;inset:0;z-index:-1;pointer-events:none; }
+.grimoire-folio::after { background:var(--decor-hero) top 16px right 16px / min(42%,300px) auto no-repeat,var(--decor-scene) bottom 14px center / min(62%,340px) auto no-repeat; }
+.grimoire-frontispiece::after { background:var(--decor-foot) bottom 26px center / min(88%,430px) auto no-repeat; }
+.grimoire[data-book-course="index"] .grimoire-frontispiece::after { background-size:min(70%,300px) auto; }
+.grimoire[data-book-course="index"] .grimoire-frontispiece { padding-bottom:calc(min(70%,300px) + 20px); }
+.grimoire-frontispiece { padding-bottom:calc(clamp(100px,11vw,150px) + 30px); }
+.grimoire-folio { padding-bottom:calc(clamp(170px,18vw,270px) + 16px); }
+.page-turn-leaf.grimoire-folio::after,.page-turn-leaf.grimoire-folio::before { display:none; }
+@media(max-width:700px) {
+  .grimoire-frontispiece::before,.grimoire-folio::before { background-size:56px,56px,56px,56px,380px auto; }
+  .grimoire-folio::after { background-size:46% auto,92% auto; }
+  .grimoire-frontispiece::after { display:none; }
+  .grimoire-frontispiece { padding-bottom:26px; }
+  .grimoire-folio { padding-bottom:calc(56vw + 20px); }
+}
+
+/* UPDATE 01.6 — hoja que se curva al cambiar de ramo (coreografía en platform/animation.js → pageCurl). */
+.curl-stage { position:absolute;inset:0;z-index:6;pointer-events:none;perspective:2600px; }
+.curl-under { position:absolute;overflow:hidden;z-index:0; }
+.curl-shade { position:absolute;z-index:1;pointer-events:none;opacity:0;background:linear-gradient(90deg,rgb(48 28 12 / .5),rgb(48 28 12 / .16) 32%,transparent 68%); }
+.curl-shade-rev { background:linear-gradient(270deg,rgb(48 28 12 / .5),rgb(48 28 12 / .16) 32%,transparent 68%); }
+.curl-leaf { position:absolute;z-index:2;transform-style:preserve-3d; }
+.curl-strip { position:absolute;top:0;transform-style:preserve-3d; }
+.curl-face { position:absolute;inset:0;overflow:hidden;backface-visibility:hidden;-webkit-backface-visibility:hidden; }
+.curl-page { position:absolute;top:0;margin:0;border-radius:0!important; }
+.curl-back { transform:rotateY(180deg);background:#eedab3; }
+.curl-back::before { content:"";position:absolute;inset:0;background:var(--decor-tile) var(--bx,0px) 40px / 500px auto repeat; }
+@media(prefers-reduced-motion:reduce) { .curl-stage { display:none; } }
+
+/* UPDATE 01.7 — intro épica: círculo mágico, motas de luz, rayos, destello de la gema, luz de las páginas y resplandor final. */
+.gi-circle { position:absolute;left:50%;top:50%;width:min(118vmin,980px);aspect-ratio:1;margin:calc(min(118vmin,980px) / -2) 0 0 calc(min(118vmin,980px) / -2);
+  color:#f2c977;opacity:0;pointer-events:none;filter:drop-shadow(0 0 6px rgb(255 200 110 / .8)) drop-shadow(0 0 22px rgb(255 170 70 / .45)); }
+.gi-circle svg { width:100%;height:100%;display:block;overflow:visible; }
+.gi-circle-inner { color:#ffe2a4;width:min(84vmin,700px);margin:calc(min(84vmin,700px) / -2) 0 0 calc(min(84vmin,700px) / -2); }
+.gi-rays { position:absolute;left:50%;top:50%;width:min(160vmin,1500px);aspect-ratio:1;opacity:0;pointer-events:none;mix-blend-mode:screen;
+  background:repeating-conic-gradient(from 0deg,rgb(255 226 160 / 0) 0deg 4deg,rgb(255 222 150 / .55) 6.5deg,rgb(255 226 160 / 0) 9deg 15deg);
+  -webkit-mask-image:radial-gradient(closest-side,#000 8%,#0008 35%,transparent 72%);mask-image:radial-gradient(closest-side,#000 8%,#0008 35%,transparent 72%); }
+.gi-motes { position:absolute;left:50%;top:50%;width:0;height:0;pointer-events:none; }
+.gi-mote { position:absolute;left:0;top:0;width:calc(9px * var(--s,1));height:calc(9px * var(--s,1));margin:calc(-4.5px * var(--s,1));border-radius:50%;opacity:0;
+  background:radial-gradient(#fffbe8,#ffd98a 40%,rgb(255 190 90 / 0) 72%);box-shadow:0 0 12px 3px rgb(255 205 120 / .55); }
+.gi-burst { background:radial-gradient(#fff,#ffe4a8 35%,rgb(255 200 110 / 0) 70%); }
+.gi-pagelight { position:absolute;inset:-6%;z-index:5;opacity:0;pointer-events:none;mix-blend-mode:screen;
+  background:radial-gradient(ellipse at 30% 50%,rgb(255 246 214 / .95),rgb(255 214 140 / .45) 35%,transparent 70%); }
+.gi-flare { position:absolute;left:52.83%;top:48.13%;width:70%;aspect-ratio:1;opacity:0;pointer-events:none;mix-blend-mode:screen;
+  background:linear-gradient(90deg,transparent 0 46%,rgb(220 255 248 / .95) 50%,transparent 54% 100%),linear-gradient(0deg,transparent 0 47.5%,rgb(220 255 248 / .9) 50%,transparent 52.5% 100%),
+    radial-gradient(closest-side,rgb(200 255 245 / .9),rgb(120 230 215 / .3) 18%,transparent 40%); }
+.gi-flash { position:absolute;inset:0;opacity:0;pointer-events:none;mix-blend-mode:screen;background:radial-gradient(ellipse at 50% 48%,rgb(255 244 214 / .95),rgb(255 210 140 / .5) 40%,transparent 75%); }
+.grimoire-intro .gi-stage { z-index:2; }
+.grimoire-intro .gi-motes { z-index:3; }
+
+.gi-bloom { position:absolute;inset:0;z-index:3;pointer-events:none; }
+.gi-bloom-light { position:absolute;left:50%;top:50%;width:190%;aspect-ratio:1;margin:-95% 0 0 -95%;opacity:0;mix-blend-mode:screen;
+  background:radial-gradient(closest-side,rgb(255 248 220 / .95),rgb(255 222 150 / .6) 22%,rgb(255 190 90 / .22) 45%,transparent 70%); }
+.gi-sigil { position:absolute;left:50%;top:50%;width:78%;aspect-ratio:1;margin:-39% 0 0 -39%;opacity:0;color:#b8862f;
+  filter:drop-shadow(0 0 4px rgb(255 214 130 / .95)) drop-shadow(0 0 14px rgb(255 190 90 / .7)); }
+.gi-sigil svg { width:100%;height:100%;display:block; }
+.grimoire-intro .gi-rays { z-index:1; }

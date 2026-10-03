@@ -1,0 +1,215 @@
+==================================================
+14. PREPARACIÓN PARA FUTURO SISTEMA DE MASCOTA
+SIN ACTIVARLO TODAVÍA
+==================================================
+
+IMPORTANTE:
+
+Esta fase NO debe implementar el nuevo sistema de mascota.
+
+Actualmente debe seguir utilizándose la mascota que ya existe.
+
+NO agregar todavía:
+
+- selector de mascotas;
+- configuración de mascota;
+- nuevas mascotas visibles;
+- evolución;
+- accesorios nuevos activos;
+- comportamiento avanzado;
+- caminar libremente;
+- estados complejos;
+- economía de mascotas;
+- personalización de usuario.
+
+Sin embargo, quiero que el trabajo visual de esta actualización
+deje el escenario preparado correctamente para el futuro sistema.
+
+==================================================
+15. CONSERVAR Y ORGANIZAR LOS RECURSOS DE MASCOTA
+==================================================
+
+Inspecciona primero la infraestructura de mascota existente.
+
+Conserva:
+
+- assets existentes;
+- archivos Rive;
+- poses;
+- skins;
+- controladores;
+- contratos;
+- documentación;
+- catálogos;
+- cualquier sistema actual relacionado.
+
+No borres ni reemplaces estos recursos.
+
+Si existen recursos destinados a futuras mascotas,
+deben permanecer dentro del proyecto y organizados
+según la arquitectura existente.
+
+NO deben aparecer todavía en la experiencia del usuario.
+
+Si algún recurso futuro no necesita cargarse actualmente,
+mantenerlo disponible en el proyecto pero fuera del
+runtime/bundle inicial cuando sea razonable.
+
+No aumentar innecesariamente el peso de Inicio
+por assets que todavía no se utilizan.
+
+==================================================
+16. INTEGRACIÓN FUTURA CON EL ESCENARIO
+==================================================
+
+El nuevo diseño de Inicio debe considerar que la mascota futura
+será parte física del escenario.
+
+Por eso deben existir zonas lógicas de integración,
+aunque todavía no se active el nuevo sistema.
+
+Ejemplos conceptuales:
+
+- mesa/escritorio;
+- ventana;
+- estantería;
+- zona de descanso;
+- superficies del escenario.
+
+NO quiero posiciones absolutas improvisadas
+que sólo funcionen con la mascota actual.
+
+La composición debe permitir posteriormente que una mascota:
+
+- esté delante o detrás de determinados objetos;
+- cambie de zona;
+- se siente;
+- duerma;
+- lea;
+- mire objetos;
+- camine por partes permitidas;
+- reciba correctamente la iluminación del entorno.
+
+==================================================
+17. CAPAS Y PROFUNDIDAD
+==================================================
+
+El escenario debe dejar preparada una separación lógica de capas.
+
+Conceptualmente:
+
+BACKGROUND
+→ elementos lejanos
+
+SCENE
+→ habitación / plantas / muebles
+
+MASCOT BACK LAYER
+→ zonas donde la mascota puede quedar detrás de objetos
+
+MASCOT
+→ personaje
+
+MASCOT FRONT LAYER
+→ objetos que pueden quedar delante del personaje
+
+UI / INTERACTIVE SURFACES
+→ información e interacción
+
+No es obligatorio implementar literalmente estos nombres.
+
+Adáptalo a la arquitectura existente.
+
+El objetivo es evitar que el futuro sistema de mascota termine
+siendo un PNG flotando encima de todo.
+
+==================================================
+18. ANCLAJES DE ESCENARIO
+==================================================
+
+Si la arquitectura actual lo permite limpiamente,
+define una forma mínima y reutilizable de describir
+zonas donde una mascota podría ubicarse.
+
+Ejemplo conceptual:
+
+desk
+window
+bookshelf
+rest-area
+
+Cada zona futura podría conocer cosas como:
+
+- posición;
+- escala aproximada;
+- profundidad/z-index;
+- orientación;
+- límites de movimiento.
+
+NO implementar todavía navegación automática entre ellas.
+
+NO construir una state machine nueva.
+
+NO crear comportamiento ficticio.
+
+Solamente dejar el contrato o estructura mínima necesaria
+si aporta valor real y encaja con el sistema existente.
+
+==================================================
+19. MASCOTA ACTUAL
+==================================================
+
+Durante UPDATE 01.1:
+
+la mascota visible debe seguir siendo la mascota actual.
+
+No cambiar su identidad ni implementar la futura configuración.
+
+Se permite únicamente ajustar:
+
+- posición;
+- escala;
+- integración con el nuevo fondo;
+- profundidad visual;
+- relación con muebles/objetos;
+
+si esto es necesario para que no parezca flotando
+o desconectada de la escena.
+
+No rediseñar todavía su rig ni sus animaciones.
+
+==================================================
+20. NO HACER INGENIERÍA ESPECULATIVA
+==================================================
+
+No quiero construir ahora todo el sistema futuro "por si acaso".
+
+Preparar únicamente aquello que evita tener que destruir
+la escena más adelante.
+
+Principio:
+
+PREPARADO PARA MASCOTA FUTURA
+≠
+MASCOTA FUTURA IMPLEMENTADA
+
+Si una abstracción no es necesaria todavía,
+documentarla como pendiente en vez de construirla.
+
+==================================================
+21. DOCUMENTACIÓN PARA LA SIGUIENTE UPDATE
+==================================================
+
+Al terminar, documenta brevemente:
+
+- qué infraestructura de mascota ya existe;
+- qué assets futuros quedaron preservados;
+- qué zonas del escenario quedaron preparadas;
+- qué contratos/hooks existen;
+- qué NO está implementado todavía;
+- qué deberá abordar la futura actualización de mascota.
+
+La próxima actualización podrá utilizar esto como base
+sin tener que reconstruir Inicio.
+
+No activar ninguna funcionalidad futura sin autorización.

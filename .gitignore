@@ -8,3 +8,4 @@ node_modules/
 *.tar.gz
 rive/cli/
 rive/companion-v2/build/
+Claude outputs/

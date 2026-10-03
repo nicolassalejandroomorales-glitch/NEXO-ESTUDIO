@@ -1,0 +1,220 @@
+Apruebo PARCIALMENTE el Checkpoint 1.
+
+El patrón de interacción me parece correcto:
+- hotspot invisible;
+- foco de teclado;
+- feedback visual sutil;
+- responsive;
+- día/noche;
+- reduced-motion;
+- conservación visual del fondo actual.
+
+Pero todavía NO apruebo replicarlo a biblioteca, silla y alfombra.
+
+La razón es que el objetivo principal de esta arquitectura no es sólo
+hacer clic sobre partes del PNG, sino demostrar que un objeto de la
+habitación puede ser realmente MODULAR:
+
+- quitarse;
+- moverse;
+- sustituirse;
+- mantener su interacción;
+- mantener sus anchors;
+- conservar la composición visual.
+
+Actualmente la ventana sigue horneada dentro del fondo.
+Por tanto este checkpoint demuestra correctamente la capa de interacción,
+pero todavía no demuestra la capa modular de assets.
+
+==================================================
+SIGUIENTE PASO:
+WINDOW MODULARIZATION SPIKE
+==================================================
+
+Trabaja SOLAMENTE con la ventana.
+
+No continúes todavía con:
+- biblioteca;
+- silla;
+- alfombra;
+- tienda;
+- mascota nueva;
+- otros objetos.
+
+Objetivo:
+
+conseguir que la misma escena actual pueda reconstruirse visualmente como:
+
+ROOM CLEAN PLATE
++
+WINDOW DEFAULT ASSET
++
+WINDOW HOTSPOT
++
+WINDOW LIGHTING
+
+sin una ventana duplicada horneada detrás.
+
+==================================================
+1. CLEAN PLATE
+==================================================
+
+Necesitamos una versión del fondo donde la ventana intercambiable
+ya no esté dibujada como objeto final.
+
+IMPORTANTE:
+
+No produzcas una reconstrucción visual mediocre sólo para completar
+la tarea.
+
+Si puedes generar/editar de forma fiable un clean plate de esa zona,
+hazlo en un asset NUEVO sin destruir el fondo original.
+
+Conservar siempre:
+- PNG/WebP original;
+- UPDATE 01.2;
+- assets anteriores.
+
+Si no puedes producir un clean plate de calidad suficiente:
+DETENTE y documenta exactamente qué asset artístico necesito aportar.
+
+==================================================
+2. WINDOW ASSET
+==================================================
+
+La ventana actual debe existir como asset independiente
+con transparencia donde corresponda.
+
+Conceptualmente:
+
+room-base-clean.*
+window-default.*
+
+No importa si internamente usas PNG/WebP optimizado,
+pero debe conservarse una fuente de buena calidad.
+
+==================================================
+3. PARIDAD VISUAL
+==================================================
+
+Componer:
+
+clean background
++
+window-default
+
+debe verse prácticamente igual al fondo original aprobado.
+
+Generar comparación visual:
+
+ORIGINAL
+vs
+MODULAR
+
+No cambiar el diseño de la ventana durante esta prueba.
+
+El objetivo NO es rediseñar.
+El objetivo es demostrar modularidad sin perder calidad.
+
+==================================================
+4. SCENE MANIFEST
+==================================================
+
+La posición y escala de la ventana deben proceder del scene manifest
+o configuración central de escena.
+
+No hardcodear nuevamente sus coordenadas en varios archivos.
+
+Debe ser posible cambiar:
+
+- x
+- y
+- scale / width / height
+- depth
+- asset
+
+desde una única fuente de verdad.
+
+==================================================
+5. PRUEBAS DE MODULARIDAD
+==================================================
+
+En modo desarrollo, demostrar las siguientes pruebas:
+
+A. DEFAULT
+window-default en su posición normal.
+
+B. HIDDEN
+quitar el asset de ventana.
+Debe desaparecer realmente.
+No debe quedar la ventana original dibujada debajo.
+
+C. MOVED
+mover temporalmente la ventana.
+Debe cambiar sin tocar la lógica del hotspot.
+
+D. SWAPPED
+usar temporalmente un segundo asset de prueba.
+No necesita ser diseño final.
+Sólo debe demostrar que el slot acepta otro asset.
+
+El asset de prueba NO debe publicarse como diseño final.
+
+==================================================
+6. HOTSPOT
+==================================================
+
+La interacción creada en Checkpoint 1 debe continuar funcionando.
+
+Idealmente el hotspot debe estar relacionado semánticamente con:
+
+window-main
+
+y no depender accidentalmente de una imagen concreta.
+
+==================================================
+7. DÍA / NOCHE
+==================================================
+
+Mantener la lógica actual.
+
+Si la modularización permite separar mejor:
+
+- vista exterior;
+- marco;
+- glow;
+- luz interior;
+
+documenta esa posibilidad, pero NO sobreingenierices ahora.
+
+==================================================
+8. CHECKPOINT 1B
+==================================================
+
+Después de esta prueba:
+
+DETENTE.
+
+Entregar:
+
+- comparación original vs modular;
+- ventana visible;
+- ventana oculta;
+- ventana movida;
+- ventana sustituida por asset test;
+- desktop;
+- móvil;
+- día;
+- noche;
+- debug de slot/hotspot.
+
+Además explicar:
+
+1. qué es clean plate en esta implementación;
+2. qué archivo controla la posición;
+3. cómo se sustituye window-default por otra ventana;
+4. qué tendría que hacer una futura Tienda para equipar otra ventana;
+5. qué lógica NO tendría que cambiar.
+
+No continúes con biblioteca/silla/alfombra hasta mi aprobación.
+No publiques todavía.

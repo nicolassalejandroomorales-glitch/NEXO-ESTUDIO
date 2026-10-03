@@ -10,6 +10,14 @@
   let settings={sound:false,sfxVolume:.4,music:false,musicVolume:.15,ambient:false,ambientVolume:.12};
   let room='home',gesture=false,hidden=typeof document!=='undefined'&&document.hidden;
   let sfx=null,ambient=null,music=null,loading=null,generation=0;
+  /* Efectos largos en archivo (más ricos que el sprite): apertura del grimorio y cambio de página. */
+  const files={grimoire:['assets/audio/grimoire-open.webm','assets/audio/grimoire-open.mp3'],page:['assets/audio/page-turn.webm','assets/audio/page-turn.mp3']};
+  const fileVolume={grimoire:1,page:.55};
+  const fileHowls={};
+  function fileHowl(name) {
+    if(!fileHowls[name]&&window.Howl)fileHowls[name]=new window.Howl({src:files[name],volume:settings.sfxVolume*fileVolume[name],preload:true});
+    return fileHowls[name];
+  }
   function wav(pcm,rate) {
     const bytes=new Uint8Array(44+pcm.length*2),view=new DataView(bytes.buffer);
     const label=(at,value)=>[...value].forEach((char,i)=>bytes[at+i]=char.charCodeAt(0));
@@ -56,6 +64,7 @@
       await window.NexoLoader.script('./vendor/howler/howler.min.js');
       if(!window.Howl)return null;
       sfx=new window.Howl({src:[wavSprite()],format:['wav'],sprite,volume:settings.sfxVolume,preload:true});
+      if(settings.sound)Object.keys(files).forEach(fileHowl);   // precarga para que la apertura suene a tiempo
       return sfx;
     })().catch(()=>{loading=null;return null;});
     return loading;
@@ -90,9 +99,10 @@
       ambient:Boolean(next.ambient),ambientVolume:bounded(next.ambientVolume,.12),
       music:Boolean(next.music),musicVolume:bounded(next.musicVolume,.15)};
     if(sfx)sfx.volume(settings.sound?settings.sfxVolume:0);
+    Object.entries(fileHowls).forEach(([name,howl])=>howl.volume(settings.sound?settings.sfxVolume*fileVolume[name]:0));
     reconcile();
   }
-  function activate() {gesture=true;reconcile();}
+  function activate() {gesture=true;if(settings.sound)init();reconcile();}
   function setRoom(route) {
     const next=rooms[Array.isArray(route)?route[0]:route]||'home';
     if(next===room)return;
@@ -101,13 +111,17 @@
   function play(name='click',next) {
     if(next)configure(next);
     activate();
-    if(!settings.sound||!sprite[name]||hidden)return;
-    init().then(sound=>{if(sound&&settings.sound&&!hidden)sound.play(name);}).catch(()=>{});
+    if(!settings.sound||hidden||(!sprite[name]&&!files[name]))return;
+    init().then(sound=>{
+      if(!settings.sound||hidden)return;
+      if(files[name]) {const howl=fileHowl(name);howl?.volume(settings.sfxVolume*fileVolume[name]);howl?.play();return;}
+      if(sound)sound.play(name);
+    }).catch(()=>{});
   }
   function playFeedback(next) {play('confirm',next);}
   function onVisibility() {hidden=document.hidden;reconcile();}
   if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibility);
-  function dispose() {stopLoops();sfx?.unload();sfx=null;loading=null;gesture=false;}
+  function dispose() {stopLoops();sfx?.unload();sfx=null;Object.keys(fileHowls).forEach(name=>{fileHowls[name].unload();delete fileHowls[name];});loading=null;gesture=false;}
   window.NexoAudio={init,configure,activate,setRoom,play,playFeedback,dispose,
     get settings(){return {...settings,room,gesture,hidden,ambientPlaying:Boolean(ambient),musicPlaying:Boolean(music)};}};
 })();

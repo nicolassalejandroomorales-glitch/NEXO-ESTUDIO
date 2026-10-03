@@ -798,7 +798,17 @@
       backgroundAsset:'assets/home-scenes/refugio-012.png',cleanPlateAsset:null,
       layers:{background:0,ambientBack:1,modularObjects:2,mascotBack:3,mascot:4,mascotFront:5,ambientFront:6,integratedUI:7,hotspots:8},
       slots:[{id:'window',type:'window',zone:'window-area',bounds:[.045,.08,.235,.40],layer:'modularObjects',renderMode:'baked',asset:null,foregroundAsset:null,replacementReady:false}],
-      hotspots:[{id:'window-focus',slot:'window',inset:[.04,.04,.76,.60],action:'focus-light',accessibleLabel:'Ventana: resaltar suavemente la luz de entrada'}],
+      hotspots:[
+        {id:'window-focus',slot:'window',inset:[.04,.04,.76,.60],action:'focus-light',accessibleLabel:'Ventana: resaltar suavemente la luz de entrada'},
+        // Navegación diegética: cada objeto usa el MISMO router que los botones normales (data-route).
+        {id:'staff-shop',bounds:[1078/1672,292/941,62/1672,318/941],action:'route',route:'shop',accessibleLabel:'Báculo estelar: abrir la Tienda'},
+        {id:'armchair-profile',bounds:[1255/1672,395/941,240/1672,280/941],action:'route',route:'profile',accessibleLabel:'Sillón: abrir tu Perfil'},
+        {id:'map-logbook',bounds:[612/1672,612/941,180/1672,76/941],action:'route',route:'planner',routeSub:'grades',accessibleLabel:'Mapa enrollado: abrir la Bitácora'},
+        {id:'parchment-calendar',bounds:[995/1672,278/941,105/1672,125/941],action:'route',route:'planner',routeSub:'calendar',accessibleLabel:'Pergamino de la pared: abrir el calendario'},
+        {id:'bookshelf-library',bounds:[1142/1672,205/941,108/1672,370/941],action:'route',route:'learn',routeSub:'library',accessibleLabel:'Estantería: abrir la Biblioteca'},
+        {id:'globe-knowledge',bounds:[705/1672,290/941,95/1672,90/941],action:'route',route:'knowledge',accessibleLabel:'Globo dorado: abrir el mapa de conocimiento'},
+        {id:'desk-continue',bounds:[30/1672,430/941,205/1672,95/941],action:'continue',accessibleLabel:'Escritorio: continuar estudiando'}
+      ],
       mascotAnchors:{
         desk:{zone:'desk-area',bounds:[.025,.46,.345,.18],point:[.205,.55],layer:'mascot',active:true,seat:{width:.12,foot:.89}},
         window:{zone:'window-area',bounds:[.045,.08,.235,.40],point:[.16,.44],layer:'mascotBack',active:false},
@@ -806,12 +816,33 @@
         rest:{zone:'rest-area',bounds:[.76,.42,.225,.33],point:[.87,.70],layer:'mascotBack',active:false}
       },
       ambientLayers:[
-        {id:'window-view',className:'home-window-view',bounds:[120/1672,85/941,160/1672,320/941],depth:1},
+        {id:'floor-night',className:'home-light-layer home-floor-night',bounds:[220/1672,600/941,758/1672,341/941],depth:1},
+        {id:'map',className:'home-light-layer home-map',bounds:[600/1672,600/941,200/1672,105/941],depth:1},
+        {id:'staff',className:'home-light-layer home-staff',bounds:[1050/1672,285/941,120/1672,340/941],depth:1},
+        {id:'staff-star',className:'home-light-layer home-staff-star',bounds:[1109.61/1672,324.5/941,28/1672,40/941],depth:1},
+        // UPDATE 01.4 — enredaderas que se mecen (tools/home-leaves/build_leaves.py): fondo reconstruido + hojas.
+        {id:'leaf-a-plate',className:'home-light-layer home-leaf-plate home-leaf-plate-a',bounds:[858/1672,52/941,77/1672,230/941],depth:1},
+        {id:'leaf-b-plate',className:'home-light-layer home-leaf-plate home-leaf-plate-b',bounds:[930/1672,56/941,56/1672,192/941],depth:1},
+        {id:'leaf-c-plate',className:'home-light-layer home-leaf-plate home-leaf-plate-c',bounds:[712/1672,36/941,78/1672,132/941],depth:1},
+        {id:'leaf-d-plate',className:'home-light-layer home-leaf-plate home-leaf-plate-d',bounds:[1296/1672,116/941,90/1672,84/941],depth:1},
+        {id:'leaf-a',className:'home-light-layer home-leaf home-leaf-a',bounds:[858/1672,52/941,77/1672,230/941],depth:1},
+        {id:'leaf-b',className:'home-light-layer home-leaf home-leaf-b',bounds:[930/1672,56/941,56/1672,192/941],depth:1},
+        {id:'leaf-c',className:'home-light-layer home-leaf home-leaf-c',bounds:[712/1672,36/941,78/1672,132/941],depth:1},
+        {id:'leaf-d',className:'home-light-layer home-leaf home-leaf-d',bounds:[1296/1672,116/941,90/1672,84/941],depth:1},
+        {id:'view-dawn',className:'home-light-layer home-view-dawn',bounds:[120/1672,85/941,160/1672,320/941],depth:1},
+        {id:'view-dusk',className:'home-light-layer home-view-dusk',bounds:[120/1672,85/941,160/1672,320/941],depth:1},
+        {id:'view-night',className:'home-light-layer home-view-night',bounds:[120/1672,85/941,160/1672,320/941],depth:1},
         {id:'foliage-back',className:'refuge-foliage',bounds:[0,0,1,1],depth:1},
+        {id:'tint-dawn',className:'home-light-layer home-tint-dawn',bounds:[0,0,1,1],depth:1},
+        {id:'tint-dusk',className:'home-light-layer home-tint-dusk',bounds:[0,0,1,1],depth:1},
+        {id:'tint-night',className:'home-light-layer home-tint-night',bounds:[0,0,1,1],depth:1},
+        {id:'lamp-glow',className:'home-light-layer home-lamp-glow',bounds:[0,0,1,1],depth:2},
+        {id:'staff-glow',className:'home-light-layer home-staff-glow',bounds:[1097/1672,325/941,54/1672,54/941],depth:2},
+        {id:'dust',className:'home-dust',bounds:[.05,.1,.42,.62],depth:3},
         {id:'window-tone',className:'home-window-tone',slot:'window',inset:[.025531914893617,.0375,.817021276595745,.8875],depth:2},
         {id:'light-rays',className:'refuge-light',bounds:[0,0,1,1],depth:3}
       ],
-      lightingProfile:{sourceSlot:'window',driver:'NexoAmbientTime',states:['morning','day','dusk','night'],feedback:{duration:600,peakBrightness:1.12}}
+      lightingProfile:{sourceSlot:'window',driver:'NexoAmbientTime',states:['dawn','day','dusk','night'],continuous:true,feedback:{duration:600,peakBrightness:1.12}}
     }
   });
   const defaultSceneId='refugio-012';
@@ -841,8 +872,9 @@
       return `<span class="scene-slot" data-scene-slot="${slot.id}" data-replacement-ready="${ready}" style="${geometry(slot.bounds)}--scene-depth:${profile.layers[slot.layer]}" aria-hidden="true">${image}${debug?`<small class="scene-debug-label">slot · ${slot.id} · ${slot.renderMode}</small>`:''}</span>${foreground}`;
     }).join('');
     const hotspots=profile.hotspots.map(h=>{
-      const slot=profile.slots.find(item=>item.id===h.slot);
-      return `<button type="button" class="scene-hotspot" data-scene-hotspot="${h.id}" data-scene-slot-ref="${h.slot}" style="${geometry(ambientBounds(profile,h))}--scene-depth:${profile.layers.hotspots}" aria-label="${h.accessibleLabel}">${debug?`<small class="scene-debug-label">hotspot · ${h.id}</small>`:''}</button>`;
+      const route=h.action==='route'?` data-route="${h.route}"${h.routeSub?` data-route-sub="${h.routeSub}"`:''}`:'';
+      const slotRef=h.slot?` data-scene-slot-ref="${h.slot}"`:'';
+      return `<button type="button" class="scene-hotspot" data-scene-hotspot="${h.id}" data-scene-action="${h.action}"${slotRef}${route} style="${geometry(ambientBounds(profile,h))}--scene-depth:${profile.layers.hotspots}" aria-label="${h.accessibleLabel}" title="${h.accessibleLabel.split(':')[0]}">${debug?`<small class="scene-debug-label">hotspot · ${h.id}</small>`:''}</button>`;
     }).join('');
     const anchors=debug?Object.entries(profile.mascotAnchors).map(([id,a])=>`<span class="scene-debug-anchor" style="left:${a.point[0]*100}%;top:${a.point[1]*100}%" aria-hidden="true"><small>${id}</small></span>`).join(''):'';
     return {markup:ambient+slots+hotspots+anchors,debug,backgroundAsset:profile.cleanPlateAsset||profile.backgroundAsset};
@@ -856,6 +888,11 @@
   function cleanup() {pulse?.cancel();pulse=null;}
   function activate(id,root,profile=getProfile()) {
     const hotspot=profile.hotspots.find(item=>item.id===id);
+    if(hotspot?.action==='continue') {
+      // Reutiliza el destino del botón "Abrir mapa de preparación": no se duplica la lógica.
+      root.querySelector('.continue-volume .primary-btn')?.click();
+      return true;
+    }
     if(!hotspot||hotspot.action!=='focus-light')return false;
     cleanup();
     if(matchMedia('(prefers-reduced-motion: reduce)').matches||document.body.classList.contains('reduce-motion')||document.body.dataset.nexoAmbientMotion==='reduced')return true;
@@ -867,9 +904,24 @@
     active.finished.then(()=>{if(pulse===active)pulse=null;}).catch(()=>{});
     return true;
   }
+  // Móvil: la sala es más ancha que la pantalla y se desliza de lado (CSS en update01.css).
+  // Parte mostrando el escritorio y la mascota; el aviso "Desliza" se oculta al primer deslizamiento.
+  function enhancePan(root) {
+    const pan=root?.querySelector('.home-pan');
+    if(!pan)return;
+    const hint=root.querySelector('.home-pan-hint');
+    const update=()=>{
+      const max=pan.scrollWidth-pan.clientWidth;
+      pan.dataset.pan=max<=2?'none':pan.scrollLeft<4?'start':pan.scrollLeft>max-4?'end':'mid';
+      if(hint)hint.dataset.visible=String(max>2&&pan.dataset.pan==='start'&&!pan.dataset.touched);
+    };
+    pan.scrollLeft=0;
+    pan.addEventListener('scroll',()=>{if(pan.scrollLeft>4)pan.dataset.touched='1';update();},{passive:true});
+    update();
+  }
   if(typeof matchMedia==='function')matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change',cleanup);
   if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(document.hidden)cleanup();});
-  window.NexoHomeScene=Object.freeze({profiles,getProfile,ambientBounds,replacementReady,render,legacyContract,activate,cleanup});
+  window.NexoHomeScene=Object.freeze({profiles,getProfile,ambientBounds,replacementReady,render,legacyContract,activate,cleanup,enhancePan});
 })();
 
 ;
@@ -977,20 +1029,55 @@
     }
     return stops[0][1];
   }
-  function update(at=new Date()) {
-    const hour=at.getHours()+at.getMinutes()/60;
-    const [r,g,b]=colorAt(hour);
-    document.body.style.setProperty('--ambient-rgb',`${r} ${g} ${b}`);
+  // Pesos de luz continuos (suman 1). La sala pasa de una luz a otra sin saltos.
+  const lightKeys=[[0,'night'],[5,'night'],[6.5,'dawn'],[9,'day'],[16.5,'day'],[18.5,'dusk'],[20.5,'night'],[24,'night']];
+  function weightsAt(hour) {
+    const h=((Number(hour)||0)%24+24)%24, w={dawn:0,day:0,dusk:0,night:0};
+    for(let i=1;i<lightKeys.length;i+=1)if(h<=lightKeys[i][0]) {
+      const [start,a]=lightKeys[i-1], [end,b]=lightKeys[i], t=(h-start)/(end-start);
+      w[a]+=1-t; w[b]+=t; return w;
+    }
+    w.night=1; return w;
+  }
+  function applyHour(hour) {
+    const [r,g,b]=colorAt(hour), w=weightsAt(hour), style=document.body.style;
+    style.setProperty('--ambient-rgb',`${r} ${g} ${b}`);
+    Object.entries(w).forEach(([key,value])=>style.setProperty(`--w-${key}`,value.toFixed(3)));
     document.body.dataset.nexoTime=hour<6?'night':hour<10?'morning':hour<17?'day':hour<20?'dusk':'night';
+  }
+  function update(at=new Date()) {
+    if(previewing)return;
+    applyHour(at.getHours()+at.getMinutes()/60);
     document.body.classList.toggle('ambient-paused',document.hidden);
+  }
+  // Vista previa para probar la luz sin esperar: preview(22) salta con fundido corto;
+  // timelapse() recorre 24 h en ~40 s. stopPreview() vuelve a la hora real.
+  let previewing=false, previewTimer=null;
+  function preview(hour) {
+    stopPreview(); previewing=true; document.body.classList.add('ambient-preview'); applyHour(hour);
+  }
+  function timelapse(seconds=40,from=new Date().getHours()) {
+    stopPreview(); previewing=true; document.body.classList.add('ambient-preview','ambient-timelapse');
+    const started=performance.now(), tick=()=>{
+      const p=(performance.now()-started)/(seconds*1000);
+      if(p>=1){stopPreview();return;}
+      applyHour((from+p*24)%24); previewTimer=setTimeout(tick,250);
+    };
+    tick();
+  }
+  function stopPreview() {
+    if(previewTimer)clearTimeout(previewTimer); previewTimer=null; previewing=false;
+    document.body.classList.remove('ambient-preview','ambient-timelapse'); update();
   }
   function start() {
     if(interval)return;
     update();
+    // Primera pintura sin fundido; desde ahí, cada cambio de luz se funde durante 5 min.
+    requestAnimationFrame(()=>requestAnimationFrame(()=>document.body.classList.add('ambient-live')));
     interval=setInterval(()=>{if(!document.hidden)update();},300000);
     document.addEventListener('visibilitychange',()=>update());
   }
-  window.NexoAmbientTime=Object.freeze({colorAt,update,start});
+  window.NexoAmbientTime=Object.freeze({colorAt,weightsAt,update,start,preview,timelapse,stopPreview});
 })();
 
 ;
@@ -1546,13 +1633,20 @@
       window.gsap?.fromTo(target,from,{...to,ease:to.ease||'power1.out',clearProps:'transform,opacity,filter'});
     } catch { /* La interfaz sigue funcionando sin animación. */ }
   }
-  let navigationAnimation=null, openingLeaf=null, openedInMemory=false, origin=null, previousFolio=null;
+  let navigationAnimation=null, openingLeaf=null, openedInMemory=false, origin=null, previousFolio=null, previousPages=null;
   const running=new Set();
   function prepare(root) {
     const source=root.querySelector('.continue-volume');
     const rect=source?.getBoundingClientRect();
     origin=rect&&rect.bottom>0&&rect.top<innerHeight?rect:null;
     previousFolio=root.querySelector('.grimoire-folio')?.innerHTML||null;
+    const spread=root.querySelector('.grimoire-spread');
+    if(spread) {
+      const s=spread.getBoundingClientRect(),rel=el=>{const r=el.getBoundingClientRect();return {left:r.left-s.left,top:r.top-s.top,width:r.width,height:r.height};};
+      const front=spread.querySelector('.grimoire-frontispiece'),folio=spread.querySelector('.grimoire-folio');
+      previousPages={course:root.querySelector('.grimoire')?.dataset.bookCourse||'index',route:root.dataset.renderedRoute||'',
+        front:front?{html:front.innerHTML,rect:rel(front)}:null,folio:folio?{html:folio.innerHTML,rect:rel(folio)}:null};
+    } else previousPages=null;
   }
   function animate(target,frames,options) {
     const animation=target.animate(frames,options);
@@ -1562,16 +1656,242 @@
   }
   function cancel() {
     running.forEach(animation=>animation.cancel());running.clear();
-    navigationAnimation=null;openingLeaf?.remove();openingLeaf=null;
+    navigationAnimation=null;if(openingLeaf?._cleanup)openingLeaf._cleanup();else openingLeaf?.remove();openingLeaf=null;
   }
   function transitionFor(previous,next,opened) {
     const from=String(previous||'').split('/'), to=String(next||'').split('/');
     const learn=parts=>['learn','subjects','subject','lesson','library','knowledge','inspector'].includes(parts[0]);
     if(previous===next) return {kind:'none',duration:0};
-    if(learn(to)&&!learn(from)) return {kind:opened?'book-return':'book-first',duration:opened?500:1100};
-    if(learn(from)&&to[0]==='home') return {kind:'book-close',duration:280};
-    if(learn(to)&&learn(from)) return {kind:'page-turn',duration:320};
+    if(learn(to)&&!learn(from)) return {kind:opened?'book-return':'book-first',duration:opened?420:3400};
+    if(learn(from)&&to[0]==='home') return {kind:'book-close',duration:380};
+    if(learn(to)&&learn(from)) return {kind:'page-turn',duration:820};
     return {kind:'none',duration:0};
+  }
+
+  /* ---------------------------------------------------------------- Intro del grimorio
+     Capa fija sobre la pantalla (no depende del scroll). La portada aparece UNA vez por sesión (sessionStorage);
+     después, entrar o salir del grimorio es solo un fundido suave. Guion completo más abajo (UPDATE 01.7). */
+  const ASSETS=['assets/grimoire/grimoire-cover.webp','assets/grimoire/grimoire-cover-glow.webp','assets/grimoire/grimoire-cover-clasp.png','assets/grimoire/grimoire-endpaper.webp'];
+  let preloaded=false;const decoded=[];
+  function preload() {
+    // Se descargan y DECODIFICAN antes de usarlas; si no, el navegador pinta la tapa vacía un instante.
+    if(preloaded||typeof Image==='undefined')return; preloaded=true;
+    ASSETS.forEach(src=>{const img=new Image();img.src=src;decoded.push(img);img.decode?.().catch(()=>{});});
+  }
+  if(typeof window!=='undefined'&&typeof window.addEventListener==='function')window.addEventListener('load',()=>(window.requestIdleCallback||setTimeout)(preload,{timeout:4000}));
+  /* UPDATE 01.7 — intro épica (una sola vez por sesión, 3,4 s):
+       0–700    oscuridad; aparece un círculo mágico de runas detrás y empiezan a subir motas de luz
+       250–1000 el grimorio sube flotando hasta su lugar
+       700–1500 las runas de la portada se encienden en círculo; las motas giran hacia el libro
+       1330     la gema destella (estrella de luz)          1500–1750 se suelta el broche
+       1750–2600 la tapa se abre: sale luz de las páginas, rayos dorados y un estallido de chispas
+       2050–2700 páginas que se levantan
+       2650–3400 la cámara "entra" al libro con un resplandor cálido y aparece el grimorio real */
+  const RUNES=[[[0,-1,0,1],[0,-.2,-.6,-.8],[0,.2,.6,-.4]],[[-.8,.7,0,-.8,.8,.7,-.8,.7],[-.45,.1,.45,.1]],[[0,1,0,-1],[-.6,-.4,0,-1,.6,-.4],[-.5,.35,.5,.35]],
+    [[-.9,.2,-.45,-.4,0,.2,.45,-.4,.9,.2],[-.6,.7,.6,.7]],[[-.5,-1,-.5,1],[.5,-1,.5,1],[-.5,0,0,-.5,.5,0,0,.5,-.5,0]],[[-.7,-.7,.7,.7],[.7,-.7,-.7,.7]],
+    [[0,-1,.25,-.25,1,0,.25,.25,0,1,-.25,.25,-1,0,-.25,-.25,0,-1]],[[-.7,1,-.7,-.3,0,-1,.7,-.3,.7,1],[-.7,.3,.7,.3]],[[.3,-.9,-.5,-.5,-.6,.3,-.1,.85,.4,.75]]];
+  function circleSVG(kind) {
+    // círculo mágico dibujado con las mismas runas inventadas de la portada
+    const C=500,parts=[];
+    const circ=(r,w,o=1,dash='')=>parts.push(`<circle cx="${C}" cy="${C}" r="${r}" fill="none" stroke-width="${w}" opacity="${o}"${dash?` stroke-dasharray="${dash}"`:''}/>`);
+    if(kind==='outer') {
+      circ(478,3);circ(462,1.4);circ(392,1.4);circ(376,3);
+      for(let k=0;k<72;k++){const a=k/72*Math.PI*2,r0=466,r1=k%6?472:476;parts.push(`<line x1="${C+Math.cos(a)*r0}" y1="${C+Math.sin(a)*r0}" x2="${C+Math.cos(a)*r1}" y2="${C+Math.sin(a)*r1}" stroke-width="1.4"/>`);}
+      for(let k=0;k<30;k++){
+        const a=-Math.PI/2+k/30*Math.PI*2,cx=C+Math.cos(a)*427,cy=C+Math.sin(a)*427,out=[Math.cos(a),Math.sin(a)],tan=[-Math.sin(a),Math.cos(a)],sc=17;
+        for(const st of RUNES[(k*4)%RUNES.length]){const pts=[];for(let i=0;i<st.length;i+=2){const gx=st[i],gy=st[i+1];pts.push(`${(cx+(gx*tan[0]-gy*out[0])*sc).toFixed(1)},${(cy+(gx*tan[1]-gy*out[1])*sc).toFixed(1)}`);}parts.push(`<polyline points="${pts.join(' ')}" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`);}
+      }
+    } else {
+      circ(330,2.2);circ(318,1,.8,'4 10');circ(150,2);circ(120,1.2,.8);
+      const hex=k=>[C+300*Math.cos(Math.PI/6+k*Math.PI/3),C+300*Math.sin(Math.PI/6+k*Math.PI/3)];
+      const pts=[0,1,2,3,4,5,0].map(hex).map(p=>p.map(v=>v.toFixed(1)).join(',')).join(' ');
+      parts.push(`<polyline points="${pts}" fill="none" stroke-width="2.4"/>`);
+      for(let k=0;k<6;k++){const [x,y]=hex(k);parts.push(`<circle cx="${x}" cy="${y}" r="16" fill="none" stroke-width="2"/>`,`<line x1="${C}" y1="${C}" x2="${x}" y2="${y}" stroke-width="1" opacity=".5"/>`);}
+      for(let k=0;k<12;k++){const a=k/12*Math.PI*2,x=C+Math.cos(a)*226,y=C+Math.sin(a)*226,r=k%2?7:12;parts.push(`<path d="M${x} ${y-r}L${x+r*.3} ${y-r*.3}L${x+r} ${y}L${x+r*.3} ${y+r*.3}L${x} ${y+r}L${x-r*.3} ${y+r*.3}L${x-r} ${y}L${x-r*.3} ${y-r*.3}Z" fill="currentColor" stroke="none"/>`);}
+    }
+    return `<svg viewBox="0 0 1000 1000" aria-hidden="true" focusable="false" stroke="currentColor">${parts.join('')}</svg>`;
+  }
+  function introMarkup() {
+    const sparks=Array.from({length:7},(_,i)=>`<i class="gi-spark" style="--i:${i}"></i>`).join('');
+    return `<div class="gi-backdrop"></div><div class="gi-rays"></div>
+      <div class="gi-circle gi-circle-outer">${circleSVG('outer')}</div><div class="gi-circle gi-circle-inner">${circleSVG('inner')}</div>
+      <div class="gi-motes"></div>
+      <div class="gi-stage"><div class="gi-book">
+      <div class="gi-block"><div class="gi-pagelight"></div><div class="gi-page gi-page-1"></div><div class="gi-page gi-page-2"></div><div class="gi-page gi-page-3"></div></div>
+      <div class="gi-cover"><div class="gi-front"><img class="gi-art" src="${ASSETS[0]}" alt="" decoding="sync"><div class="gi-glow"></div><div class="gi-gem"></div><div class="gi-flare"></div><div class="gi-sheen"></div><div class="gi-clasp"></div></div><div class="gi-back"><img class="gi-art" src="${ASSETS[3]}" alt="" decoding="sync"></div></div>
+      <div class="gi-sparks">${sparks}</div></div>
+      <div class="gi-bloom"><div class="gi-bloom-light"></div><div class="gi-sigil">${circleSVG('inner')}</div></div></div>
+      <div class="gi-flash"></div><p class="gi-hint"><span class="gi-hint-mouse">Haz clic o presiona Esc para saltar</span><span class="gi-hint-touch">Toca para saltar</span></p>`;
+  }
+  function timeline(el,frames,start,dur,_total,easing='ease-in-out') {
+    if(!el)return null;
+    return animate(el,frames,{duration:dur,delay:start,easing,fill:'both'});
+  }
+  function grimoireIntro(book,spec) {
+    preload();
+    const T=spec.duration,low=document.body.dataset.nexoQuality==='low';
+    const layer=document.createElement('div');
+    layer.className='grimoire-intro';layer.dataset.kind=spec.kind;layer.setAttribute('aria-hidden','true');
+    layer.innerHTML=introMarkup();
+    document.body.append(layer);
+    const q=sel=>layer.querySelector(sel),wide=innerWidth>760;
+    const shift=wide?(q('.gi-book').offsetWidth/2)+'px':'0px';   // en pantallas anchas el libro abierto queda centrado
+    const hold=animate(book,[{opacity:0},{opacity:0,offset:.86},{opacity:1}],{duration:T,easing:'ease-out'});
+    q('.gi-stage').style.opacity='0';q('.gi-backdrop').style.opacity='.9';
+    // motas de luz: suben, giran hacia el libro y estallan al abrirse
+    const motes=q('.gi-motes'),R=Math.min(innerWidth,innerHeight);
+    for(let i=0;i<(low?14:38);i++) {
+      const m=document.createElement('i');m.className='gi-mote';motes.append(m);
+      const a0=Math.random()*Math.PI*2,r0=R*(.32+Math.random()*.28),a1=a0+(Math.random()<.5?1:-1)*(1.2+Math.random()),r1=R*(.12+Math.random()*.1),a2=a1+.6,r2=R*(.45+Math.random()*.35);
+      const P=(a,r,dy=0)=>`translate(${(Math.cos(a)*r).toFixed(1)}px,${(Math.sin(a)*r*.75+dy).toFixed(1)}px)`;
+      const size=.5+Math.random()*.9;
+      m.style.setProperty('--s',size.toFixed(2));
+      m._spec=[[{transform:P(a0,r0,R*.25)+' scale(.3)',opacity:0},{transform:P((a0+a1)/2,(r0+r1)/2)+' scale(1)',opacity:.95,offset:.35},{transform:P(a1,r1)+' scale(.8)',opacity:.85,offset:.62},{transform:P(a2,r2,-R*.1)+' scale(.2)',opacity:0}],Math.random()*500,2500+Math.random()*500];
+    }
+    const arts=[...layer.querySelectorAll('img.gi-art')].map(img=>img.decode?img.decode().catch(()=>{}):Promise.resolve());
+    const ready=Promise.race([Promise.all(arts),new Promise(r=>setTimeout(r,260))]);
+    let started=false,main=null;
+    const start=()=>{
+      if(started||!layer.isConnected)return; started=true;
+      q('.gi-stage').style.opacity='';q('.gi-backdrop').style.opacity='';
+      try{hold.currentTime=0;}catch{}
+      window.NexoAudio?.play?.('grimoire');
+      const E='cubic-bezier(.2,.7,.2,1)';
+      timeline(q('.gi-backdrop'),[{opacity:.9},{opacity:1}],0,500,T,'ease-out');
+      // círculo mágico: aparece, gira (cada anillo hacia un lado), se intensifica y se apaga
+      [['.gi-circle-outer',70],['.gi-circle-inner',-110]].forEach(([sel,deg])=>{
+        timeline(q(sel),[{opacity:0,transform:`scale(.72) rotate(0deg)`},{opacity:.85,transform:`scale(1) rotate(${deg*.25}deg)`,offset:.22},{opacity:1,transform:`scale(1.02) rotate(${deg*.45}deg)`,offset:.44},{opacity:.55,transform:`scale(1.12) rotate(${deg*.75}deg)`,offset:.76},{opacity:0,transform:`scale(1.35) rotate(${deg}deg)`}],0,T,T,'ease-in-out');
+      });
+      [...motes.children].forEach(m=>timeline(m,m._spec[0],m._spec[1],m._spec[2],T,'cubic-bezier(.3,.1,.3,1)'));
+      timeline(q('.gi-stage'),[{transform:'translateY(70px) scale(.86)',opacity:0},{transform:'translateY(-6px) scale(1.01)',opacity:1,offset:.75},{transform:'translateY(0) scale(1)',opacity:1}],250,750,T,E);
+      timeline(q('.gi-book'),[{transform:'translateY(0)'},{transform:'translateY(-7px)'},{transform:'translateY(0)'}],1000,750,T,'ease-in-out');   // flota
+      timeline(q('.gi-glow'),[{opacity:0,'--sweep':'0deg'},{opacity:.95,'--sweep':'200deg',offset:.55},{opacity:.9,'--sweep':'390deg'}],700,800,T);
+      timeline(q('.gi-glow'),[{filter:'brightness(1)'},{filter:'brightness(1.45)'},{filter:'brightness(.6)'}],1500,1100,T);
+      timeline(q('.gi-sheen'),[{backgroundPosition:'130% 0',opacity:0},{opacity:1,offset:.2},{backgroundPosition:'-30% 0',opacity:0}],750,800,T);
+      timeline(q('.gi-gem'),[{opacity:0,transform:'scale(.6)'},{opacity:1,transform:'scale(1.25)',offset:.5},{opacity:.8,transform:'scale(1)'}],1250,500,T);
+      timeline(q('.gi-flare'),[{opacity:0,transform:'translate(-50%,-50%) rotate(0deg) scale(.2)'},{opacity:1,transform:'translate(-50%,-50%) rotate(25deg) scale(1.15)',offset:.4},{opacity:0,transform:'translate(-50%,-50%) rotate(55deg) scale(.5)'}],1330,480,T,'ease-out');
+      timeline(q('.gi-clasp'),[{transform:'translateX(0) rotate(0)',opacity:1},{transform:'translateX(3%) rotate(-3deg)',opacity:1,offset:.35},{transform:'translateX(22%) rotate(8deg)',opacity:0}],1500,250,T,'cubic-bezier(.5,0,.6,1)');
+      main=timeline(q('.gi-cover'),[{transform:'rotateY(0deg) translateZ(0)'},{transform:'rotateY(-18deg) translateZ(18px)',offset:.18},{transform:'rotateY(-168deg) translateZ(0)'}],1750,850,T,'cubic-bezier(.55,.06,.3,1)');
+      timeline(q('.gi-book'),[{translate:'0 0'},{translate:`${shift} 0`}],1750,850,T,'cubic-bezier(.55,.06,.3,1)');
+      timeline(q('.gi-pagelight'),[{opacity:0},{opacity:1,offset:.45},{opacity:.35}],1850,900,T,'ease-out');
+      // de la página en blanco sale luz y se "escribe" un sello mágico
+      timeline(q('.gi-bloom'),[{translate:'0 0'},{translate:`${shift} 0`}],1750,850,T,'cubic-bezier(.55,.06,.3,1)');
+      timeline(q('.gi-bloom-light'),[{opacity:0,transform:'scale(.4)'},{opacity:1,transform:'scale(1)',offset:.4},{opacity:.75,transform:'scale(1.15)'}],2000,1000,T,'ease-out');
+      timeline(q('.gi-sigil'),[{opacity:0,clipPath:'circle(0% at 50% 50%)',transform:'rotate(-40deg) scale(.8)'},{opacity:1,clipPath:'circle(70% at 50% 50%)',transform:'rotate(0deg) scale(1)',offset:.6},{opacity:.9,clipPath:'circle(70% at 50% 50%)',transform:'rotate(12deg) scale(1.05)'}],2150,850,T,'cubic-bezier(.3,.1,.3,1)');
+      timeline(q('.gi-rays'),[{opacity:0,transform:'translate(-50%,-50%) rotate(0deg) scale(.6)'},{opacity:.85,transform:'translate(-50%,-50%) rotate(12deg) scale(1)',offset:.35},{opacity:0,transform:'translate(-50%,-50%) rotate(30deg) scale(1.3)'}],1900,1200,T,'ease-out');
+      layer.querySelectorAll('.gi-page').forEach((page,i)=>timeline(page,[{transform:'rotateY(0deg)'},{transform:`rotateY(${-(150+i*8)}deg)`}],2050+i*110,520,T,'cubic-bezier(.4,.1,.3,1)'));
+      layer.querySelectorAll('.gi-spark').forEach((spark,i)=>timeline(spark,[{opacity:0,transform:'translate(0,0) scale(.5)'},{opacity:.9,offset:.35},{opacity:0,transform:`translate(${(i%2?1:-1)*(8+i*3)}px,${-40-i*9}px) scale(1)`}],900+i*110,1100,T,'ease-out'));
+      // estallido de chispas al abrirse
+      const burst=q('.gi-motes');
+      for(let i=0;i<(low?12:44);i++) {
+        const s=document.createElement('i');s.className='gi-mote gi-burst';burst.append(s);
+        const a=Math.random()*Math.PI*2,d=R*(.2+Math.random()*.45);s.style.setProperty('--s',(.8+Math.random()*1.1).toFixed(2));
+        timeline(s,[{transform:`translate(${shift},0) scale(1.2)`,opacity:0},{opacity:1,offset:.12},{transform:`translate(calc(${shift} + ${(Math.cos(a)*d).toFixed(1)}px),${(Math.sin(a)*d*.8-R*.05).toFixed(1)}px) scale(.2)`,opacity:0}],2050+Math.random()*250,900+Math.random()*500,T,'cubic-bezier(.1,.7,.3,1)');
+      }
+      timeline(q('.gi-hint'),[{opacity:0},{opacity:.7,offset:.2},{opacity:.7,offset:.85},{opacity:0}],300,2300,T);
+      timeline(q('.gi-stage'),[{scale:'1'},{scale:'1.24'}],2650,750,T,'cubic-bezier(.5,0,.7,.4)');   // la cámara entra
+      timeline(q('.gi-flash'),[{opacity:0},{opacity:.55,offset:.45},{opacity:0}],2700,700,T,'ease-in-out');
+      timeline(layer,[{opacity:1},{opacity:0}],2950,450,T,'ease-in');
+      layer._main=main;
+      Promise.all([...running].filter(a=>a.effect?.target&&layer.contains(a.effect.target)||a.effect?.target===layer).map(a=>a.finished)).then(done,done);
+    };
+    const finish=()=>{start();running.forEach(a=>{try{a.finish();}catch{}});};
+    const onKey=e=>{if(['Escape','Enter',' '].includes(e.key)){e.preventDefault();finish();}};
+    layer.addEventListener('pointerdown',finish);document.addEventListener('keydown',onKey,true);
+    const done=()=>{document.removeEventListener('keydown',onKey,true);layer.remove();if(openingLeaf===layer)openingLeaf=null;};
+    hold.finished.catch(()=>{});
+    layer._cleanup=done;
+    ready.then(start);
+    return layer;
+  }
+  /* ---------------------------------------------------------------- UPDATE 01.6 — cambio de página real
+     La hoja que se da vuelta se arma con 7 tiras verticales anidadas: cada tira gira un poco respecto
+     de la anterior, así la hoja se CURVA como papel. El anverso muestra la página vieja y el reverso el
+     papel del ramo nuevo; al aterrizar, el reverso se funde con la página nueva.
+     Adelante (ramo siguiente / más profundo): gira la página derecha hacia la izquierda.
+     Atrás (ramo anterior / volver al índice): gira la izquierda hacia la derecha. */
+  function routeKey(route) {
+    const parts=String(route||'').split('/'),ids=Object.keys(window.NexoRooms?.courses||{});
+    if(parts[0]!=='learn')return [ids.length+1,0];
+    if(parts[1]==='course')return [ids.indexOf(parts[2]),parts[3]==='evaluation'?(parts[5]?3:2):parts[3]?4:1];
+    if(parts[1])return [ids.length,1];
+    return [-1,0];
+  }
+  function turnDirection(previous,next) {
+    const a=routeKey(previous),b=routeKey(next);
+    return (b[0]<a[0]||(b[0]===a[0]&&b[1]<a[1]))?-1:1;
+  }
+  function decorVars(course) {
+    if(!course||course==='index')return "--decor-tile:url('assets/grimoire/decor/index-tile.svg');--decor-hero:none;--decor-foot:none;";
+    const u=part=>`url('assets/grimoire/decor/${course}-${part}.svg')`;
+    return `--decor-tile:${u('tile')};--decor-hero:${u('hero')};--decor-foot:${u('foot')};`;
+  }
+  function pageCurl(book,dir,T) {
+    const spread=book.querySelector('.grimoire-spread');
+    const prev=previousPages,fwd=dir>0;
+    if(!spread||!prev)return null;
+    const turning=fwd?prev.folio:prev.front, staying=fwd?prev.front:prev.folio;
+    const target=(fwd?spread.querySelector('.grimoire-frontispiece'):spread.querySelector('.grimoire-folio'));
+    const sr=spread.getBoundingClientRect(),tr=target?.getBoundingClientRect();
+    const landW=tr?tr.width:staying.rect.width, W=turning.rect.width, H=Math.max(turning.rect.height,staying.rect.height);
+    const N=7, sw=W/N, oldAccent=window.NexoRooms?.courses?.[prev.course]?.accent, oldVars=decorVars(prev.course)+(oldAccent?`--book-accent:${oldAccent};`:'');
+    const turningClass=fwd?'grimoire-folio':'grimoire-frontispiece', stayingClass=fwd?'grimoire-frontispiece':'grimoire-folio';
+    const spine=fwd?turning.rect.left:turning.rect.left+W;
+    const stage=document.createElement('div');
+    stage.className='curl-stage';stage.setAttribute('aria-hidden','true');stage.inert=true;
+    stage.style.perspectiveOrigin=`${spine}px 40%`;
+    // la página que "se queda" (vieja) tapa la nueva hasta que la hoja aterriza encima
+    const under=document.createElement('div');
+    under.className=`curl-under ${stayingClass}`;under.style.cssText=oldVars+`left:${staying.rect.left}px;top:${staying.rect.top}px;width:${staying.rect.width}px;height:${staying.rect.height}px;`;
+    under.innerHTML=staying.html;
+    const shadeNew=document.createElement('div');
+    shadeNew.className='curl-shade'+(fwd?'':' curl-shade-rev');
+    Object.assign(shadeNew.style,{left:turning.rect.left+'px',top:turning.rect.top+'px',width:W+'px',height:H+'px'});
+    const shadeOld=document.createElement('div');
+    shadeOld.className='curl-shade'+(fwd?' curl-shade-rev':'');
+    Object.assign(shadeOld.style,{left:'0px',top:'0px',width:'100%',height:'100%'});
+    under.append(shadeOld);
+    // hoja con tiras anidadas
+    const leaf=document.createElement('div');
+    leaf.className='curl-leaf';
+    Object.assign(leaf.style,{left:turning.rect.left+'px',top:turning.rect.top+'px',width:W+'px',height:turning.rect.height+'px',transformOrigin:fwd?'left center':'right center'});
+    let parent=leaf;const strips=[],fronts=[],backs=[];
+    for(let i=0;i<N;i++) {
+      const strip=document.createElement('div');
+      strip.className='curl-strip';
+      Object.assign(strip.style,{width:sw+0.6+'px',height:'100%',transformOrigin:fwd?'left center':'right center'});
+      strip.style[fwd?'left':'right']=i===0?'0px':sw+'px';
+      const front=document.createElement('div');front.className='curl-face';
+      const page=document.createElement('div');page.className=`curl-page ${turningClass}`;page.style.cssText=oldVars+`width:${W}px;height:${turning.rect.height}px;${fwd?'left':'right'}:${-i*sw}px;`;
+      page.innerHTML=turning.html;front.append(page);
+      const back=document.createElement('div');back.className='curl-face curl-back';
+      back.style.setProperty('--bx',`${fwd?-(N-1-i)*sw:-i*sw}px`);
+      strip.append(front,back);parent.append(strip);parent=strip;
+      strips.push(strip);fronts.push(front);backs.push(back);
+    }
+    stage.append(under,shadeNew,leaf);spread.append(stage);
+    const sgn=fwd?-1:1, sx=landW/W;
+    window.NexoAudio?.play?.('page');
+    const ease='cubic-bezier(.42,0,.22,1)';
+    const main=animate(leaf,[
+      {transform:'rotateY(0deg) scaleX(1)'},
+      {transform:`rotateY(${sgn*28}deg) scaleX(1)`,offset:.22},
+      {transform:`rotateY(${sgn*100}deg) scaleX(${(1+sx)/2})`,offset:.58},
+      {transform:`rotateY(${sgn*180}deg) scaleX(${sx})`}],{duration:T,easing:ease,fill:'forwards'});
+    // curvatura: el borde libre se queda atrás al levantar y se estira al bajar
+    strips.forEach((strip,i)=>{ if(i===0)return;
+      const c=-sgn*(5+i*2.2);
+      animate(strip,[{transform:'rotateY(0deg)'},{transform:`rotateY(${c}deg)`,offset:.3},{transform:`rotateY(${c*.55}deg)`,offset:.6},{transform:`rotateY(${-c*.18}deg)`,offset:.86},{transform:'rotateY(0deg)'}],{duration:T,easing:'ease-in-out',fill:'forwards'});
+    });
+    fronts.forEach((f,i)=>animate(f,[{filter:'brightness(1)'},{filter:'brightness(.9)',offset:.3},{filter:'brightness(.62)',offset:.5},{filter:'brightness(.62)'}],{duration:T,easing:'linear',fill:'forwards'}));
+    backs.forEach(b=>animate(b,[{filter:'brightness(.6)',opacity:1},{filter:'brightness(.66)',opacity:1,offset:.5},{filter:'brightness(.9)',opacity:1,offset:.68},{filter:'brightness(1)',opacity:1,offset:.8},{filter:'brightness(1)',opacity:1,offset:.88},{filter:'brightness(1)',opacity:0}],{duration:T,easing:'linear',fill:'forwards'}));
+    animate(shadeNew,[{opacity:0},{opacity:.95,offset:.32},{opacity:.4,offset:.62},{opacity:0,offset:.85},{opacity:0}],{duration:T,easing:'ease-in-out',fill:'forwards'});
+    animate(shadeOld,[{opacity:0},{opacity:0,offset:.45},{opacity:.85,offset:.82},{opacity:.85}],{duration:T,easing:'ease-in',fill:'forwards'});
+    animate(under,[{opacity:1},{opacity:1,offset:.9},{opacity:0,offset:.901},{opacity:0}],{duration:T,fill:'forwards'});
+    const done=()=>{stage.remove();if(openingLeaf===stage)openingLeaf=null;};
+    main.finished.then(done,done);
+    stage._main=main;stage._cleanup=done;
+    return stage;
   }
   function navigate(root,previous,next) {
     cancel();
@@ -1584,42 +1904,37 @@
     }
     root.dataset.worldTransition=spec.kind;
     root.dataset.transitionDuration=String(spec.duration);
-    if(reduced()||document.body.dataset.nexoAmbientMotion==='reduced'||spec.kind==='none') return;
+    if(spec.kind==='none') return;
     const book=root.querySelector('.grimoire'),refuge=root.querySelector('.refuge');
     const target=book||refuge;
     if(!target?.animate)return;
-    if(['book-first','book-return'].includes(spec.kind)&&book) {
-      const leaf=document.createElement('div');
-      leaf.className='book-passage';leaf.setAttribute('aria-hidden','true');
-      leaf.innerHTML='<div class="book-passage-pages"><span>✦</span><div class="book-opening-glow"></div><i class="book-opening-spark">✧</i><i class="book-opening-spark">✦</i><i class="book-opening-spark">✧</i></div><div class="book-passage-cover"><span>✧</span><b>NEXO</b><small>GRIMORIO DEL CONOCIMIENTO</small><i>✦</i></div>';
-      const measured=book.getBoundingClientRect();
-      const rect={left:measured.left,top:measured.top+scrollY,width:measured.width,height:Math.max(180,Math.min(measured.height,innerHeight-(measured.top+scrollY)-20))};
-      Object.assign(leaf.style,{left:rect.left+'px',top:rect.top+'px',width:rect.width+'px',height:rect.height+'px'});
-      document.body.append(leaf);openingLeaf=leaf;
-      const start=origin?`translate(${origin.left-rect.left}px,${origin.top-rect.top}px) scale(${origin.width/rect.width},${origin.height/rect.height})`:'translateY(35px) scale(.88)';
-      animate(leaf,[{transform:start,opacity:1},{transform:'none',opacity:1,offset:.38},{transform:'none',opacity:1,offset:.9},{transform:'none',opacity:0}],{duration:spec.duration,easing:'cubic-bezier(.2,.65,.25,1)',fill:'forwards'});
-      navigationAnimation=animate(leaf.querySelector('.book-passage-cover'),[{transform:'rotateY(0deg)'},{transform:'rotateY(0deg)',offset:.16},{transform:'rotateY(-164deg)',offset:.96},{transform:'rotateY(-174deg)'}],{duration:spec.duration,easing:'cubic-bezier(.35,0,.35,1)',fill:'forwards'});
-      animate(leaf.querySelector('.book-opening-glow'),[{opacity:0},{opacity:.55,offset:.55},{opacity:0}],{duration:spec.duration,easing:'ease-in-out',fill:'both'});
-      leaf.querySelectorAll('.book-opening-spark').forEach((spark,index)=>animate(spark,[{opacity:0,transform:'translateY(5px) scale(.8)'},{opacity:.65,transform:'translateY(0) scale(1.06)',offset:.5},{opacity:0,transform:'translateY(-8px) scale(.9)'}],{duration:spec.duration*.65,delay:spec.duration*(.18+index*.07),easing:'ease-in-out',fill:'both'}));
-      animate(book,[{opacity:0},{opacity:0,offset:.38},{opacity:1,offset:.86},{opacity:1}],{duration:spec.duration});
-      navigationAnimation.finished.then(()=>{leaf.remove();if(openingLeaf===leaf)openingLeaf=null;}).catch(()=>leaf.remove());
+    // Movimiento reducido: solo un fundido corto (sin giros ni desplazamientos).
+    if(reduced()||document.body.dataset.nexoAmbientMotion==='reduced') {navigationAnimation=animate(target,[{opacity:0},{opacity:1}],{duration:200,easing:'ease-out'});return;}
+    if(spec.kind==='book-first'&&book) {
+      openingLeaf=grimoireIntro(book,spec);
+      navigationAnimation=openingLeaf?._main||null;
+    } else if(spec.kind==='page-turn'&&book&&previousPages?.front&&previousPages?.folio&&innerWidth>760) {
+      openingLeaf=pageCurl(book,turnDirection(previous,next),spec.duration);
+      navigationAnimation=openingLeaf?._main||null;
     } else if(spec.kind==='page-turn'&&book&&previousFolio) {
+      // Móvil: las páginas van una sobre otra; basta una hoja que se levanta con sombra.
       const leaf=document.createElement('div');
       leaf.className='grimoire-folio page-turn-leaf';leaf.setAttribute('aria-hidden','true');leaf.inert=true;
       leaf.innerHTML=previousFolio;book.append(leaf);openingLeaf=leaf;
-      navigationAnimation=animate(leaf,[{transform:'rotateY(0deg)',opacity:1},{transform:'rotateY(-96deg)',opacity:1,offset:.7},{transform:'rotateY(-150deg)',opacity:0}],{duration:spec.duration,easing:'ease-in-out',fill:'forwards'});
+      window.NexoAudio?.play?.('page');
+      navigationAnimation=animate(leaf,[{transform:'perspective(2600px) rotateY(0deg)',filter:'brightness(1)',opacity:1},{transform:'perspective(2600px) rotateY(-60deg)',filter:'brightness(.84)',opacity:1,offset:.55},{transform:'perspective(2600px) rotateY(-120deg)',filter:'brightness(.7)',opacity:0}],{duration:560,easing:'cubic-bezier(.45,.05,.3,1)',fill:'forwards'});
       navigationAnimation.finished.then(()=>{leaf.remove();if(openingLeaf===leaf)openingLeaf=null;}).catch(()=>leaf.remove());
     } else {
       const frames=spec.kind==='page-turn'?[{transform:'perspective(1200px) rotateY(-4deg)',opacity:.72},{transform:'perspective(1200px) rotateY(0)',opacity:1}]
         :spec.kind==='book-close'?[{transform:'scale(1.025)',opacity:.7},{transform:'scale(1)',opacity:1}]
-          :[{transform:'translateY(7px) scale(.985)',opacity:.8},{transform:'translateY(0) scale(1)',opacity:1}];
+          :[{transform:'translateY(14px) scale(.985)',opacity:0},{transform:'translateY(0) scale(1)',opacity:1}];
       navigationAnimation=animate(target,frames,{duration:spec.duration,easing:'ease-out'});
     }
   }
   // Stop an in-flight opening when motion preference changes or the tab is hidden.
   if(typeof matchMedia==='function')matchMedia('(prefers-reduced-motion: reduce)').addEventListener?.('change',cancel);
   if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(document.hidden)cancel();});
-  window.NexoAnimation = { reveal:target=>run(target,'slideIn'),run,reduced,presets:Object.keys(presets),transitionFor,navigate,prepare };
+  window.NexoAnimation = { reveal:target=>run(target,'slideIn'),run,reduced,presets:Object.keys(presets),transitionFor,navigate,prepare,preload };
 })();
 
 ;
@@ -1637,6 +1952,14 @@
   let settings={sound:false,sfxVolume:.4,music:false,musicVolume:.15,ambient:false,ambientVolume:.12};
   let room='home',gesture=false,hidden=typeof document!=='undefined'&&document.hidden;
   let sfx=null,ambient=null,music=null,loading=null,generation=0;
+  /* Efectos largos en archivo (más ricos que el sprite): apertura del grimorio y cambio de página. */
+  const files={grimoire:['assets/audio/grimoire-open.webm','assets/audio/grimoire-open.mp3'],page:['assets/audio/page-turn.webm','assets/audio/page-turn.mp3']};
+  const fileVolume={grimoire:1,page:.55};
+  const fileHowls={};
+  function fileHowl(name) {
+    if(!fileHowls[name]&&window.Howl)fileHowls[name]=new window.Howl({src:files[name],volume:settings.sfxVolume*fileVolume[name],preload:true});
+    return fileHowls[name];
+  }
   function wav(pcm,rate) {
     const bytes=new Uint8Array(44+pcm.length*2),view=new DataView(bytes.buffer);
     const label=(at,value)=>[...value].forEach((char,i)=>bytes[at+i]=char.charCodeAt(0));
@@ -1683,6 +2006,7 @@
       await window.NexoLoader.script('./vendor/howler/howler.min.js');
       if(!window.Howl)return null;
       sfx=new window.Howl({src:[wavSprite()],format:['wav'],sprite,volume:settings.sfxVolume,preload:true});
+      if(settings.sound)Object.keys(files).forEach(fileHowl);   // precarga para que la apertura suene a tiempo
       return sfx;
     })().catch(()=>{loading=null;return null;});
     return loading;
@@ -1717,9 +2041,10 @@
       ambient:Boolean(next.ambient),ambientVolume:bounded(next.ambientVolume,.12),
       music:Boolean(next.music),musicVolume:bounded(next.musicVolume,.15)};
     if(sfx)sfx.volume(settings.sound?settings.sfxVolume:0);
+    Object.entries(fileHowls).forEach(([name,howl])=>howl.volume(settings.sound?settings.sfxVolume*fileVolume[name]:0));
     reconcile();
   }
-  function activate() {gesture=true;reconcile();}
+  function activate() {gesture=true;if(settings.sound)init();reconcile();}
   function setRoom(route) {
     const next=rooms[Array.isArray(route)?route[0]:route]||'home';
     if(next===room)return;
@@ -1728,13 +2053,17 @@
   function play(name='click',next) {
     if(next)configure(next);
     activate();
-    if(!settings.sound||!sprite[name]||hidden)return;
-    init().then(sound=>{if(sound&&settings.sound&&!hidden)sound.play(name);}).catch(()=>{});
+    if(!settings.sound||hidden||(!sprite[name]&&!files[name]))return;
+    init().then(sound=>{
+      if(!settings.sound||hidden)return;
+      if(files[name]) {const howl=fileHowl(name);howl?.volume(settings.sfxVolume*fileVolume[name]);howl?.play();return;}
+      if(sound)sound.play(name);
+    }).catch(()=>{});
   }
   function playFeedback(next) {play('confirm',next);}
   function onVisibility() {hidden=document.hidden;reconcile();}
   if(typeof document!=='undefined')document.addEventListener('visibilitychange',onVisibility);
-  function dispose() {stopLoops();sfx?.unload();sfx=null;loading=null;gesture=false;}
+  function dispose() {stopLoops();sfx?.unload();sfx=null;Object.keys(fileHowls).forEach(name=>{fileHowls[name].unload();delete fileHowls[name];});loading=null;gesture=false;}
   window.NexoAudio={init,configure,activate,setRoom,play,playFeedback,dispose,
     get settings(){return {...settings,room,gesture,hidden,ambientPlaying:Boolean(ambient),musicPlaying:Boolean(music)};}};
 })();

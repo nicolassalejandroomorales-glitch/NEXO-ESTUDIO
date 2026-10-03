@@ -1,0 +1,632 @@
+# NEXO — UPDATE 01.3
+## INTERACTIVE HOME FOUNDATION + ARCANE GRIMOIRE POLISH
+
+Trabaja exclusivamente sobre la versión aprobada de UPDATE 01.2
+(Nexo Sites versión 23 / código correspondiente).
+
+IMPORTANTE:
+Los cambios locales fallidos posteriores a UPDATE 01.2 NO son la referencia.
+No conservar etiquetas, botones o zonas visibles añadidas durante esos intentos.
+
+Esta actualización debe construirse mediante SDD y checkpoints visuales.
+
+NO hagas una implementación larga y autónoma de principio a fin.
+Primero arquitectura, luego una vertical slice, luego aprobación,
+y sólo después replicar el patrón.
+
+==================================================
+0. OBJETIVO DEL PRODUCTO
+==================================================
+
+Quiero que Inicio deje de ser conceptualmente un PNG con elementos
+puestos encima y pase a ser una ESCENA estructurada.
+
+Visualmente debe conservar la ilustración actual.
+
+Internamente quiero que la escena permita que algunos objetos puedan:
+
+- tener una posición semántica;
+- ser clickeables mediante hotspots invisibles;
+- sustituirse posteriormente;
+- tener objetos delante/detrás;
+- participar en animaciones;
+- servir como destinos de la mascota futura.
+
+Los slots/hotspots NO deben verse durante uso normal.
+
+También quiero:
+
+- movimiento ambiental sutil;
+- vegetación que conecte visualmente la parte superior e inferior;
+- mejor integración de madera y verde hacia abajo;
+- ventana preparada para día/noche;
+- intro del grimorio más ceremonial y mágica;
+- navegación interna entre páginas rápida;
+- acceso diegético futuro a Perfil, Tienda y Calendario;
+- iconografía menos genérica.
+
+==================================================
+1. SCOPE
+==================================================
+
+IN SCOPE:
+
+- arquitectura de escena para Inicio;
+- scene manifest/config central;
+- sistema mínimo de slots;
+- sistema mínimo de hotspots invisibles;
+- coordenadas responsive/normalizadas;
+- ventana como primera vertical slice;
+- overlays ambientales;
+- continuidad vegetal/madera;
+- anchors futuros de mascota;
+- biblioteca/silla/alfombra después de validar ventana;
+- navegación diegética básica;
+- polish de intro del grimorio;
+- audio mínimo del grimorio usando infraestructura existente;
+- iconos propios básicos de Tienda/Calendario;
+- acceso a Calendario desde la habitación.
+
+OUT OF SCOPE:
+
+- tienda funcional completa;
+- compra/equipamiento de muebles;
+- editor de habitación para el usuario;
+- inventario completo;
+- sistema final de mascota;
+- nuevas mascotas;
+- animaciones complejas de mascota;
+- sistema completo de biblioteca;
+- rediseño profundo de Calendario;
+- clases académicas nuevas;
+- motor académico nuevo;
+- cambios DB/Supabase/migraciones/cloud.
+
+No ampliar el scope sin autorización.
+
+==================================================
+2. PRINCIPIO ARQUITECTÓNICO
+==================================================
+
+El PNG actual sigue siendo la base artística de Inicio.
+
+NO quiero convertir toda la ilustración en cientos de fragmentos.
+
+Quiero construir una escena por capas encima/alrededor de esa base.
+
+Conceptualmente:
+
+BACKGROUND BASE
+AMBIENT BACK LAYERS
+MODULAR OBJECTS
+MASCOT BACK/OCCLUSION
+MASCOT
+MASCOT FRONT/OCCLUSION
+AMBIENT FRONT LAYERS
+INTEGRATED UI
+HOTSPOTS INVISIBLES
+
+Adapta nombres/estructura a la arquitectura existente.
+
+==================================================
+3. SCENE MANIFEST
+==================================================
+
+Crear una única fuente de verdad para la composición de la escena.
+
+No repartir posiciones por múltiples archivos CSS/JS.
+
+Debe existir conceptualmente un perfil como:
+
+sceneId
+referenceWidth
+referenceHeight
+backgroundAsset
+slots
+hotspots
+mascotAnchors
+ambientLayers
+lightingProfile
+
+La imagen actual tiene referencia:
+
+1672 × 941.
+
+Preferir coordenadas normalizadas o un sistema que se adapte
+predeciblemente al responsive.
+
+Objetivo:
+
+si en el futuro cambio completamente el fondo,
+quiero poder crear otro scene profile y ajustar sus slots
+sin reescribir la lógica de interacción.
+
+==================================================
+4. DEBUG MODE
+==================================================
+
+Slots y hotspots deben ser invisibles normalmente.
+
+Crear, si es sencillo, un modo de desarrollo opcional:
+
+debugScene=true
+
+que permita visualizar:
+
+- bounds de slots;
+- bounds de hotspots;
+- ids;
+- anchors.
+
+Debe estar DESACTIVADO para usuarios normales.
+
+No mostrar nunca textos permanentes como:
+"BIBLIOTECA"
+"VENTANA"
+"CONTINUAR"
+sobre el escenario salvo que formen parte real del diseño aprobado.
+
+==================================================
+5. VERTICAL SLICE OBLIGATORIA: VENTANA
+==================================================
+
+ANTES de modularizar biblioteca, silla o alfombra:
+
+implementar únicamente la ventana como prueba completa.
+
+La ventana debe demostrar:
+
+- slot;
+- hotspot invisible;
+- coordenadas responsive;
+- layering;
+- integración con sistema horario;
+- compatibilidad desktop/móvil;
+- posibilidad futura de sustituir asset;
+- capacidad de integrarse con iluminación.
+
+No hace falta implementar todavía varias ventanas comprables.
+
+Si la ventana actual está horneada dentro del PNG y eso impide
+un reemplazo visual real, documenta claramente la necesidad de:
+
+- clean plate;
+- máscara;
+- o asset modular separado.
+
+NO inventes una solución visual destructiva.
+
+==================================================
+6. CHECKPOINT 1
+==================================================
+
+Al terminar únicamente la vertical slice de ventana:
+
+DETENTE.
+
+Genera:
+- captura desktop;
+- captura móvil;
+- captura día;
+- captura noche;
+- debug view mostrando el slot/hotspot.
+
+Explica:
+- arquitectura creada;
+- archivos nuevos;
+- cómo cambiaría de posición la ventana;
+- cómo añadiríamos una segunda ventana/fondo.
+
+NO continúes con los demás objetos hasta aprobación.
+
+==================================================
+7. OBJETOS SIGUIENTES
+==================================================
+
+Sólo tras aprobación del patrón de ventana:
+
+aplicar el mismo sistema a:
+
+- bookshelf
+- chair
+- rug
+
+No mostrar sus nombres o límites al usuario.
+
+Cada objeto debe conservar:
+
+id semántico
+slot
+hotspot opcional
+layer/depth
+asset actual/futuro
+anchors si corresponden
+
+No implementar todavía inventario o compra.
+
+==================================================
+8. HOTSPOTS Y NAVEGACIÓN DIEGÉTICA
+==================================================
+
+Los hotspots son invisibles.
+
+La interacción puede tener feedback sutil en:
+
+- hover;
+- focus;
+- tap/click.
+
+Debe seguir existiendo navegación convencional.
+
+Objetivo conceptual:
+
+bookshelf
+→ Perfil / biblioteca personal
+
+magic-shop-object (por ejemplo bastón, si existe o se añade después)
+→ Tienda
+
+calendar-object / pergamino
+→ Calendario
+
+desk
+→ estudio/continuar en el futuro
+
+No duplicar lógica.
+
+Hotspot y botón convencional deben llamar al mismo destino/router.
+
+Mantener accesibilidad por teclado.
+
+==================================================
+9. MASCOTA FUTURA
+==================================================
+
+Mantener la mascota actual.
+
+NO reconstruir su sistema.
+
+Sí definir anchors de escena reutilizables:
+
+desk
+window
+bookshelf
+rest
+
+Estos anchors permitirán posteriormente:
+
+- caminar hacia biblioteca;
+- sacar/devolver libro;
+- mirar ventana;
+- descansar;
+- leer.
+
+No implementar esas secuencias todavía.
+
+==================================================
+10. FONDO "VIVO": DEFINICIÓN CONCRETA
+==================================================
+
+No interpretar "vivo" de forma libre.
+
+Implementar vida mediante overlays discretos.
+
+Posibles capas:
+
+foliage-back
+vine-extension
+light-rays
+ambient-particles
+foliage-front
+
+Objetivos:
+
+- oscilación mínima de hojas;
+- respiración muy lenta de luz;
+- partículas escasas;
+- profundidad por movimiento diferencial;
+- continuidad vegetal hacia parte inferior.
+
+No animar toda la imagen.
+
+No exagerar movimiento.
+
+Respetar prefers-reduced-motion.
+
+Evitar loops costosos.
+
+==================================================
+11. PARALLAX AMBIENTAL
+==================================================
+
+Usar movimiento diferencial muy sutil si mejora la escena.
+
+Ejemplo conceptual:
+
+capa lejana → movimiento mínimo
+capa media → movimiento ligeramente mayor
+capa cercana → movimiento algo mayor
+
+No implementar movimiento fuerte con mouse/cámara
+si no es necesario.
+
+El objetivo es profundidad, no espectáculo.
+
+==================================================
+12. CONTINUIDAD HACIA ABAJO
+==================================================
+
+La parte inferior debe sentirse más conectada a la habitación.
+
+Mejorar mediante:
+
+- madera/piso/materiales cálidos;
+- vegetación;
+- enredadera descendente;
+- transición orgánica entre escena y UI.
+
+No introducir un nuevo panel rectangular gigante.
+
+No reducir legibilidad.
+
+==================================================
+13. GRIMORIO — STORYBOARD
+==================================================
+
+NO implementar simplemente "más lenta y más magia".
+
+Usar un storyboard temporal.
+
+Orientación inicial:
+
+0–500 ms
+portada visible con presencia clara.
+
+400–900 ms
+runas/reflejos/brillos sutiles comienzan.
+
+800–1200 ms
+aumenta suavemente el resplandor arcano.
+
+1000–1900 ms
+la cubierta comienza y completa la apertura
+con sensación de peso.
+
+1400–2100 ms
+respuesta suave de páginas/capas internas.
+
+1900–2300 ms
+contenido termina de aparecer.
+
+No es obligatorio usar exactamente esos milisegundos
+si pruebas visuales justifican pequeños ajustes.
+
+Quiero:
+- suavidad;
+- capas;
+- easing natural;
+- sensación ceremonial;
+- portada detallada visible suficiente tiempo.
+
+No quiero:
+- flash agresivo;
+- partículas excesivas;
+- animación plana;
+- apertura instantánea.
+
+==================================================
+14. PAGE TURN INTERNO
+==================================================
+
+La intro del grimorio es especial.
+
+Cambiar entre ramos NO debe repetirla.
+
+Cambio de página/ramo:
+aprox. 250–400 ms,
+suave, elegante y funcional.
+
+Mantener cada ramo como página/spread propio
+con su tematización actual.
+
+==================================================
+15. AUDIO DEL GRIMORIO
+==================================================
+
+Usar la infraestructura de audio ya existente si es adecuada.
+
+No instalar otra librería.
+
+La apertura ocurre tras interacción del usuario,
+por lo que puede disparar sonido respetando políticas del navegador.
+
+Objetivo:
+sonido arcano, suave y corto,
+sin resultar estridente.
+
+Debe respetar:
+- mute;
+- configuración de efectos;
+- fallos de carga sin romper navegación.
+
+Si falta el asset definitivo,
+preparar el contrato y usar solamente un placeholder
+claramente identificado, no presentar sonido provisional como final.
+
+==================================================
+16. ICONOGRAFÍA
+==================================================
+
+Reducir progresivamente iconos genéricos.
+
+Para esta actualización únicamente:
+
+- Calendario: icono claramente de calendario.
+- Tienda: icono de carrito/tienda coherente con Nexo.
+
+Preferir SVG propio/simple.
+
+No crear ahora toda una biblioteca de iconos.
+
+==================================================
+17. CALENDARIO
+==================================================
+
+Scope limitado.
+
+En esta actualización:
+
+- permitir acceso desde objeto/hotspot dentro de Inicio;
+- mantener acceso convencional;
+- usar icono apropiado;
+- corregir sólo inconsistencias visuales obvias si aparecen.
+
+NO rediseñar todo el planner/calendario.
+
+Eso tendrá su propia spec si se necesita.
+
+==================================================
+18. ASSETS
+==================================================
+
+No improvisar separación visual de assets destructivamente.
+
+Para un objeto verdaderamente intercambiable puede ser necesario:
+
+- base limpia/clean plate;
+- PNG transparente del objeto;
+- foreground/occlusion layer.
+
+Si falta arte necesario:
+
+documentar exactamente el asset requerido.
+
+No producir una reconstrucción visual mediocre sólo para
+poder marcar una tarea como completada.
+
+==================================================
+19. CHECKPOINT 2
+==================================================
+
+Tras ventana aprobada y antes de publicar:
+
+mostrar:
+
+- escena completa desktop;
+- móvil;
+- biblioteca/silla/alfombra integradas;
+- vegetación inferior;
+- hotspots en debug mode;
+- intro del grimorio;
+- page turn;
+- día/noche.
+
+Esperar aprobación visual antes de publicación final.
+
+==================================================
+20. TESTING
+==================================================
+
+Verificar:
+
+- desktop;
+- tablet;
+- móvil;
+- resize;
+- teclado;
+- hotspots;
+- router;
+- reduced-motion;
+- día/noche;
+- mute/audio;
+- primera apertura;
+- reapertura;
+- page turn;
+- ausencia de errores de consola.
+
+No tocar DB.
+
+==================================================
+21. CRITERIOS DE ACEPTACIÓN
+==================================================
+
+AC01
+La habitación se ve igual o mejor que UPDATE 01.2,
+no como una composición reconstruida de peor calidad.
+
+AC02
+La escena posee una configuración central reutilizable.
+
+AC03
+Cambiar de fondo puede resolverse mediante otro scene profile
+y ajuste de slots, sin reescribir interacción.
+
+AC04
+La ventana demuestra correctamente slot + hotspot + responsive.
+
+AC05
+Slots/hotspots son invisibles en producción.
+
+AC06
+Biblioteca, silla y alfombra pueden modelarse como objetos
+sin etiquetas visibles.
+
+AC07
+La escena está preparada para personalización futura,
+pero no expone todavía un editor.
+
+AC08
+Existe movimiento ambiental sutil y performant.
+
+AC09
+La vegetación conecta mejor la parte superior con la inferior.
+
+AC10
+La mascota actual sigue funcionando y existen anchors futuros.
+
+AC11
+Biblioteca/Calendario/Tienda pueden compartir router
+con la navegación convencional.
+
+AC12
+La intro del grimorio es más ceremonial,
+por capas y con portada protagonista.
+
+AC13
+El cambio de ramo sigue siendo rápido.
+
+AC14
+El sonido del grimorio no rompe navegación ni configuración.
+
+AC15
+Calendario y Tienda tienen iconografía adecuada
+sin rediseñar sistemas completos.
+
+AC16
+No se introducen regresiones de UPDATE 01.2.
+
+==================================================
+22. REGLA DE TRABAJO
+==================================================
+
+NO hacer:
+
+"implementar todo y mostrar al final".
+
+Hacer:
+
+arquitectura
+→ ventana
+→ checkpoint
+→ aprobación
+→ demás objetos
+→ ambientación
+→ grimorio
+→ checkpoint
+→ tests
+→ publicación.
+
+Ante una decisión artística importante no especificada:
+DETENTE y muéstrame opciones.
+
+No adivines mi intención visual.

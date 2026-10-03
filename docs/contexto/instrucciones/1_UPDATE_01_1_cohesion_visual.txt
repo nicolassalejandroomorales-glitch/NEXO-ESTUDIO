@@ -1,0 +1,339 @@
+# NEXO — UPDATE 01.1
+## VISUAL COHESION PASS — Inicio vivo + grimorio real
+
+Trabaja sobre la UPDATE 01 RECUPERADA, no sobre la base antigua del 30-09.
+
+Usa como base de trabajo la copia recuperada íntegramente de UPDATE 01
+(verificada desde:
+nexo-update01-codigo-y-evidencia.zip
+o su extracción aislada correspondiente).
+
+NO reconstruyas desde cero.
+NO vuelvas a la base vieja.
+NO implementes todavía el sistema completo de clases.
+NO metas mascota completa.
+NO agregues nuevas features de producto fuera de Inicio + Aprender.
+
+==================================================
+1. OBJETIVO DE ESTA FASE
+==================================================
+
+Quiero corregir los principales problemas de integración visual
+que aún impiden que Nexo se sienta como el producto deseado.
+
+Esta fase debe mejorar:
+
+- continuidad de Inicio;
+- integración del fondo;
+- ambientación viva;
+- transición Inicio → Aprender;
+- grimorio como objeto real;
+- estructura de ramos dentro del grimorio.
+
+Esta fase NO debe enfocarse todavía en clases funcionales completas.
+Primero necesito una base visual y estructural correcta.
+
+==================================================
+2. PROBLEMAS A RESOLVER
+==================================================
+
+P1. El fondo se percibe como una imagen superpuesta o separada,
+    no como una escena viva integrada en la experiencia.
+
+P2. Existe una discontinuidad o corte abrupto entre el fondo/escena
+    y las superficies de información.
+
+P3. Inicio todavía no se siente como un único espacio continuo.
+
+P4. No hay una transición suficientemente clara y diegética
+    entre Inicio y Aprender.
+
+P5. El grimorio todavía no se siente como un grimorio real.
+    Las páginas se sienten vacías o genéricas.
+
+P6. No quiero ver los cuatro ramos como simples opciones
+    reunidas en una sola página plana.
+    Quiero que cada ramo se experimente como una página
+    o spread propio dentro del grimorio.
+
+P7. Cada ramo debe conservar el sistema general del grimorio,
+    pero con identidad visual temática propia.
+
+P8. El fondo y el entorno deben tener vida sutil:
+    movimiento, luz, ambiente, profundidad;
+    no ser un PNG quieto.
+
+==================================================
+3. RESULTADO DESEADO — INICIO
+==================================================
+
+Inicio debe sentirse como una escena viva y coherente.
+
+No quiero:
+[imagen arriba]
++
+[paneles abajo]
++
+[corte visible]
+
+Quiero:
+una sola escena integrada.
+
+El contenido funcional debe sentirse colocado en superficies
+que pertenecen al mundo:
+
+- tablones;
+- papeles;
+- pergaminos;
+- escritorio;
+- libros;
+- objetos del entorno.
+
+La escena debe tener continuidad visual entre:
+
+- fondo;
+- primer plano;
+- información;
+- superficies de UI.
+
+Debe evitarse cualquier “brecha” o límite abrupto que haga pensar
+que el fondo es solo un bloque aparte.
+
+==================================================
+4. FONDO VIVO
+==================================================
+
+El fondo debe sentirse vivo, no estático.
+
+Añadir, con moderación y buen rendimiento:
+
+- movimiento ambiental sutil;
+- leve oscilación de hojas o plantas;
+- partículas suaves;
+- profundidad;
+- respiración visual de la luz;
+- integración mejor de capas.
+
+NO exagerar.
+NO convertirlo en un espectáculo cargado.
+Debe seguir siendo cálido, ilustrado y acogedor.
+
+==================================================
+5. TRANSICIÓN INICIO → APRENDER
+==================================================
+
+Quiero una transición más diegética y clara.
+
+Entrar a Aprender debe sentirse como:
+abrir el grimorio.
+
+Debe existir una sensación visual real de paso entre espacios.
+
+No quiero sólo:
+cambio instantáneo de vista
+o
+overlay sin peso.
+
+Quiero:
+- preparación del libro;
+- apertura;
+- entrada a sus páginas;
+- continuidad con el mundo.
+
+Mantén buen rendimiento y duraciones razonables.
+
+==================================================
+6. GRIMORIO
+==================================================
+
+El grimorio debe sentirse como un objeto real y valioso.
+
+Mejorar:
+
+- portada/entrada;
+- lomo;
+- páginas;
+- bordes;
+- profundidad;
+- marcadores;
+- ornamentos;
+- composición;
+- riqueza visual;
+- ocupación del espacio.
+
+Debe sentirse menos vacío y más personalizado.
+
+Evitar:
+- paneles sueltos;
+- tarjetas disfrazadas;
+- gran área vacía con poco carácter;
+- sensación SaaS con textura.
+
+==================================================
+7. RAMOS — UNA EXPERIENCIA MÁS PERSONALIZADA
+==================================================
+
+No quiero que los cuatro ramos estén presentados como
+una sola página plana con bloques equivalentes.
+
+Quiero que el grimorio permita recorrer ramos como páginas
+o spreads más individuales.
+
+Objetivo:
+
+- cada ramo se presenta en una página o apertura propia;
+- navegar entre ramos se siente como pasar páginas;
+- el usuario puede elegir ramo con una experiencia más inmersiva.
+
+Cada ramo debe mantener el sistema general del grimorio,
+pero tener detalles propios de su temática.
+
+Ejemplos:
+
+Química:
+- motivos químicos;
+- ilustraciones sutiles;
+- elementos de laboratorio;
+- grafismos del ramo.
+
+Anatomía/Fisiopatología:
+- motivos anatómicos;
+- láminas o símbolos relacionados.
+
+Matemática:
+- geometría, símbolos, estructuras.
+
+No necesito un sistema infinito y perfecto.
+Necesito una base visual clara y bonita.
+
+==================================================
+8. SCOPE / FUERA DE ALCANCE
+==================================================
+
+En esta fase NO hacer:
+
+- sistema completo de clases funcionales;
+- rediseño total del motor académico;
+- nuevos juegos;
+- XP;
+- cofres;
+- economía;
+- rediseño de Entrenar;
+- rediseño completo de Perfil;
+- mascota viva completa;
+- cambios de DB;
+- migraciones;
+- Supabase;
+- OAuth;
+- cloud;
+- cambios destructivos.
+
+==================================================
+9. ENFOQUE DE IMPLEMENTACIÓN
+==================================================
+
+No hagas una reescritura grande a ciegas.
+
+Trabaja por fases:
+
+FASE A
+Inicio: corregir continuidad + fondo vivo.
+
+FASE B
+Transición Inicio → Aprender.
+
+FASE C
+Reestructurar grimorio para que se sienta más real.
+
+FASE D
+Cambiar presentación de ramos:
+cada ramo como página/spread individual,
+con tematización visual.
+
+FASE E
+Responsive + capturas.
+
+==================================================
+10. CHECKPOINT OBLIGATORIO
+==================================================
+
+Muy importante:
+
+Después de FASE A + FASE B,
+genera capturas y/o abre la app
+antes de seguir a una reestructuración mayor del grimorio.
+
+Luego, tras FASE C + FASE D,
+genera nuevas capturas.
+
+No quiero otro salto ciego de varias horas
+sin evidencia visual intermedia.
+
+==================================================
+11. CAPTURAS REQUERIDAS
+==================================================
+
+Como mínimo generar:
+
+- inicio_desktop_nuevo.png
+- inicio_mobile_nuevo.png
+- transicion_grimorio.png
+- grimorio_indice_nuevo.png
+- ramo_quimica_pagina.png
+- ramo_fisio_pagina.png
+- aprender_mobile_nuevo.png
+
+Si es útil, agregar más.
+
+==================================================
+12. CRITERIOS DE ACEPTACIÓN
+==================================================
+
+AC01
+Inicio se percibe como una sola escena integrada.
+
+AC02
+No hay brecha abrupta evidente entre fondo y contenido.
+
+AC03
+El fondo se siente vivo mediante movimiento/ambiente sutil.
+
+AC04
+La información funcional sigue siendo legible y usable.
+
+AC05
+Entrar a Aprender se siente como abrir un grimorio.
+
+AC06
+El grimorio se percibe más rico, físico y menos vacío.
+
+AC07
+Los ramos ya no se sienten como cuatro bloques iguales
+en una sola página plana.
+
+AC08
+Cada ramo tiene identidad visual temática propia
+dentro del mismo sistema general.
+
+AC09
+Desktop y móvil siguen funcionando.
+
+AC10
+No se dañan rutas, datos, ni la base académica existente.
+
+==================================================
+13. INFORME FINAL
+==================================================
+
+Actualiza el informe de esta fase con:
+
+- qué cambiaste;
+- por qué;
+- qué archivos tocaste;
+- qué capturas generaste;
+- qué criterios cumplen;
+- qué gaps siguen pendientes;
+- qué recomendarías para la siguiente fase.
+
+No continúes con clases funcionales todavía.
+Esta fase termina al estabilizar Inicio + Aprender visualmente.

@@ -1,0 +1,1932 @@
+PROYECTO
+NEXO STUDYAPP 1.0 — “Arcane Study”
+
+Esta ejecución transforma la actual V14 de Nexo Estudio en la primera versión formal del producto:
+
+NEXO STUDYAPP 1.0
+
+A partir de esta entrega, el versionado público seguirá:
+1.0 → 1.1 → 1.2 → 1.3 ... → 2.0 → 2.1...
+
+No crear un proyecto paralelo ni rehacer Nexo desde cero.
+Partir del código real de V14, conservar compatibilidad y datos, hacer backup restaurable antes de modificar nada y migrar de forma segura.
+
+OBJETIVOS FUNDAMENTALES DEL PRODUCTO
+
+Nexo tiene tres promesas que tienen prioridad sobre cualquier elemento decorativo:
+
+1. Hacer que estudiar sea entretenido, dinámico y deseable.
+2. Ser académicamente serio: el usuario debe poder aspirar a una evaluación universitaria exigente estudiando principalmente mediante Nexo, sin garantías artificiales de nota.
+3. Reducir carga mental de organización: ayudar al usuario a decidir qué estudiar, cuándo, durante cuánto tiempo y por qué.
+
+Regla rectora:
+“El aprendizaje es el producto. El videojuego hace que quieras volver.”
+
+La estética jamás puede sacrificar claridad, rendimiento, accesibilidad o rigor académico.
+
+==================================================
+FASE 0 — AUDITORÍA, BACKUP Y CIERRE DE V14
+==================================================
+
+ANTES DE DESARROLLAR:
+
+1. Auditar V14 real.
+2. Crear backup restaurable completo.
+3. Ejecutar tests existentes.
+4. Documentar baseline:
+   - funcionalidad actual;
+   - rutas;
+   - módulos;
+   - tamaño de bundles/assets;
+   - tests que pasan/fallan;
+   - estado real de Supabase;
+   - estado real de PostHog;
+   - estado real de auth;
+   - estado real de sync;
+   - estado real de Rive/avatar;
+   - deuda conocida.
+
+NO eliminar funcionalidad estable de V14 salvo que haya una razón documentada.
+
+Mantener:
+- modelo académico V14;
+- Concept / Skill / ProblemFamily / Misconception / Evidence;
+- concept graph;
+- diagnosis;
+- FSRS;
+- sources;
+- Academic Inspector;
+- historial;
+- reviews;
+- cloud hardening;
+- incremental sync;
+- conflict handling;
+- ledger/economía;
+- shop/avatar existente;
+- organic pilot;
+- RDKit/Ketcher existentes cuando corresponda.
+
+==================================================
+FASE 1 — SUPABASE REAL OBLIGATORIO
+==================================================
+
+ESTA ENTREGA NO SE CONSIDERA TERMINADA SIN SUPABASE REAL FUNCIONANDO.
+
+No aceptar:
+- mocks;
+- “ready for Supabase”;
+- “configure later”;
+- variables vacías;
+- proyecto demo desconectado;
+- tests únicamente locales.
+
+Debe existir un proyecto Supabase REAL conectado a la build de producción.
+
+Configurar y validar:
+
+- URL real;
+- anon/public key;
+- variables seguras;
+- migraciones;
+- tablas;
+- índices;
+- RLS;
+- RPC;
+- auth;
+- sesiones;
+- sync;
+- planner/Bitácora;
+- study sessions;
+- settings;
+- economy ledger;
+- avatar/equipment;
+- rank reward reservations;
+- calendario/eventos;
+- conflictos;
+- guest migration;
+- reset/delete;
+- multi-device.
+
+Realizar pruebas con al menos:
+- usuario A;
+- usuario B;
+- aislamiento RLS;
+- guest → account;
+- dos dispositivos/sesiones;
+- cambios concurrentes;
+- logout/login;
+- datos offline/outbox;
+- sync incremental;
+- borrados/tombstones.
+
+Supabase debe ser server-authoritative para:
+- economía;
+- ownership;
+- compras;
+- reward reservations;
+- datos de cuenta que no deban confiar en cliente.
+
+Si Work necesita que el usuario:
+- inicie sesión;
+- autorice Supabase;
+- cree/seleccione proyecto;
+- confirme un OAuth;
+- entregue un secreto mediante una UI segura;
+
+NO OMITIRLO.
+
+Detenerse únicamente en ese punto, pedir exactamente la acción necesaria y, cuando se complete, continuar la implementación.
+
+No marcar 1.0 como terminada hasta validar el backend real.
+
+REGLA DE SERVICIOS EXTERNOS:
+
+Ningún servicio visible o utilizado en producción puede quedar “medio configurado”.
+
+Para cualquier integración existente:
+A) configurarla y validarla completamente;
+o
+B) deshabilitarla/retirarla limpiamente de producción hasta una versión posterior.
+
+Ejemplos:
+- PostHog: si se conserva, configurar proyecto real, consentimiento y validación; si no es necesario para 1.0, dejarlo explícitamente deshabilitado en producción, no roto.
+- Google Drive: NO forma parte obligatoria de 1.0. No mostrar botones OAuth o integración falsa. La integración curricular llegará posteriormente.
+- Google Auth: si no se configura completamente, no mostrarlo como opción incompleta.
+
+No dejar TODOs de configuración crítica.
+
+==================================================
+FASE 2 — ARQUITECTURA MODULAR 1.0
+==================================================
+
+La 1.0 debe reducir deuda estructural y preparar ampliaciones futuras sin reescribir la aplicación.
+
+Principios obligatorios:
+
+COMPONENTE ANTES QUE PANTALLA.
+TOKEN ANTES QUE ESTILO PUNTUAL.
+REGISTRO ANTES QUE HARDCODE.
+EVENTO ANTES QUE DEPENDENCIA DIRECTA.
+FUENTE ANTES QUE PUBLICACIÓN.
+
+Evitar que app.js vuelva a convertirse en un archivo monolítico.
+
+Organizar responsabilidades aproximadamente en dominios equivalentes a:
+
+src/
+  app/
+    router/
+    shell/
+    navigation/
+    providers/
+
+  design-system/
+    tokens/
+    materials/
+    components/
+    icons/
+    motion/
+
+  rooms/
+    home/
+    learn/
+    train/
+    games/
+    profile/
+    shop/
+    planner/
+
+  ambient/
+    time/
+    scenes/
+    lighting/
+    vegetation/
+    particles/
+    events/
+
+  mascot/
+    species/
+    rigs/
+    controller/
+    animations/
+    equipment/
+    reactions/
+    ambient-events/
+
+  cosmetics/
+    catalog/
+    slots/
+    collections/
+    preview/
+    compatibility/
+
+  academic/
+    concepts/
+    evidence/
+    mastery/
+    diagnostics/
+    reviews/
+    sources/
+    rankings/
+
+  learning/
+    lesson-engine/
+    feedback/
+    rescue/
+    training/
+
+  planner/
+    events/
+    priorities/
+    schedule/
+    study-plan/
+    reminders/
+
+  courses/
+    registry/
+    themes/
+    adapters/
+
+  audio/
+    ambience/
+    music/
+    sfx/
+
+  dev/
+    ui-lab/
+    review-center/
+    academic-inspector/
+    performance/
+
+No crear carpetas vacías solo para aparentar arquitectura.
+Crear separación real donde exista responsabilidad real.
+
+Todas las piezas deben tener APIs/contratos claros.
+
+==================================================
+FASE 3 — NEXO ARCANE DESIGN SYSTEM 2.0
+==================================================
+
+IDENTIDAD:
+
+Magia/Fantasía: 30%
+Académico: 30%
+Naturaleza: 20%
+Videojuego: 20%
+
+Cinco rasgos:
+- Riguroso
+- Mágico
+- Acogedor
+- Aventurero
+- Artesanal
+
+Tres palabras guía:
+MÁGICO · VIVO · RIGUROSO
+
+Nexo NO debe parecer:
+- dashboard SaaS genérico;
+- Moodle maquillado;
+- casino móvil;
+- RPG lleno de marcos dorados;
+- collage de assets generados;
+- app infantil;
+- interfaces distintas sin coherencia.
+
+METÁFORA CENTRAL:
+
+“Un grimorio académico vivo dentro de una aplicación moderna.”
+
+La fantasía acompaña al aprendizaje.
+Nunca compite con él.
+
+TIPOGRAFÍA:
+
+Máximo dos familias principales:
+1. Serif elegante/literaria para títulos.
+2. Sans altamente legible para UI, explicaciones, ejercicios y datos.
+
+No usar fuentes medievales ilegibles.
+
+FORMAS:
+
+- rectángulos limpios;
+- esquinas moderadamente suaves;
+- evitar hexágonos como botones;
+- evitar formas arbitrarias;
+- bordes discretos;
+- pequeños ornamentos solo cuando tengan propósito.
+
+MATERIALES:
+
+PAPER
+- conocimiento;
+- teoría;
+- fuentes;
+- apuntes;
+- mapas;
+- clases.
+
+INK
+- UI funcional;
+- interfaces densas;
+- overlays;
+- zonas de entrenamiento.
+
+WOOD
+- entorno físico;
+- habitaciones;
+- muebles;
+- soporte ambiental.
+NO convertir cada botón en madera.
+
+ARCANE
+- luz;
+- energía;
+- glifos;
+- conexiones;
+- cambios académicos.
+La magia debe significar algo.
+
+PIXEL
+- reservado a Juegos.
+
+PALETA BASE:
+
+- tinta/carbón;
+- marfil;
+- verde bosque;
+- azul arcano;
+- ámbar;
+- arcilla;
+- verdes naturales/salvia.
+
+Definir tokens reales y variantes accesibles.
+
+==================================================
+FASE 4 — SISTEMA DE “HABITACIONES”
+==================================================
+
+PRINCIPIO:
+
+“Cada sección debe sentirse como una habitación distinta del mismo mundo.”
+
+La estructura UI permanece coherente.
+El ambiente cambia.
+
+Crear RoomThemeRegistry.
+
+No hardcodear visuales directamente por pantalla.
+
+ROOM 1 — INICIO / REFUGIO VIVO
+
+Sensación:
+- naturaleza;
+- madera;
+- plantas;
+- luz;
+- hogar;
+- magia suave.
+
+Debe sentirse como “mi lugar”.
+
+Mostrar:
+- sesión recomendada;
+- objetivo diario;
+- próximas evaluaciones;
+- revisiones;
+- planificación;
+- mascota;
+- progreso contextual.
+
+ROOM 2 — APRENDER / GRIMORIO
+
+Material dominante:
+- papel;
+- tinta;
+- cuadernos;
+- diagramas;
+- fuentes;
+- conocimiento.
+
+Debe cambiar según el ramo activo.
+
+NO dejar Química Orgánica como fondo permanente.
+
+Crear CourseThemeRegistry.
+
+Cada CourseTheme puede proporcionar:
+- courseId;
+- nombre;
+- símbolo;
+- cover;
+- accent tokens;
+- patrones;
+- props;
+- tipo de diagramas;
+- assets contextuales;
+- pequeños detalles ambientales.
+
+Ejemplos:
+Orgánica:
+- estructuras;
+- reacciones;
+- apuntes moleculares.
+
+Analítica:
+- mediciones;
+- curvas;
+- instrumentos;
+- datos.
+
+Fisicoquímica:
+- energía;
+- gráficos;
+- ecuaciones;
+- equilibrio.
+
+Fisiopatología:
+- esquemas biológicos;
+- rutas fisiológicas;
+- anotaciones clínicas.
+
+Aprender pregunta:
+“¿Cuál es el curso activo?”
+
+y compone el ambiente con el tema correspondiente.
+
+Nunca:
+if(course === organic) { ... }
+repetido por toda la UI.
+
+ROOM 3 — ENTRENAR / TALLER DE COMBATE
+
+Ambiente:
+- madera más oscura;
+- escudos;
+- bastones;
+- espadas;
+- runas;
+- objetivos;
+- instrumentos de entrenamiento.
+
+La decoración debe participar del sistema.
+
+Ejemplo conceptual:
+- espada → práctica;
+- escudo → reparar errores;
+- bastón → entrenamiento conceptual;
+- grimorio → revisiones;
+- diana → aplicación en contexto nuevo;
+- arena → preparación tipo PEP.
+
+NO mostrar al usuario el término técnico “transferencia” como rango/progreso.
+
+ROOM 4 — JUEGOS / ARCADE ARCANO
+
+En 1.0 SOLO crear:
+- habitación;
+- identidad;
+- ambientación;
+- entrada;
+- placeholders.
+
+Mostrar:
+PRÓXIMAMENTE
+
+para:
+- Memory Lab;
+- Error Hunter;
+- Blitz;
+- Boss Arena;
+- futuros juegos.
+
+NO desarrollar grandes juegos en 1.0.
+NO cargar Phaser innecesariamente solo para mostrar placeholders.
+
+La habitación puede anticipar:
+- pixel art original;
+- música arcade;
+- animaciones indie;
+- misma identidad Nexo Arcane.
+
+Inspiración conceptual permitida:
+juegos indie pixel expresivos.
+
+NO copiar assets, interfaces o IP de Undertale, Terraria u otras franquicias.
+
+ROOM 5 — PERFIL / HABITACIÓN PRIVADA
+
+Debe sentirse realmente como una habitación personal.
+
+Puede contener:
+- cama;
+- escritorio;
+- estantería;
+- objetos;
+- colección;
+- trofeos;
+- mascota;
+- cosméticos;
+- recuerdos académicos.
+
+Debe tener VIDA:
+- mascota descansando;
+- pequeñas animaciones;
+- luz;
+- objetos ambientales;
+- variaciones temporales.
+
+ROOM 6 — TIENDA / MERCADO ARCANO
+
+Acceso global.
+
+En header:
+- Bitácora;
+- átomos;
+- icono circular de Tienda.
+
+Preferentemente zona superior derecha.
+
+Mantener tienda existente funcional.
+No reconstruir todavía toda la economía de cofres.
+
+==================================================
+FASE 5 — AMBIENT WORLD SYSTEM
+==================================================
+
+EL FONDO NO PUEDE SER UNA IMAGEN ESTÁTICA.
+
+Crear ambientes por CAPAS.
+
+Ejemplo:
+
+Scene
+  base
+  sky/light
+  window
+  vegetation
+  particles
+  props
+  arcane layer
+  mascot
+
+HORA LOCAL:
+
+Sincronizar con la hora local del dispositivo.
+
+Crear AmbientTimeProvider.
+
+El ambiente debe cambiar progresivamente durante el día:
+
+amanecer
+→ mañana
+→ día
+→ tarde
+→ golden hour
+→ atardecer
+→ noche
+
+NO realizar cambios bruscos por hora.
+
+Interpolar gradualmente:
+- iluminación;
+- temperatura visual;
+- cielo;
+- intensidad de lámparas;
+- reflejos;
+- sombras;
+- ambiente.
+
+No necesita GPS para 1.0.
+
+Actualizar factores temporales con bajo coste.
+No usar requestAnimationFrame continuo para calcular la hora si no hace falta.
+Usar actualizaciones discretas + transiciones CSS/GSAP.
+
+EVENTOS AMBIENTALES:
+
+Crear AmbientEventScheduler.
+
+Ejemplos:
+- ventana abierta/cerrada;
+- hojas moviéndose;
+- mascota leyendo;
+- mascota durmiendo;
+- planta balanceándose;
+- libro abierto;
+- lámpara encendida;
+- microhistorias ambientales.
+
+Preferir eventos deterministas/seeded por:
+fecha + habitación + perfil
+
+para evitar que todo cambie aleatoriamente al recargar.
+
+==================================================
+FASE 6 — PERFORMANCE SYSTEM
+==================================================
+
+LA AMBIENTACIÓN NUNCA PUEDE HACER QUE NEXO VAYA MAL.
+
+Crear PerformanceProfile global.
+
+AJUSTES:
+
+Calidad gráfica:
+- Automática
+- Baja
+- Equilibrada
+- Alta
+
+Partículas:
+- Sin partículas
+- Partículas bajas
+- Partículas altas
+
+Movimiento ambiental:
+- Reducido
+- Normal
+- Rico
+
+Mascota:
+- Movimiento reducido
+- Completo
+
+prefers-reduced-motion debe respetarse automáticamente.
+
+AUTO MODE:
+
+Considerar de forma segura:
+- hardwareConcurrency;
+- deviceMemory si existe;
+- tamaño/resolución;
+- reduced motion;
+- rendimiento observado.
+
+Siempre permitir override manual.
+
+PARTÍCULAS:
+
+Off:
+0.
+
+Low:
+muy pocas, costo mínimo.
+
+High:
+más riqueza visual, pero con límites.
+
+Nunca generar cientos de partículas DOM.
+
+LIFECYCLE:
+
+Si el usuario sale de Inicio y entra a Perfil:
+Inicio NO debe seguir ejecutándose.
+
+Al desmontar una habitación:
+- cancelar RAF;
+- cancelar timers;
+- detener observers;
+- detener animaciones;
+- liberar listeners;
+- pausar/destruir Rive no utilizado;
+- descargar audio ambiental correspondiente;
+- limpiar recursos;
+- detener cualquier engine pesado.
+
+No mantener habitaciones invisibles consumiendo CPU/GPU.
+
+Pestaña en background:
+pausar ambient animations.
+
+Offscreen:
+IntersectionObserver cuando corresponda.
+
+Lazy load:
+- rooms;
+- course assets;
+- Rive;
+- RDKit/Ketcher;
+- audio;
+- juegos;
+- assets pesados.
+
+Phaser NO debe cargar en el Game Hub 1.0 si no hay juego activo.
+
+PERFORMANCE BUDGET:
+
+Objetivos:
+- LCP < 2.5 s en dispositivo móvil medio bajo condiciones razonables.
+- CLS < 0.1.
+- INP objetivo < 200 ms.
+- input nunca bloqueado por ambientación.
+- transiciones principales 220–400 ms aproximadamente.
+- respuesta visual inmediata al input.
+- 55–60 FPS objetivo en equipos normales.
+- degradación elegante en equipos modestos.
+- nunca depender de 60 FPS para poder estudiar.
+
+Crear ruta dev:
+?nexoDev=1#/performance
+
+Mostrar:
+- FPS aproximados;
+- room activa;
+- animaciones activas;
+- particles count;
+- Rive instances;
+- listeners/timers principales;
+- assets cargados;
+- modo gráfico;
+- memoria cuando API disponible.
+
+Añadir tests de lifecycle y memory leaks razonables.
+
+==================================================
+FASE 7 — APP SHELL + NAVEGACIÓN
+==================================================
+
+Navegación principal:
+
+Inicio
+Aprender
+Entrenar
+Juegos
+Perfil
+
+MOBILE:
+bottom navigation.
+
+DESKTOP:
+sidebar / navigation rail apropiado.
+
+No hacer desktop como “teléfono estirado”.
+
+Rutas:
+
+#/home
+
+#/learn
+#/learn/course/:courseId
+#/learn/course/:courseId/lesson/:lessonId
+#/learn/course/:courseId/concept/:conceptId
+#/learn/map
+#/learn/library
+
+#/train
+#/train/practice
+#/train/reviews
+#/train/errors
+#/train/pep
+
+#/games
+
+#/profile
+#/profile/avatar
+#/profile/collection
+#/profile/progress
+#/profile/settings
+
+#/planner
+
+#/shop
+
+Dev:
+?nexoDev=1#/ui-lab
+?nexoDev=1#/review
+?nexoDev=1#/inspector
+?nexoDev=1#/performance
+
+TRANSICIONES:
+
+La aplicación debe sentirse como un grimorio vivo.
+
+Primera apertura:
+cubierta → libro se abre → Inicio.
+
+Transición entre secciones principales:
+sensación sutil de página/capítulo.
+
+NO hacer page-turn completo en cada interacción.
+
+Internas:
+rápidas y modernas.
+
+Reduced Motion:
+crossfade/simple.
+
+==================================================
+FASE 8 — HEADER GLOBAL
+==================================================
+
+Bitácora y Tienda deben estar accesibles desde cualquier habitación.
+
+Zona superior derecha:
+
+[ Bitácora ] [ ⚛ átomos ] [ Tienda ]
+
+Diseño:
+pequeños botones circulares/coherentes.
+
+Bitácora:
+icono calendario/grimorio.
+
+Tienda:
+icono mercado/bolsa.
+
+No competir con Back o título.
+
+==================================================
+FASE 9 — BITÁCORA ARCANA
+==================================================
+
+Bitácora NO es solo un calendario.
+
+Es el centro de organización académica.
+
+Tipos de eventos:
+
+- clase;
+- PEP;
+- control;
+- laboratorio;
+- pre-lab;
+- informe;
+- tarea;
+- entrega;
+- revisión;
+- sesión de estudio;
+- evento manual.
+
+Datos:
+- fecha;
+- hora;
+- curso;
+- prioridad;
+- duración estimada;
+- preparación pendiente;
+- dependencias;
+- estado;
+- notas;
+- source/event origin.
+
+HOME NO DUPLICA LOS DATOS.
+
+Home consulta Bitácora y muestra las 3 cosas más importantes.
+
+Botón:
+“Ver más”
+→ #/planner
+
+Crear Priority Engine EXPLICABLE.
+
+No ordenar únicamente por fecha.
+
+Considerar:
+- proximidad;
+- peso/importancia;
+- preparación restante;
+- debilidades académicas;
+- prerequisitos;
+- trabajo pendiente;
+- labs con pre-lab;
+- entregas;
+- overdue;
+- carga acumulada.
+
+No usar una caja negra de “IA recomienda”.
+
+Mostrar razones breves:
+“PEP 2 en 5 días · 3 conceptos requieren práctica”
+“Lab mañana · pre-lab pendiente”
+
+PLAN DE HOY:
+
+Soportar objetivo diario editable.
+
+Valor inicial del perfil actual:
+120 minutos/día.
+
+Mostrar:
+X / 120 min
+
+Nexo puede distribuir tiempo entre:
+- estudio;
+- revisiones;
+- errores;
+- pre-lab;
+- evaluaciones.
+
+Tiempo estudiado NO equivale a dominio.
+
+==================================================
+FASE 10 — LABS EN ORGANIZACIÓN
+==================================================
+
+1.0 NO necesita reconstruir todo el sistema de laboratorio académico.
+
+Sí debe preparar la estructura.
+
+Evento Laboratorio puede contener:
+- fecha;
+- ramo;
+- pre-lab;
+- manual;
+- preparación;
+- checklist;
+- informe posterior;
+- fecha de entrega.
+
+Diseñar estructura extensible:
+
+ANTES
+DURANTE
+DESPUÉS
+
+Pero NO inventar contenido si todavía no existe fuente real.
+
+La profundización curricular vendrá en 1.1.
+
+==================================================
+FASE 11 — HOME 2.0
+==================================================
+
+Home responde prioritariamente:
+
+“¿Qué debería hacer ahora?”
+
+Jerarquía:
+
+1. evaluación/prioridad inmediata;
+2. sesión recomendada;
+3. progreso del objetivo diario;
+4. próximas 3 prioridades de Bitácora;
+5. mascota/ambiente;
+6. progreso secundario.
+
+No llenar Home de CTAs iguales.
+
+Ejemplo contextual:
+
+PEP 2 Orgánica
+5 días
+
+Sesión recomendada · 34 min
+- 2 revisiones
+- Basicidad de aminas
+- 1 error pendiente
+
+[ COMENZAR ]
+
+No usar textos genéricos como:
+“Pequeños pasos, grandes destinos”
+“Sigue tu aventura”
+“Continúa creciendo”
+
+salvo que formen parte de un texto ambiental explícitamente curado.
+
+==================================================
+FASE 12 — COPY SYSTEM: PROHIBIDO EL TEXTO GENÉRICO
+==================================================
+
+AUDITAR todos los textos visibles.
+
+La UI debe usar información real/contextual.
+
+Preferir:
+“Tienes 2 revisiones vencidas”
+“PEP 2 en 5 días”
+“Último intento: error por resonancia”
+“Necesitas demostrar este concepto sin pistas”
+
+Evitar:
+“¡Tú puedes!”
+“Continúa tu aventura”
+“Grandes cosas te esperan”
+“Vamos por más”
+y frases intercambiables sin información.
+
+Crear CopyRegistry/capa equivalente para textos de producto cuando tenga sentido.
+
+Flavor text:
+solo en Ambient Events / mascota / mundo.
+Debe ser curado y no sustituir información académica.
+
+==================================================
+FASE 13 — LEARNING ENGINE 2.0
+==================================================
+
+Construir sobre Academic Intelligence V14.
+
+FLUJO BASE:
+
+Misión
+→ chequeo de prerequisitos
+→ contexto/mapa
+→ explicación
+→ WHY / por qué
+→ retrieval sin mirar
+→ ejemplo resuelto
+→ ejemplo parcialmente resuelto
+→ resolución independiente
+→ contraste
+→ error típico
+→ contexto nuevo
+→ desafío estilo evaluación
+→ reconstrucción/cierre
+→ revisión futura
+
+NO forzar todos los pasos siempre.
+
+Adaptar según:
+- KnowledgeState;
+- ProblemFamily;
+- Misconception;
+- Evidence;
+- diagnóstico;
+- source;
+- FSRS.
+
+Pilotar de forma completa en org-01.
+
+NO reconstruir las ~45 clases en 1.0.
+Eso pertenece a 1.1.
+
+==================================================
+FASE 14 — FEEDBACK 2.0
+==================================================
+
+Feedback debe distinguir:
+
+- correcto;
+- correcto frágil;
+- incompleto;
+- error superficial;
+- error procedural;
+- error conceptual;
+- posible prerequisito;
+- misconception confirmada;
+- error reparado.
+
+Cada feedback responde:
+
+QUÉ ocurrió.
+POR QUÉ.
+QUÉ SIGUE.
+
+Nunca limitarse a:
+“Incorrecto.”
+
+No fingir evaluación semántica de texto abierto si no hay capacidad fiable.
+
+==================================================
+FASE 15 — RESCATE
+==================================================
+
+Cuando exista evidencia suficiente:
+
+error repetido
+→ hipótesis de debilidad
+→ 2–3 comprobaciones
+→ posible / confirmado / no confirmado
+→ Rescate si corresponde.
+
+Rescate:
+
+- explicación alternativa;
+- contraste;
+- ejemplo resuelto;
+- ejemplo parcial;
+- usuario completa;
+- problema nuevo;
+- regreso al flujo;
+- retest futuro.
+
+Después de un Rescate:
+NO llamar al conocimiento “dominado” inmediatamente.
+
+==================================================
+FASE 16 — ENTRENAMIENTO
+==================================================
+
+Modo:
+
+“Pregúntame hasta que pare”
+
+Opciones:
+
+- Recomendado
+- Mis errores
+- Revisiones
+- Tema
+- Curso completo
+- Nivel evaluación/PEP
+
+Ayuda:
+- Normal
+- Mínima
+- Sin pistas
+
+Duración:
+- 10 min
+- 20 min
+- 40 min
+- Hasta que pare
+
+Entrenar usa V14 Academic Engine.
+No crea un sistema paralelo de mastery.
+
+==================================================
+FASE 17 — RANGOS MÁGICOS POR CONCEPTO
+==================================================
+
+NO mostrar nombres técnicos como:
+“transferable”
+“retained”
+“cristalizado”
+“catalizado”
+al usuario.
+
+Internamente se pueden conservar estados técnicos.
+
+Crear ArcaneRankMapper.
+
+Rangos visibles:
+
+1. Mago Principiante
+2. Mago Intermedio
+3. Mago Avanzado
+4. Mago Experto
+5. Rey Mago
+
+Estos rangos son POR CONCEPTO.
+
+No son simplemente nivel global de cuenta.
+
+VISUAL:
+
+Cada concepto tiene Fuego Arcano.
+
+Mago Principiante:
+llamita muy pequeña.
+
+Intermedio:
+llama pequeña estable.
+
+Avanzado:
+fuego mediano.
+
+Experto:
+fuego grande con detalles arcanos.
+
+Rey Mago:
+gran fuego arcano distintivo/coronado.
+
+El fuego debe ser legible también sin animación.
+
+NO depender solo del color.
+Añadir:
+- nombre;
+- icono;
+- estado accesible.
+
+CRITERIO:
+
+NUNCA subir de rango por:
+- terminar una lección;
+- hacer clic;
+- tiempo por sí solo;
+- XP;
+- repetir una pregunta fácil.
+
+El rango depende de evidencia.
+
+Dimensiones mínimas:
+
+- autonomía;
+- variedad;
+- razonamiento/justificación;
+- resolución en más de una familia;
+- contexto nuevo;
+- errores/misconceptions;
+- prerequisitos;
+- recuerdo diferido;
+- tiempo activo mínimo.
+
+TIEMPO ACTIVO:
+
+Crear ActiveStudyTimer.
+
+Cuenta exclusivamente en actividades académicas reales:
+- lesson;
+- practice;
+- review;
+- rescue;
+- assessment-style;
+- material actively used cuando corresponda.
+
+NO contar:
+- Home;
+- Tienda;
+- Perfil;
+- menus;
+- Game Hub;
+- pestaña oculta.
+
+Pausar si:
+- document hidden;
+- app background;
+- sesión claramente inactiva durante periodo razonable.
+
+No exigir clic constante durante lectura.
+Diseñar temporizador sensible al contexto.
+
+Cada concepto puede definir thresholds propios.
+
+Fallback 1.0 aproximado configurable:
+
+Principiante:
+≥ 5 min activos
++ evidencia guiada/comprensión básica.
+
+Intermedio:
+≥ 12 min activos acumulados
++ evidencia independiente repetida.
+
+Avanzado:
+≥ 25 min activos
++ éxito independiente en ≥2 ProblemFamilies
++ alguna evidencia de explicación/justificación.
+
+Experto:
+≥ 40 min activos
++ rendimiento sólido en múltiples familias
++ desafío estilo evaluación o dificultad alta
++ contexto nuevo
++ sin debilidad crítica abierta.
+
+Rey Mago:
+≥ 60 min activos acumulados
++ distribuidos en múltiples sesiones
++ evidencia en días distintos
++ delayed recall/revisión posterior
++ rendimiento sin pistas
++ contexto nuevo
++ no misconception/prerequisito crítico sin resolver.
+
+IMPORTANTE:
+Estos thresholds NO deben quedar rígidos universalmente.
+Permitir override por concepto/dificultad.
+El Inspector debe poder mostrarlos.
+
+FSRS decide CUÁNDO revisar.
+Evidence/Knowledge Engine decide QUÉ sabe.
+Tiempo solo agrega una barrera mínima.
+
+==================================================
+FASE 18 — RECOMPENSAS FUTURAS DE RANGO
+==================================================
+
+Cuando un concepto alcanza por PRIMERA VEZ un nuevo rango:
+
+crear RewardReservation server-authoritative.
+
+NO entregar loot todavía.
+
+Mostrar:
+
+“Recompensa reservada”
+“Cofres — Próximamente”
+
+Persistir:
+- userId;
+- conceptId;
+- rank;
+- rewardTier;
+- achievedAt;
+- status = reserved.
+
+Unique constraint:
+usuario + concepto + rango.
+
+No permitir farm duplicado.
+
+Preparar tiers configurables, por ejemplo:
+
+Principiante → cofre básico
+Intermedio → cofre poco común
+Avanzado → cofre raro
+Experto → cofre épico
+Rey Mago → cofre arcano
+
+Los nombres/rareza final pueden modificarse posteriormente.
+
+NO implementar RNG ni apertura de cofres todavía.
+
+Cuando el sistema de cofres llegue en una versión futura, debe poder recuperar TODAS las RewardReservations históricas y permitir reclamar lo ganado previamente.
+
+No otorgar mastery mediante cofres.
+Solo cosméticos/economía futura.
+
+==================================================
+FASE 19 — MASCOT COMPANION SYSTEM
+==================================================
+
+La mascota es global y contextual.
+
+No programar comportamientos sueltos por pantalla.
+
+Crear MascotController basado en eventos/estado.
+
+Inputs:
+
+CurrentMascot
+CurrentEquipment
+CurrentRoom
+CurrentActivity
+AcademicEvent
+
+Output:
+
+MascotRenderState
+
+ACTIVIDADES:
+
+Inicio:
+- feliz;
+- juega;
+- mira ventana;
+- interactúa con planta;
+- idle;
+- duerme ocasionalmente.
+
+Aprender:
+- lentes;
+- lectura;
+- escritura;
+- piensa;
+- libro;
+- estudio.
+
+Entrenar:
+- postura de combate;
+- espada;
+- bastón;
+- escudo;
+- conjuro;
+- preparación.
+
+Juegos:
+- futuro modo pixel.
+
+Perfil:
+- descansa;
+- duerme;
+- interactúa con habitación.
+
+Tienda:
+- preview;
+- prueba cosméticos.
+
+La mascota debe conservar SIEMPRE los cosméticos equipados cuando sean compatibles.
+
+==================================================
+FASE 20 — MASCOT RIG CONTRACT + COSMÉTICOS
+==================================================
+
+Crear contrato para especies presentes y futuras.
+
+Semantic anchors mínimos:
+
+head
+face
+torso
+back
+tail
+aura
+main_hand
+off_hand
+
+Migrar sin romper slots existentes:
+
+head
+face
+shirt
+back
+tail
+aura
+background
+
+Añadir soporte arquitectónico para:
+main_hand
+off_hand
+
+para:
+- espada;
+- bastón;
+- escudo;
+- futuros props.
+
+No llenar todavía catálogo con decenas de objetos.
+
+Añadir estructura futura para:
+- emotes;
+- animation packs/context animations.
+
+Si el asset Rive actual no tiene un bone/anchor real:
+NO inventar hacks frágiles.
+
+Crear fallback limpio + documentar necesidad de rig final.
+
+Añadir tests de compatibilidad por:
+species × slot × room/context.
+
+==================================================
+FASE 21 — MICROHISTORIAS / AMBIENT EVENTS
+==================================================
+
+Mascota y habitación pueden generar escenas breves.
+
+Ejemplos:
+- leyendo;
+- jugando;
+- dormida sobre libros;
+- intentando hacer magia;
+- observando molécula;
+- mirando por ventana;
+- ordenando habitación.
+
+La mayoría NO necesita diálogo.
+
+Pequeños textos:
+solo ocasionalmente.
+
+Pueden reaccionar a:
+- hora;
+- curso;
+- progreso;
+- habitación;
+- contexto.
+
+No interrumpir estudio.
+
+==================================================
+FASE 22 — AUDIO
+==================================================
+
+Howler existente.
+
+Separar settings:
+
+- Música
+- Ambiente
+- SFX
+
+Inicio:
+ambiente suave.
+
+Aprender:
+casi silencio, papel/lápiz/shimmer.
+
+Entrenar:
+sonidos más firmes, impactos/magia controlada.
+
+Juegos:
+futura música arcade.
+
+Perfil:
+ambiente de habitación.
+
+Nunca autoplay agresivo.
+
+Persistir preferencias.
+
+==================================================
+FASE 23 — SOURCES / PROCEDENCIA UNIVERSAL
+==================================================
+
+Todo contenido académico publicado debe tener procedencia.
+
+Puede ser:
+- PPT;
+- profesor;
+- grabación;
+- transcript;
+- guía;
+- PEP;
+- pauta;
+- libro;
+- manual;
+- contenido Nexo generado.
+
+Si es generado:
+marcarlo como generated.
+
+Contenido generado no debe convertirse silenciosamente en “verdad del curso”.
+
+Preparar flujo de revisión humana.
+
+No inventar fuentes.
+
+==================================================
+FASE 24 — UI LAB
+==================================================
+
+Ruta:
+
+?nexoDev=1#/ui-lab
+
+Debe mostrar todos los componentes/estados sin tener que provocarlos manualmente.
+
+Secciones:
+
+Foundations
+- colors
+- typography
+- spacing
+- radius
+- elevation
+
+Materials
+- paper
+- ink
+- wood
+- arcane
+
+Components
+- buttons
+- cards
+- panels
+- inputs
+- badges
+- progress
+- modals
+- drawers
+- toast
+- tooltip
+
+Academic
+- rank flames
+- evidence
+- error states
+- misconception
+- feedback
+- reviews
+
+Motion
+- page
+- arcane
+- physical
+- reduced
+
+Mascot
+- rooms
+- activities
+- equipment
+- fallback states
+
+Rooms
+- Home
+- Learn
+- Train
+- Games
+- Profile
+
+Settings
+- performance profiles
+- particles
+
+Regla:
+
+Un componente nuevo debe pasar primero por Design System/UI Lab antes de proliferar por producción.
+
+==================================================
+FASE 25 — REVIEW CENTER
+==================================================
+
+Ruta:
+
+?nexoDev=1#/review
+
+Crear accesos rápidos a:
+
+- Home
+- Aprender
+- org-01 pilot
+- Feedback
+- Rescate
+- Entrenamiento
+- Reviews
+- Errors
+- Knowledge Map
+- Bitácora
+- Perfil
+- Tienda
+- Games placeholder
+- Mascot states
+- Arcane ranks
+- Performance
+- UI Lab
+
+Objetivo:
+permitir revisión manual rápida.
+
+==================================================
+FASE 26 — ACCESIBILIDAD
+==================================================
+
+Mantener/fortalecer:
+
+- keyboard navigation;
+- focus visible;
+- touch targets;
+- screen reader labels;
+- contrast;
+- reduced motion;
+- no depender solo de color;
+- zoom/text scaling;
+- mobile landscape razonable.
+
+==================================================
+FASE 27 — TESTING
+==================================================
+
+Añadir tests específicos para:
+
+DESIGN SYSTEM
+- tokens;
+- variants;
+- no componentes duplicados críticos.
+
+ROOMS
+- correcta theme selection;
+- CourseTheme dinámico;
+- cleanup al navegar.
+
+AMBIENT
+- hora local;
+- cambio gradual de fases;
+- hidden-tab pause;
+- particle settings;
+- reduced motion.
+
+PERFORMANCE
+- lifecycle;
+- listeners;
+- timers;
+- lazy imports;
+- Phaser no cargado en hub;
+- no varias instancias Rive innecesarias.
+
+PLANNER
+- priority deterministic;
+- top 3 Home = planner;
+- modificación planner actualiza Home;
+- daily target.
+
+ACADEMIC
+- evidence;
+- rank;
+- tiempo mínimo;
+- tiempo solo NO sube rango;
+- repeated same item NO permite farm;
+- delayed recall Rey Mago;
+- unresolved misconception bloquea cuando corresponde.
+
+REWARDS
+- unique reservation;
+- no duplicados;
+- persist cloud;
+- server authority.
+
+MASCOT
+- context mapping;
+- equipment persistence;
+- compatibility;
+- fallback anchors.
+
+SUPABASE
+- migrations;
+- RLS;
+- A/B users;
+- sync;
+- planner;
+- rank rewards;
+- account lifecycle;
+- conflicts.
+
+REGRESSION
+- V14 academic;
+- organic;
+- cloud;
+- avatar;
+- shop;
+- storage/migrations;
+- security.
+
+==================================================
+FASE 28 — RESPONSIVE QA
+==================================================
+
+Revisar manualmente al menos:
+
+~375px
+~768px
+~1440px
+
+También revisar:
+- teclado;
+- scrolling;
+- safe areas;
+- bottom navigation;
+- sidebar desktop;
+- drawers;
+- rooms;
+- ambient assets;
+- mascot overlap.
+
+==================================================
+FASE 29 — PUBLICACIÓN OBLIGATORIA
+==================================================
+
+NEXO STUDYAPP 1.0 NO TERMINA CON UN ZIP.
+
+DEFINITION OF DONE:
+
+CODE COMPLETE
+→ TESTED
+→ SUPABASE REAL VALIDADO
+→ PRODUCTION BUILD
+→ DEPLOYED
+→ URL REAL VERIFICADA
+→ SMOKE TEST
+→ MOBILE QA
+→ DESKTOP QA
+→ REVIEW CENTER FUNCIONAL
+→ ROLLBACK DISPONIBLE
+→ ZIP FINAL
+→ INFORME FINAL
+
+Actualizar el proyecto Nexo existente si es posible.
+
+No crear deployment paralelo innecesario.
+
+Verificar en producción:
+- assets;
+- lazy imports;
+- auth;
+- Supabase;
+- rutas;
+- refresh directo;
+- service worker/PWA si existe;
+- cache/versioning;
+- responsive;
+- settings;
+- sync.
+
+Mantener rollback a V14.
+
+Si para publicar se necesita una autorización externa:
+pedirla explícitamente.
+No omitir publicación silenciosamente.
+
+==================================================
+FASE 30 — DOCUMENTACIÓN / IMPLEMENTATION REPORT
+==================================================
+
+Entregar:
+
+docs/ARCHITECTURE_1_0.md
+docs/DESIGN_SYSTEM_1_0.md
+docs/ROOM_SYSTEM_1_0.md
+docs/AMBIENT_SYSTEM_1_0.md
+docs/PERFORMANCE_1_0.md
+docs/MASCOT_SYSTEM_1_0.md
+docs/PLANNER_1_0.md
+docs/ARCANE_RANKS_1_0.md
+docs/SUPABASE_PRODUCTION_1_0.md
+docs/ADDING_COURSE_THEME.md
+docs/IMPLEMENTATION_REPORT_1_0.md
+
+El informe final debe explicar EN LENGUAJE HUMANO:
+
+- qué se cambió;
+- dónde;
+- por qué;
+- cómo funciona;
+- qué módulos se crearon;
+- qué responsabilidades tiene cada uno;
+- cómo editar colores;
+- cómo editar animaciones;
+- cómo cambiar tiempos del día;
+- cómo cambiar partículas;
+- cómo añadir una habitación;
+- cómo añadir un CourseTheme;
+- cómo añadir una mascota;
+- cómo añadir cosméticos;
+- cómo agregar un rango/ajustar criterios;
+- cómo modificar Bitácora;
+- cómo modificar prioridades;
+- cómo agregar un futuro cofre;
+- qué está lazy-loaded;
+- qué se desmonta al navegar;
+- qué optimizaciones existen;
+- qué tests corrieron;
+- qué problemas reales quedaron.
+
+NO limitarse a listar archivos.
+
+==================================================
+REGLAS DE CALIDAD UNIVERSALES
+==================================================
+
+1. No fake data para hacer bonita una pantalla.
+2. No sources inventadas.
+3. No user-facing copy genérica.
+4. No features visuales que degraden notablemente performance.
+5. No hardcodear cursos.
+6. No hardcodear una especie de mascota concreta.
+7. No economía client-authoritative.
+8. No duplicated mastery engine.
+9. No grandes juegos en 1.0.
+10. No cofres funcionales todavía: solo rewards reservadas.
+11. No integración Drive falsa.
+12. No Supabase “para configurar después”.
+13. No proveedor de producción roto.
+14. No monolito gigante.
+15. No fondos estáticos que finjan ser el sistema ambiental completo.
+16. No mantener habitaciones invisibles corriendo.
+17. No page-turn en cada click.
+18. No magia meramente ornamental cuando represente estado académico.
+19. No subir rango por tiempo únicamente.
+20. No marcar tarea como completa si no fue probada.
+
+==================================================
+ORDEN DE PRIORIDAD
+==================================================
+
+Si hay conflicto de alcance, priorizar:
+
+1. Integridad de datos.
+2. Supabase real.
+3. Regresión.
+4. Arquitectura modular.
+5. Learning Engine.
+6. Arcane Rank evidence.
+7. Bitácora.
+8. Design System.
+9. Navigation/App Shell.
+10. Mascot system.
+11. Ambient world.
+12. Performance.
+13. Polish.
+
+La ambientación espectacular NO puede bloquear:
+estudio,
+planner,
+backend,
+sync,
+evidencia
+o publicación.
+
+==================================================
+ENTREGA FINAL
+==================================================
+
+Entregar:
+
+- NEXO STUDYAPP 1.0 publicado;
+- URL funcional;
+- Supabase real verificado;
+- ZIP final;
+- backup V14;
+- migrations;
+- tests;
+- reportes;
+- docs;
+- Review Center;
+- UI Lab;
+- Performance inspector.
+
+Al finalizar, informar explícitamente:
+
+SUPABASE:
+configured / tested / production verified
+
+DEPLOY:
+URL + smoke status
+
+TESTS:
+pasados / fallidos / motivo
+
+PERFORMANCE:
+resultados principales
+
+DATA:
+migraciones realizadas
+
+DEBT:
+solo deuda real, no frases vagas
+
+NO declarar “Nexo StudyApp 1.0 terminado” hasta cumplir Definition of Done.

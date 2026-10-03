@@ -1,0 +1,420 @@
+# NEXO — UPDATE 01.3
+## ROOM INTERACTIVITY FOUNDATION + GRIMOIRE INTRO POLISH
+
+Trabaja sobre la versión actual posterior a UPDATE 01.2.
+
+NO volver a la base antigua.
+NO rehacer desde cero Inicio ni Aprender.
+NO implementar todavía el sistema completo de clases funcionales.
+NO implementar todavía la tienda ni la personalización completa.
+NO implementar todavía el sistema final de mascota.
+
+Objetivo de esta fase:
+1. convertir Inicio en una habitación más estructurada e interactuable;
+2. preparar la escena para futura personalización y uso por la mascota;
+3. enriquecer la zona inferior para que no se vea vacía;
+4. mejorar la apertura del grimorio para que se sienta más mágica y ceremonial;
+5. mantener el producto usable y estable.
+
+==================================================
+1. CONTEXTO
+==================================================
+
+La base visual actual ya es buena y útil.
+No quiero perderla.
+
+Ahora necesito una mejora estructural en dos áreas:
+
+A. INICIO como habitación-sistema
+B. APRENDER como grimorio con mejor introducción
+
+Esta fase es de integración y polish estructural,
+no de rediseño total.
+
+==================================================
+2. PROBLEMAS ACTUALES A RESOLVER
+==================================================
+
+P1. Inicio mejoró, pero todavía quiero que la habitación superior
+sea más claramente una escena habitable e interactuable.
+
+P2. El fondo ya no debe entenderse sólo como imagen decorativa,
+sino como una escena que en el futuro pueda albergar acciones,
+objetos y personalización.
+
+P3. La parte inferior todavía se siente algo vacía;
+quiero más continuidad material (madera, verde, enredaderas).
+
+P4. Quiero que ciertos elementos del escenario empiecen a existir
+como objetos del mundo:
+- biblioteca
+- ventana
+- escritorio
+- zonas de descanso
+- zonas decorativas
+
+P5. La apertura del grimorio me gusta,
+pero la animación inicial de la portada aún debe sentirse
+más mágica, más suave, más rica y más ceremonial.
+
+P6. Las transiciones internas entre páginas/ramos
+deben seguir siendo más rápidas que la introducción.
+
+==================================================
+3. OBJETIVO — INICIO COMO HABITACIÓN-SISTEMA
+==================================================
+
+Inicio debe evolucionar desde “pantalla bonita”
+hacia “habitación viva preparada para interacción”.
+
+No quiero solo una ilustración.
+
+Quiero una escena estructurada con:
+
+- ventana clara e importante;
+- biblioteca/estantería;
+- escritorio;
+- zona de mascota;
+- materiales cálidos;
+- vegetación;
+- piso / base visual inferior;
+- continuidad hacia la zona funcional.
+
+Debe sentirse como un lugar real dentro del mundo de Nexo.
+
+==================================================
+4. INTERACTABLES DE ESCENA
+==================================================
+
+NO implementar todavía toda la lógica final de gameplay.
+
+Sí quiero dejar la base para que ciertos elementos existan
+como entidades del escenario.
+
+Objetos principales a preparar:
+
+- bookshelf / biblioteca
+- window / ventana
+- desk / escritorio
+- rest-area / zona descanso
+- decor-slots / slots decorativos
+
+Cada uno debe poder tener como mínimo, si la arquitectura lo permite:
+
+- id
+- tipo
+- bounds o zona
+- capa/profundidad
+- estado visual básico
+- acción o destino conceptual
+- metadata futura
+
+Ejemplo:
+bookshelf
+→ abrir biblioteca
+→ sacar libro / poner libro (futuro)
+
+window
+→ foco de iluminación
+→ comportamiento de día/noche
+
+desk
+→ continuar estudio / zona mascota
+
+NO implementar todavía todas esas acciones finales.
+Solo preparar la estructura para que la habitación no tenga
+que reconstruirse luego.
+
+==================================================
+5. SLOTS Y PERSONALIZACIÓN FUTURA
+==================================================
+
+Quiero dejar preparada la habitación para personalización futura.
+
+No implementar tienda ni compra todavía.
+
+Sí dejar preparada una estructura mínima para slots decorativos,
+por ejemplo conceptualmente:
+
+- wall-slot
+- bookshelf-slot
+- desk-slot
+- window-slot
+- floor-slot
+- plant-slot
+
+Cada slot futuro podría conocer:
+- posición
+- tipo
+- capa
+- restricciones de uso
+
+No hacer sobreingeniería.
+Solo crear lo mínimo útil para no tener que romper
+la escena más adelante.
+
+==================================================
+6. ESCENA SUPERIOR + PARTE INFERIOR
+==================================================
+
+Quiero mejorar la continuidad visual de la parte inferior.
+
+Problema actual:
+la parte de abajo se siente vacía.
+
+Resultado deseado:
+- más sensación de piso / madera inferior;
+- continuidad de materiales cálidos;
+- enredaderas o vegetación descendiendo más abajo;
+- integración visual entre escena superior e interfaz inferior;
+- seguir manteniendo claridad y legibilidad.
+
+No llenar por llenar.
+Debe sentirse bonito, orgánico y coherente.
+
+==================================================
+7. PREPARACIÓN PARA MASCOTA FUTURA
+==================================================
+
+Mantener la mascota actual.
+
+NO implementar todavía:
+- configuración de mascota
+- cambio de mascota
+- sistema de estados completo
+- navegación compleja
+- accesorios activos
+
+Sí preparar el escenario para que una futura mascota pueda:
+
+- estar en escritorio;
+- mirar la ventana;
+- acercarse a la biblioteca;
+- usar una zona de descanso;
+- quedar delante o detrás de ciertos objetos.
+
+No dejar la escena dependiente de posiciones absolutas arbitrarias.
+
+==================================================
+8. VENTANA Y SISTEMA DE LUZ
+==================================================
+
+La ventana debe ganar protagonismo.
+
+Debe funcionar como pieza central del ambiente de:
+
+- día
+- tarde
+- noche
+
+Mejorar, si es razonable:
+
+- sensación de entrada de luz;
+- resplandor;
+- relación entre exterior e interior;
+- protagonismo visual de la ventana.
+
+No rediseñar un nuevo sistema horario completo si no hace falta.
+Pulir el existente.
+
+==================================================
+9. GRIMORIO — INTRO CINEMÁTICA
+==================================================
+
+La apertura del grimorio debe mejorar.
+
+Quiero que la introducción del grimorio sea:
+
+- más lenta que ahora;
+- más suave;
+- más ceremonial;
+- con más presencia de la portada;
+- con más detalle mágico;
+- con destellos/brillos sutiles;
+- con sensación de magia.
+
+Debe sentirse como la entrada a un objeto especial.
+
+La portada debe poder verse y sentirse mejor antes de abrir.
+
+Inspiración funcional:
+un grimorio mágico muy ornamentado, poderoso,
+detallado y atractivo.
+
+NO copiar directamente ninguna obra específica.
+Traducir la inspiración a propiedades visuales y de animación.
+
+==================================================
+10. RITMO DE ANIMACIONES
+==================================================
+
+Distinguir dos ritmos:
+
+A. INTRO DEL GRIMORIO
+- más lenta
+- más ceremonial
+- más protagonista
+
+B. PÁGINAS / CAMBIO DE RAMO
+- más rápidas
+- suaves
+- funcionales
+- bonitas
+
+Orientación tentativa:
+- intro grimorio: ~1100–1600 ms
+- reapertura si aplica: más corta
+- page turn interno: mantenerlo más rápido
+
+Respetar reduced-motion.
+
+==================================================
+11. SONIDO (SOLO PREPARACIÓN O IMPLEMENTACIÓN MÍNIMA)
+==================================================
+
+Si es razonable y limpio, puedes preparar o añadir una base mínima
+para el sonido de apertura del grimorio.
+
+Objetivo:
+sensación mágica/arcana suave.
+
+Pero:
+- no crear un sistema de audio complejo;
+- no introducir deuda grande;
+- no romper autoplay/políticas del navegador.
+
+Si no es limpio implementarlo ahora,
+documentarlo como fase siguiente.
+
+==================================================
+12. FUERA DE ALCANCE
+==================================================
+
+No implementar todavía:
+- clases funcionales completas;
+- motor de lecciones;
+- IA de estudio;
+- tienda;
+- compra de objetos;
+- inventario completo de habitación;
+- sistema completo de biblioteca;
+- sistema final de sonidos globales;
+- sistema final de mascota;
+- Entrenar;
+- Juegos;
+- Perfil completo;
+- DB/migraciones/Supabase/cloud.
+
+==================================================
+13. FORMA DE TRABAJO
+==================================================
+
+Dividir en bloques:
+
+BLOQUE A
+Room scene foundation:
+- escena estructurada
+- interactables base
+- slots mínimos
+- continuidad inferior
+- ventana/luz
+- preparación mascota
+
+BLOQUE B
+Grimorio intro polish:
+- portada más protagonista
+- apertura más suave/lenta
+- brillos mágicos
+- page transitions rápidas
+
+BLOQUE C
+QA y capturas
+
+No hacer una iteración ciega larga.
+Mostrar evidencia al terminar cada bloque.
+
+==================================================
+14. CAPTURAS REQUERIDAS
+==================================================
+
+Generar al menos:
+
+- home_room_desktop.png
+- home_room_mobile.png
+- home_window_day.png
+- home_window_night.png
+- home_lower_area.png
+- grimoire_cover_intro.png
+- grimoire_open_polished.png
+- grimoire_page_turn.png
+
+Si es posible, evidencia visual de la intro del grimorio.
+
+==================================================
+15. CRITERIOS DE ACEPTACIÓN
+==================================================
+
+AC01
+Inicio se percibe claramente como una habitación-sistema
+y no solo como una ilustración decorativa.
+
+AC02
+La escena superior contiene claramente ventana, biblioteca
+y zonas habitables.
+
+AC03
+La habitación queda estructuralmente preparada para futura
+interacción y personalización.
+
+AC04
+Existen bases mínimas para objetos/zonas interactuables.
+
+AC05
+Existen bases mínimas para slots decorativos futuros,
+sin activar todavía la tienda.
+
+AC06
+La parte inferior deja de sentirse vacía y gana continuidad
+con madera, vegetación y materiales coherentes.
+
+AC07
+La mascota actual se integra mejor a la escena.
+
+AC08
+La ventana gana protagonismo como pieza del sistema de luz.
+
+AC09
+La introducción del grimorio se siente más mágica y ceremonial.
+
+AC10
+La portada del grimorio tiene más presencia.
+
+AC11
+Las transiciones internas siguen siendo más rápidas
+que la intro principal.
+
+AC12
+Desktop y móvil siguen funcionando correctamente.
+
+AC13
+No se dañan datos, rutas ni la base actual.
+
+==================================================
+16. INFORME FINAL
+==================================================
+
+Actualizar informe con:
+
+- qué cambiaste;
+- qué archivos tocaste;
+- qué estructura nueva dejaste preparada;
+- qué sí quedó interactuable;
+- qué quedó solo preparado para futuro;
+- qué capturas generaste;
+- qué criterios cumplen;
+- qué gaps siguen pendientes;
+- qué recomendarías antes de UPDATE 02.
+
+No continúes automáticamente con clases funcionales.
+Termina esta fase cuando Inicio y la intro del grimorio
+queden estabilizados.

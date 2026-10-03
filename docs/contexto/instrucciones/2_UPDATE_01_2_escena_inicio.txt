@@ -1,0 +1,318 @@
+# NEXO — UPDATE 01.2
+## HOME SCENE INTEGRATION + GRIMOIRE POLISH
+
+Trabaja sobre la versión actual de UPDATE 01.1.
+
+NO vuelvas a la base vieja.
+NO rehagas toda la app desde cero.
+NO implementes todavía clases funcionales completas.
+NO implementes todavía el sistema nuevo de mascota.
+
+Objetivo de esta fase:
+1. corregir la integración visual de Inicio;
+2. hacer que la escena superior se sienta habitable;
+3. preparar correctamente el espacio futuro de la mascota;
+4. pulir la apertura del grimorio;
+5. eliminar la sensación de fondo enmarcado o imagen superpuesta.
+
+==================================================
+1. PROBLEMA ACTUAL
+==================================================
+
+La base visual mejoró, pero siguen existiendo estos problemas:
+
+P1. El fondo de Inicio todavía se siente demasiado separado,
+como si fuera una imagen puesta detrás o dentro de un marco.
+
+P2. La parte superior no se siente como una habitación habitable
+y viva, sino como una escena todavía demasiado encapsulada.
+
+P3. Sigue existiendo una sensación de borde, marco o corte
+abrupto entre la escena y otras superficies.
+
+P4. La escena no transmite suficientemente la idea de que la
+mascota futura podrá vivir ahí e interactuar con el entorno.
+
+P5. El grimorio me gustó, pero la animación de apertura es muy rápida.
+
+P6. La apertura del grimorio necesita más magia:
+brillos/destellos sutiles y mejor sensación de entrada.
+
+==================================================
+2. RESULTADO DESEADO — INICIO
+==================================================
+
+Inicio debe organizarse conceptualmente como:
+
+A. HABITACIÓN VIVA SUPERIOR
+B. SUPERFICIES FUNCIONALES INTEGRADAS INFERIORES
+
+La pantalla no debe sentirse como:
+imagen arriba + panel abajo.
+
+Debe sentirse como un único mundo continuo.
+
+==================================================
+3. HABITACIÓN VIVA SUPERIOR
+==================================================
+
+La zona superior debe sentirse como un espacio habitable real.
+
+Debe incluir claramente:
+
+- una ventana importante;
+- biblioteca / estantería;
+- libros;
+- plantas / verde;
+- materiales cálidos;
+- espacio de habitación;
+- zonas que luego puedan pertenecer a la mascota.
+
+Esa zona superior debe servir en el futuro para que la mascota pueda:
+
+- caminar;
+- detenerse;
+- mirar la ventana;
+- acercarse a la biblioteca;
+- interactuar con libros;
+- descansar.
+
+NO implementar todavía ese comportamiento.
+Sólo dejar la escena correctamente preparada.
+
+==================================================
+4. MOVIMIENTO AMBIENTAL — DEFINICIÓN DE "VIVO"
+==================================================
+
+No interpretes "vivo" como un efecto exagerado.
+
+"Vivo" aquí significa:
+
+- movimiento ambiental sutil;
+- respiración de luz;
+- pequeñas partículas suaves;
+- leve oscilación de plantas o follaje;
+- sensación de profundidad;
+- iluminación que hace sentir que la escena no es estática.
+
+NO hacer un espectáculo de animaciones.
+NO sobrecargar rendimiento.
+
+==================================================
+5. VENTANA COMO ELEMENTO CLAVE
+==================================================
+
+La ventana debe ser un elemento importante del escenario.
+
+Debe apoyar la percepción de:
+
+- mañana;
+- tarde;
+- noche.
+
+La transición día/noche debe sentirse principalmente a través de:
+
+- luz exterior;
+- tono interior;
+- resplandor;
+- ambiente de ventana.
+
+Quiero que la ventana sea parte del corazón visual de Inicio.
+
+==================================================
+6. CONTINUIDAD HACIA ABAJO
+==================================================
+
+La parte inferior no debe romper la estética.
+
+Debe continuar la misma familia material y cromática:
+
+- verdes;
+- café / madera;
+- tonos cálidos;
+- detalles dorados suaves;
+- pergamino;
+- vegetación.
+
+No quiero una ruptura visual fuerte entre la habitación
+superior y la parte funcional inferior.
+
+Si existen contenedores o marcos,
+deben integrarse mejor y evitar verse como cajas extrañas.
+
+==================================================
+7. PREPARACIÓN DE ESCENA PARA MASCOTA FUTURA
+==================================================
+
+Sin implementar el nuevo sistema de mascota, deja preparada
+la escena con una lógica clara de zonas.
+
+Debe poder inferirse visualmente que existen lugares como:
+
+- window-area
+- bookshelf-area
+- desk-area
+- rest-area
+
+No construir state machine nueva.
+No crear selector.
+No crear configuración activa todavía.
+
+Mantener la mascota actual,
+pero mejorar su contexto de escena para que no parezca flotando.
+
+==================================================
+8. GRIMORIO — POLISH
+==================================================
+
+El grimorio base me gustó.
+No lo rehagas por completo.
+
+Sólo quiero pulir:
+
+- velocidad de apertura;
+- sensación mágica de entrada;
+- pequeños brillos/destellos;
+- un poco más de ceremonia visual.
+
+La apertura actual es demasiado rápida.
+
+Objetivo tentativo:
+- apertura inicial: ~850–1100 ms
+- reapertura: ~350–500 ms
+
+Usa brillos sutiles, no recargados.
+Mantén soporte para reduced-motion.
+
+==================================================
+9. NO HACER
+==================================================
+
+No implementar en esta fase:
+
+- clases funcionales nuevas;
+- motor académico;
+- rediseño de Entrenar;
+- rediseño completo de Perfil;
+- sistema nuevo de mascota;
+- selector/configuración de mascota;
+- juegos;
+- XP;
+- cofres;
+- cambios de DB;
+- migraciones;
+- Supabase;
+- cloud.
+
+==================================================
+10. ENFOQUE DE IMPLEMENTACIÓN
+==================================================
+
+Trabaja en dos bloques:
+
+BLOQUE A
+Integración de Inicio:
+- escena superior habitable;
+- continuidad material;
+- reducción de marcos/cortes;
+- fondo más vivo;
+- preparación para mascota futura.
+
+BLOQUE B
+Pulido del grimorio:
+- apertura más lenta;
+- brillos sutiles;
+- sensación más mágica.
+
+No hagas cambios grandes en otras áreas.
+
+==================================================
+11. CHECKPOINT OBLIGATORIO
+==================================================
+
+Después del BLOQUE A:
+- generar capturas
+- mostrar Inicio desktop y móvil
+
+Antes de tocar demasiado el grimorio.
+
+Después del BLOQUE B:
+- generar capturas/clip o evidencia del grimorio
+- mostrar comparación antes/después si es posible
+
+No quiero otra iteración ciega larga.
+
+==================================================
+12. CAPTURAS REQUERIDAS
+==================================================
+
+Generar al menos:
+
+- home_scene_desktop.png
+- home_scene_mobile.png
+- home_day_window.png
+- home_night_window.png
+- grimoire_open_polished.png
+- grimoire_courses_polished.png
+
+Si es posible, agregar evidencia visual de la apertura.
+
+==================================================
+13. CRITERIOS DE ACEPTACIÓN
+==================================================
+
+AC01
+Inicio se percibe como una composición continua.
+
+AC02
+La zona superior se siente como una habitación habitable.
+
+AC03
+Existe una ventana importante y claramente integrada.
+
+AC04
+La escena transmite mejor profundidad y vida mediante
+movimiento ambiental sutil.
+
+AC05
+Se reduce claramente la sensación de imagen enmarcada
+o fondo superpuesto.
+
+AC06
+La parte inferior continúa la misma familia material y color.
+
+AC07
+La escena queda preparada para que una futura mascota
+pueda habitarla.
+
+AC08
+La mascota actual no se ve más desconectada del entorno.
+
+AC09
+La apertura del grimorio se siente más lenta y más mágica.
+
+AC10
+Los brillos/destellos del grimorio son sutiles y agradables.
+
+AC11
+Desktop y móvil siguen funcionando correctamente.
+
+AC12
+No se dañan rutas, datos ni la base visual ya lograda.
+
+==================================================
+14. INFORME FINAL
+==================================================
+
+Actualizar el informe con:
+
+- qué cambiaste;
+- por qué;
+- qué archivos tocaste;
+- qué capturas generaste;
+- qué criterios cumplen;
+- qué gaps quedan pendientes;
+- qué recomendarías antes de pasar a clases funcionales.
+
+No continúes automáticamente con clases.
+Termina al estabilizar Inicio + el polish del grimorio.
