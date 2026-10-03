@@ -1,6 +1,18 @@
 # Batalla con esquiva (inspirada en el género de Undertale) — SPEC borrador, 3 oct 2026
 
-Parte de `docs/juegos/SPEC.md`. Estado: **borrador, esperando decisiones de Niquito**.
+Parte de `docs/juegos/SPEC.md`. Estado: **prototipo jugable, esperando aprobación visual de Niquito**.
+
+## Hecho (3 oct 2026)
+
+- Prototipo independiente: `dist/games/prototipos/batalla-rey-amonio.html` (se abre en `http://127.0.0.1:8765/games/prototipos/batalla-rey-amonio.html`).
+  No está conectado a la app ni al motor académico: sirve para decidir cómo se siente.
+- Enemigos se diseñan con ficha antes de programar: `docs/juegos-batalla/ENEMIGOS.md` (plantilla + Rey Amonio).
+- Acciones: Predecir, **Flecha** (dibujar el mecanismo arrastrando), **Ordenar** (por pKaH), Objeto, Analizar y Perdonar.
+  Tras un acierto: **canalizar** (barra de precisión, ×1 a ×1,5; solo multiplica, nunca reemplaza al conocimiento).
+- Esquiva con 3 ataques por concepto + ataque de fase 2; teclado y arrastre táctil; modo sin daño; respeta `prefers-reduced-motion`.
+- Música original en capas y efectos, sintetizados en vivo con Web Audio (sin archivos). Cambia entre turno y esquiva, y en fase 2.
+- Probado con Playwright en 1440 y 390 px: sin errores de consola.
+- Nota técnica: el prototipo usa canvas simple, no Phaser, para ser un solo archivo. Decidir al integrarlo.
 
 ## Qué
 

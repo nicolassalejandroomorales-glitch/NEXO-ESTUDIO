@@ -111,3 +111,5 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
 - Arreglado: `tools/static-server.cjs` ya declara el MIME de `.svg`.
 - **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. SPEC borrador en `docs/juegos/SPEC.md` (esperando decisiones de Niquito). Principio: los juegos deben alimentar
   el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
+  Prototipo de batalla con esquiva "Rey Amonio" en `dist/games/prototipos/` (sin conectar a la app). Los enemigos se diseñan
+  con ficha antes de programarlos: `docs/juegos-batalla/ENEMIGOS.md`. Pendiente su aprobación visual.
