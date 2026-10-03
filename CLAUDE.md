@@ -88,6 +88,7 @@ node smoke-test.cjs; node tools/room-test.cjs; node tools/update01-test.cjs   # 
 - UPDATE 01.6: páginas decoradas por ramo (`tools/grimoire-pages/`), cambio de página con hoja curvada y sonidos sintetizados
   (`tools/grimoire-audio/`). Ver `docs/update-01-6-paginas/SPEC.md`.
 - UPDATE 01.7: páginas llenas de dibujos, sonido suave e intro épica una vez por sesión. Ver `docs/update-01-7-grimorio-epico/SPEC.md`.
+- **Clases borradas (4 oct 2026)**: se eliminaron los reproductores y el contenido de las clases (`amine-lesson.*`, `organic-studio.*`, `organic-pep1-3.js`, `organic-biomolecules.js`). Abrir cualquier tema muestra "Disponible próximamente". El catálogo de temas (`organic-manifest.js`, `data.js`) sigue. Siguen sin tocar: ejercicios generados desde el catálogo (`generatedExercises` en `app.js`) y el motor académico de Aminas (`dist/academic/*`); se decide caso a caso al rehacer cada clase.
 - Pendiente del producto (lo más importante): **una clase completa que se sienta increíble** (Orgánica II → PEP 1 → Aminas → Basicidad),
   con corrección real y actividades variadas. Ver `docs/contexto/RESUMEN_OBJETIVOS_NEXO.md`.
 - Arreglado: `tools/static-server.cjs` ya declara el MIME de `.svg`.
