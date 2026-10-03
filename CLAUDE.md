@@ -60,6 +60,24 @@ node smoke-test.cjs; node tools/room-test.cjs; node tools/update01-test.cjs   # 
 2. Implementar en pasos chicos. Probar en desktop (1440) y en móvil (390), y correr las pruebas rápidas.
 3. Mostrar ANTES/AHORA y **esperar la aprobación visual** de Niquito.
 
+## Varios chats, una sola memoria (reglas absolutas)
+
+Niquito trabaja Nexo en **chats separados, uno por tema** (Inicio/escena, grimorio, motor académico y clase, juegos, etc.)
+para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se acuerdan entre sí**: la única memoria compartida es este archivo y `docs/`.
+
+1. **Al empezar un chat**: lee este `CLAUDE.md` y el `SPEC.md` del tema en `docs/<cambio>/`. Di en una línea qué entendiste y qué falta.
+2. **Un chat = un tema = un `docs/<cambio>/SPEC.md`**. Si el tema no tiene SPEC, créalo antes de programar.
+3. **No salirse del tema**: si ves algo de otro tema (un bug, una idea), no lo arregles aquí. Anótalo en la sección **Pendiente** del SPEC de ese tema
+   (o en `docs/pendientes.md` si no tiene) y avísale a Niquito en una línea.
+4. **Archivos compartidos** (`dist/app.js`, `update01.css`, `dist/data.js`): toca lo mínimo. Lo nuevo va en archivos propios del tema
+   (por ejemplo `dist/games/*.js`) y se conecta con un cambio chico. Así dos chats no se pisan.
+5. **Cierre de cada chat** (obligatorio, sin que Niquito lo pida): actualiza el `SPEC.md` del tema (hecho / decisiones / pendiente)
+   y la sección **Estado** de este archivo, con fecha. Luego commit y push, según la sección de Git.
+6. **Este archivo se mantiene vivo**: cuando en cualquier chat se tome una decisión que deba valer siempre (una regla, un límite, una preferencia
+   de Niquito, un error que no debe repetirse), **Claude la agrega aquí por iniciativa propia**, corta y en la sección que corresponda, y se la cuenta a Niquito en una línea.
+   Una regla escrita aquí es **absoluta** para todos los chats futuros. Si dos reglas chocan, se detiene y le pregunta a Niquito. No se borran reglas sin su permiso.
+7. Mantenerlo corto: si una sección crece demasiado, se mueve el detalle a `docs/` y aquí queda un puntero.
+
 ## Git y sincronización (lo hace Claude, no Niquito)
 
 - Al empezar cada sesión local: git fetch y, si hay cambios nuevos en
@@ -91,3 +109,5 @@ node smoke-test.cjs; node tools/room-test.cjs; node tools/update01-test.cjs   # 
 - Pendiente del producto (lo más importante): **una clase completa que se sienta increíble** (Orgánica II → PEP 1 → Aminas → Basicidad),
   con corrección real y actividades variadas. Ver `docs/contexto/RESUMEN_OBJETIVOS_NEXO.md`.
 - Arreglado: `tools/static-server.cjs` ya declara el MIME de `.svg`.
+- **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. Aún sin SPEC (`docs/juegos/SPEC.md` por crear). Principio: los juegos deben alimentar
+  el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
