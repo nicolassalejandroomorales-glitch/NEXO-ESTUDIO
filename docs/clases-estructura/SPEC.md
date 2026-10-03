@@ -1,6 +1,6 @@
 # Estructura de las clases de Nexo (SPEC)
 
-Estado: **borrador para aprobar**. Aún no se programa nada. Fecha: 4 oct 2026.
+Estado: **estructura aprobada por Niquito (4 oct 2026)**: 7 etapas, sistema de errores con prerrequisitos y actividades reutilizables. Quedan abiertas las preguntas del final.
 
 ## Qué
 
@@ -18,6 +18,21 @@ Esto cumple los 3 objetivos del proyecto: aprender de verdad (se pide evidencia)
 - Fuente a un botón de distancia, con vista dividida opcional.
 - Material del semestre actual manda; lo histórico va después.
 - Primera clase de prueba: Orgánica II → PEP 1 → Aminas → Basicidad.
+- **Aula inmersiva con mascota** (4 oct): toda la clase ocurre sobre un fondo inmersivo, como el refugio. Nada de páginas planas.
+- **Varios caminos para la misma clase** (4 oct): quien quiere una clase larga e interactiva debe recibir desafíos crecientes; quien prefiere sesiones cortas usa misiones.
+- **El sistema de errores es central** (4 oct): explicar por qué te equivocaste, qué prerrequisito te falta y qué hacer ahora.
+
+## Caminos (misma clase, distinto ritmo)
+
+El contenido es el mismo; cambia el orden, el ritmo y la exigencia. Se elige al entrar al aula y se puede cambiar.
+
+| Camino | Para quién | Cómo se siente |
+|---|---|---|
+| **Misiones** | Tienes 10–15 min. | Una misión = una idea con sus 7 etapas en miniatura. Se guardan y se retoman. |
+| **Expedición** | Quieres una clase larga e interactiva. | Recorre todas las misiones seguidas. La dificultad sube sola si aciertas sin ayuda (desafíos extra) y cierra con un **desafío final estilo PEP**. |
+| **Prueba encima** | La evaluación es pronto. | Diagnóstico → directo a los problemas tipo PEP. Si fallas, el rescate te devuelve solo a la misión que necesitas. |
+
+Los tres caminos escriben la misma evidencia en el motor; ninguno da dominio por "terminar".
 
 ## Las 7 etapas de una clase
 
@@ -46,6 +61,17 @@ Regla central: **terminar la clase no equivale a dominarla**. El estado sale sol
 
 ## Tipos de actividad (componentes reutilizables)
 
+Cada tipo sale de lo que **de verdad pregunta la PEP 1 2025** (pauta en `dist/assets/exams/13_org2_pep1_2025_aminas_aromaticos.jpg` y `07_…`):
+
+| Actividad | Qué es, en simple | Pregunta real de la PEP 1 2025 |
+|---|---|---|
+| **Ordenar** | Arrastras tarjetas para dejarlas en orden (de menor a mayor). | P3: "Ordene de menor a mayor la basicidad de los siguientes compuestos" (1,0 pt). |
+| **Clasificar** | Arrastras cada molécula a su caja. | P5: "Clasifique como aromáticos, antiaromáticos o no aromáticos (regla de Hückel)" (3,0 pts). |
+| **Dibujar producto** | Dibujas la estructura que se forma. | P1 y P6: "Prediga el/los productos mayoritarios" (Hofmann, Gabriel, SEA). |
+| **Ruta de síntesis** (nueva) | Encadenas reactivos paso a paso, de la molécula de partida al producto. | P2 y P4: "Diseñe una síntesis a partir de benceno" (4,0 pts) y "Proponga aminas y reactivos" (3,0 pts). |
+| **Elegir** | Alternativas; cada distractor apunta a un error típico. | Útil para diagnóstico y repaso rápido. |
+
+
 Reutilizan los `responseTypes` que ya existen en `dist/academic/model.js`, así no se duplica el motor.
 
 | Actividad | Cómo se corrige | Estado hoy |
@@ -54,9 +80,52 @@ Reutilizan los `responseTypes` que ya existen en `dist/academic/model.js`, así 
 | Ordenar | Automática por orden esperado. | Tipo declarado; falta componente. |
 | Conectar (pares) | Automática. | Tipo declarado; falta componente. |
 | Clasificar en cajas | Automática. | Falta tipo y componente. |
+| Ruta de síntesis | Por pasos: cada reactivo se compara con los aceptados para esa transformación. | Nueva; falta tipo y componente. |
 | Numérica | Automática con tolerancia. | Existe el validador. |
 | Dibujar estructura | Por dimensiones (conectividad, carga, enlace, regio). | Existe `classifiers.js`; falta integrar el editor. |
 | Justificar con texto | Autorúbrica; nunca "corrección" falsa. | Existe en `structured.js`. |
+
+## Dibujar estructuras de forma sencilla
+
+Pedido de Niquito: dibujar moléculas fácil y entendible. Tres niveles, de más guiado a más libre:
+
+1. **Completar sobre un esqueleto**: aparece el anillo o la cadena y tocas una posición para ponerle un grupo (–NH₂, –NO₂, –CH₃, carga +, par libre). Cubre la mayoría de las preguntas de la PEP y se corrige exacto.
+2. **Lápiz de esqueleto**: arrastras para dibujar en zigzag (línea-ángulo), tocas un vértice para cambiarlo a N u O, tocas un enlace para hacerlo doble.
+3. **Editor completo** (Ketcher, ya está en `dist/vendor/ketcher`): solo para productos libres o síntesis largas.
+
+La corrección compara dimensiones (conectividad, carga, enlace, posición) con `classifiers.js`, no la imagen.
+
+## Aula inmersiva
+
+- Fondo pintado de aula (como el refugio), con la mascota presente. La mascota reacciona: celebra un acierto sin ayuda, se preocupa ante un error y "te acompaña" al rescate.
+- La interfaz flota sobre el fondo (pergaminos, pizarras), no en tarjetas planas.
+- Reglas del Inicio también aplican: respetar `prefers-reduced-motion`, `data-nexo-quality="low"` y contraste ≥ 4,5:1.
+
+## Material encontrado (Drive "Material Nexo (2026)")
+
+| Fuente | Dónde | Qué aporta |
+|---|---|---|
+| Diapositivas de cátedra "Aminas" (Dr. Javier Echeverría, 50 diap.) | `2S QYF 2026 › ORGANICA 2 › TEORIA › PPTS CLASES` | Temario oficial; fuente principal (autoridad `course_official`). |
+| Las mismas diapositivas con apuntes a mano | `PPTs con apuntes › PEP 1(1).pdf` | Pistas del profesor: "en la prueba me hacen determinar cuál N es más básico", "analizar los orbitales y la reactividad en cada ejercicio". |
+| Apunte propio de Obsidian | `QyF Obsidian › 1.1 Compuestos nitrogenados - Aminas.md` | Resumen ordenado. **Ojo:** dice "piridina pKa ≈ 8,75"; ese valor es su **pKb**. El pKa del ion piridinio es ≈ 5,2 (consistente con la diapositiva: piridina ≈ 10⁵ veces más básica que el pirrol, pKa ≈ 0,4). |
+| PEP 1 2025 con pauta | `dist/assets/exams/13_…jpg`, `07_…jpg` | Qué se evalúa y con qué puntaje. |
+| Grabaciones de clase | `TEORIA › GRABACIONES` (2 archivos `.m4a`) | Solo audio, sin transcripción. Pendiente transcribir. |
+
+### Misiones propuestas para Aminas (siguen el orden de las diapositivas)
+
+| # | Misión | Diapositivas | Peso en la PEP 1 2025 |
+|---|---|---|---|
+| 1 | El par libre: base y nucleófilo, clasificación 1°/2°/3°, geometría | 2–5, 11 | Base de todo |
+| 2 | Nombrar aminas | 6–10 | Ejercicios 1–3 de la clase |
+| 3 | Propiedades y sales (solubilidad, ebullición, fármacos) | 12–16 | Bajo |
+| 4 | Basicidad I: pKa del ácido conjugado, equilibrio, Ka·Kb = Kw | 17–20 | Alto |
+| 5 | Basicidad II: resonancia, sustituyentes, heterociclos, hibridación | 21–28 | **P3 (ordenar)** |
+| 6 | Síntesis de aminas: alquilación, azida, Gabriel, aminación reductiva, reducción de nitro | 29–33 | **P4, P6** |
+| 7 | Reacciones: acilación, Hofmann, diazonio (Sandmeyer, Schiemann) | 34–40 | **P4, P6** |
+| 8 | Espectroscopía: IR, RMN, regla del nitrógeno | 44–47 | Bajo |
+| ★ | Desafío final estilo PEP | — | Todo |
+
+La PEP 1 también evalúa **aromáticos** (SEA, Hückel): esa sería la segunda clase, y sirve como prueba de que la estructura se reutiliza.
 
 ## Cómo se ve una clase por dentro (datos)
 
@@ -113,9 +182,16 @@ Cada actividad lleva: tipo, enunciado, respuesta esperada, distractores con su `
 - Respeta `prefers-reduced-motion`.
 - Pruebas rápidas en verde.
 
-## Pendiente por decidir (con mi recomendación)
+## Decidido
 
-1. **Duración**: ¿una clase larga (~85 min como antes) o varias *misiones* de 10–15 min que suman una clase? Recomiendo **misiones**: bajan la fricción y se adaptan al tiempo que tengas.
-2. **Aspecto**: ¿pantalla de aula inmersiva (sin menú, con la mascota) o dentro del layout normal? Recomiendo **aula inmersiva**, para que se sienta distinto a una lista de ejercicios.
-3. **Material de Aminas**: sin tus diapositivas o la pauta de la PEP 1 no se puede hacer el paso 6 con el contenido del semestre.
-4. **Resto del contenido viejo**: la lámina "Anilina y bencilamina" del índice y código sin uso (`richLesson`, `questionsFor`). Recomiendo borrarlos al llegar al paso 1.
+- Duración → **los dos**: caminos Misiones, Expedición y Prueba encima.
+- Aspecto → **aula inmersiva con mascota**, todo sobre fondo inmersivo.
+- Material → Drive "Material Nexo (2026)" (ver arriba).
+
+## Pendiente por decidir
+
+1. Nivel de dibujo para empezar (1, 2 o 3).
+2. Fondo del aula: reutilizar `dist/assets/rooms/learn.webp` o pintar un aula nueva por script.
+3. Qué hace la mascota en el aula (solo reacciona, o también da pistas cuando las pides).
+4. Transcribir las grabaciones de clase para citar "minuto de clase" como fuente.
+5. Restos de la clase vieja (lámina "Anilina y bencilamina", `richLesson`, `questionsFor`): se borran en el paso 1.
