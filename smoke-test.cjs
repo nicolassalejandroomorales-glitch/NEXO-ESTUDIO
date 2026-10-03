@@ -26,7 +26,7 @@ for (const id of ids) {
 
 if (guides.length !== 12 || exams.length !== 17 || backgrounds.length !== 8) throw new Error('Bibliotecas base incompletas');
 if (exercises.length !== 36) throw new Error('Los ejercicios reales base cambiaron inesperadamente');
-if (app.includes('generatedExercises') || !app.includes('${filtered.length} ejercicios disponibles')) throw new Error('Los ejercicios generados desde las clases deben estar eliminados');
+if (app.includes('generatedExercises') || !app.includes('const EXERCISES = [];')) throw new Error('La biblioteca de ejercicios debe estar vacía (se rehace junto con las clases)');
 if (!app.includes('Disponible próximamente') || app.includes('completeComprehension') || app.includes('gradeMastery')) throw new Error('Las clases deben mostrar "Disponible próximamente" y no conservar el reproductor antiguo');
 const economy = fs.readFileSync(path.join(dist, 'study/economy.js'), 'utf8');
 if (!index.includes('./startup-bundle.js?v=') || !startupBundle.includes('/* study/economy.js */') || !app.includes('window.NexoEconomy') || !economy.includes('minutes >= 120 ? 250') || !economy.includes('minutes >= 60 ? 100') || !economy.includes('minutes >= 30 ? 25') || !economy.includes('minutes >= 15 ? 15') || !economy.includes('minutes >= 5 ? 3')) throw new Error('Faltan tramos oficiales de átomos del reloj');

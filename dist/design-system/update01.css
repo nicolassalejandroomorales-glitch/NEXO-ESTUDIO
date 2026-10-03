@@ -667,3 +667,33 @@ body.reduce-motion #app>.page { animation:none!important; }
   filter:drop-shadow(0 0 4px rgb(255 214 130 / .95)) drop-shadow(0 0 14px rgb(255 190 90 / .7)); }
 .gi-sigil svg { width:100%;height:100%;display:block; }
 .grimoire-intro .gi-rays { z-index:1; }
+
+/* ── Contraste (4 oct): superficies claras heredadas del tema antiguo pasan a oscuras ──
+   Causa: styles.css conservaba fondos celestes/blancos (#e8eeee, #eef1f2, #e5e9eb…) con texto claro encima.
+   Regla: toda superficie lleva texto con contraste ≥ 4.5:1 (probado con tools/contrast-audit.cjs). */
+.library-summary { background:#223137; border:1px solid #4b6269; color:#f1efe7; }
+.library-summary b { color:#fff3db; }
+.library-summary span { color:#d9ddd6; }
+.guide-card small, .exam-card small, .exercise-card small { background:#2b3d44; color:#f1efe7; }
+.node-index { background:#2b3d44; border:1px solid #5a747c; color:#f1efe7; }
+.lesson-node.dominado .node-index { background:#2f6b4a; border-color:#7fc79d; color:#fff; }
+.subject-dot { background:#1f2c31; border:2px solid var(--course); color:#f1efe7; }
+.academic-concept-detail a { color:#f0c777; text-decoration:underline; text-underline-offset:3px; }
+.danger, .text-btn.danger, .icon-btn.danger { color:#ffa598 !important; }
+.primary-btn:disabled { background:#3b5f4d; color:#f1efe7; opacity:1; cursor:not-allowed; }
+.secondary-btn { color:#f6f5ee; }
+
+/* Estado vacío (Practicar → Ejercicios) */
+.empty-state { text-align:left; display:flex; flex-direction:column; align-items:flex-start; gap:14px; max-width:640px; margin-block:12px;
+  padding:clamp(22px,4vw,36px); border:1px solid #4b6269; border-radius:12px;
+  background:linear-gradient(160deg,#1b2a2f,#141d21); color:#f1efe7; box-shadow:0 12px 32px rgb(0 0 0 / .28); }
+.empty-state h2 { margin:0; font-size:clamp(1.5rem,4vw,2rem); color:#fff3db; }
+.empty-state p { margin:0; color:#d9ddd6; line-height:1.6; max-width:52ch; }
+.empty-state .eyebrow { color:#e8c06a; }
+.empty-state-mark { display:grid; place-items:center; width:52px; height:52px; border-radius:50%;
+  border:1px solid #e8c06a; color:#e8c06a; font-size:1.4rem; background:rgb(232 192 106 / .08); }
+
+/* Grimorio: tintas más oscuras sobre el papel beige (contraste ≥ 4.5:1) */
+.course-plate figcaption b { color:#46562f; }
+.course-opening-number { color:#74482a; }
+.grimoire-frontispiece>.eyebrow { color:#6a4a31; }

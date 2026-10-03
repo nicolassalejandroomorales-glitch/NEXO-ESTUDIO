@@ -1098,9 +1098,8 @@
     { id: 'lab-fis-2', subject: 'fisio', title: 'Registro de señales y discusión', status: 'provisional', objective: 'Separar dato observado, mecanismo inferido y conclusión.', calculation: 'Promedio, cambio relativo y rango de referencia sólo si la guía lo entrega.', safety: 'Privacidad de datos y límites de interpretación.', evidence: ['Tabla original', 'Gráfico legible', 'Mecanismo esperado', 'Alternativas y limitaciones'] }
   ];
 
-  const EXERCISES = [
-    ...DATA.exercises.map((item, index) => ({ ...item, format: 'choice', lessonId: allLessons(item.subject)[index % allLessons(item.subject).length] }))
-  ];
+  // Los ejercicios se están rehaciendo junto con las clases: la biblioteca queda vacía a propósito.
+  const EXERCISES = [];
 
   function renderPractice(tab = 'exercises', detailId = '') {
     const tabs = [
@@ -1117,18 +1116,8 @@
     return `<div class="filter-bar"><label><span>Ramo</span><select data-ui-filter="practiceSubject"><option value="all">Todos</option>${SUBJECTS.map(s => `<option value="${s.id}" ${ui.practiceSubject === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></label>${level ? `<label><span>Nivel</span><select data-ui-filter="practiceLevel"><option value="all">Todos</option>${[['basic', 'Básico'], ['intermediate', 'Intermedio'], ['pep', 'Nivel PEP']].map(([id, name]) => `<option value="${id}" ${ui.practiceLevel === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label>` : ''}</div>`;
   }
 
-  function renderExercises(detailId) {
-    if (detailId) {
-      const exercise = EXERCISES.find(item => item.id === detailId);
-      if (exercise) return exerciseRunner(exercise);
-    }
-    const filtered = EXERCISES.filter(item => (ui.practiceSubject === 'all' || item.subject === ui.practiceSubject) && (ui.practiceLevel === 'all' || item.level === ui.practiceLevel));
-    const groups = SUBJECTS.filter(s => ui.practiceSubject === 'all' || s.id === ui.practiceSubject);
-    return `<section>${practiceFilters()}<div class="library-summary"><b>${filtered.length} ejercicios disponibles</b><span>Elección, cálculo guiado y respuesta abierta por cada clase. Las pistas están ocultas y se registra si las usaste.</span></div>${groups.map(subject => {
-      const items = filtered.filter(item => item.subject === subject.id);
-      if (!items.length) return '';
-      return `<section class="library-group"><header><span style="--course:${subject.color}">${subject.icon}</span><div><h2>${subject.name}</h2><p>${items.length} ejercicios filtrados</p></div></header><div class="exercise-grid">${items.map(exerciseCard).join('')}</div></section>`;
-    }).join('')}</section>`;
+  function renderExercises() {
+    return `<section class="empty-state" aria-labelledby="exercisesSoon"><span class="empty-state-mark" aria-hidden="true">✧</span><p class="eyebrow">EJERCICIOS</p><h2 id="exercisesSoon">Disponible próximamente</h2><p>Estamos escribiendo ejercicios nuevos junto con cada clase, para que midan si aprendiste de verdad. Mientras tanto puedes revisar tus guías, errores y pruebas antiguas.</p><div class="button-row"><button class="primary-btn" data-practice-tab="guides">Ver guías</button><button class="secondary-btn" data-practice-tab="exams">Pruebas antiguas</button></div></section>`;
   }
 
   function exerciseCard(item) {
