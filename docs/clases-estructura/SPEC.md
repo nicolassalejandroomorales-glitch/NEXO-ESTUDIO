@@ -198,6 +198,16 @@ Cada actividad lleva: tipo, enunciado, respuesta esperada, distractores con su `
 - **Paso 1 hecho (4 oct)**: reproductor del aula (`dist/classes/player.js`, `classroom.css`), catálogo (`classes/catalog.js`, va en el arranque) y borrador de la Misión 1 de Aminas (`classes/org-01.js`). Caminos, 7 etapas, rescate con repaso, pistas de la mascota y panel de fuente funcionando. Fondo provisional: la sala de Aprender. Prueba: `tools/classroom-test.cjs`.
 - Se borraron los restos de la clase vieja (lámina del índice y funciones sin uso).
 
+## Rediseño del aula (4 oct, tras revisión de Niquito)
+
+Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, la barra con todos los pasos arriba molesta y quiere que **la app lo guíe sola**. Decisiones:
+
+- **Escena: torre del alquimista** donde aprendes de un **sabio**. Pintura base generada con la IA de imágenes de Canva (permiso dado; diseño propio), y encima, por código, animaciones de velas y frascos, la mascota en la mesa y los diálogos del sabio. Se eligen entre 3 opciones.
+- **Sin barra de pasos.** Se muestra una sola cosa a la vez; el sabio habla en burbujas y avanza la clase. Solo queda un hilo discreto de progreso.
+- **Las fases como escenas:** 1) el reto del sabio (diagnóstico), 2) la lección con la **diapositiva proyectada** en la pizarra o espejo, 3) el experimento en la mesa (ejemplo resuelto con predicción), 4) las pruebas del aprendiz (práctica: frascos que se enturbian si fallas), 5) el rescate (vuelve a la diapositiva que falta), 6) el encargo final (transferencia estilo PEP), 7) cierre con el sabio y la mascota.
+- **Diapositivas reales visibles:** el PDF de cátedra convertido en imágenes, proyectado en la escena y ampliable. Requiere permitir en la red del entorno `drive.usercontent.google.com` (y `drive.google.com`) y compartir el PDF con enlace.
+- Bajar la pintura de Canva en alta resolución requiere permitir `export-download.canva.com` en la red del entorno.
+
 ## Pendiente
 
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
