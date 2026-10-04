@@ -13,7 +13,7 @@ const { execFileSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'rive', 'mascotas');
 const SPECIES = ['raptor', 'capibara', 'zorro'];
-const HEADROOM = 40;
+const HEADROOM = 80;
 
 // ——— Ids: un solo espacio de nombres por documento ———
 let nextId = 10;
@@ -116,14 +116,55 @@ function slotRml(slot, pivot, registry) {
   if (slot.prop) {
     const p = slot.prop;
     p.rid = newId();
-    p.options.forEach(o => { o.rid = newId(); });
+    p.options.forEach(o => { o.rid = newId(); (o.shapes || []).forEach(sh => { if (o.shapes.some(x => x.clip === sh.name)) sh.rid = newId(); }); });
     registry[p.name] = p;
     const opts = p.options.map(o => `<Node name="${o.name}" id="${o.rid}">${(o.shapes || []).map(sh => shapeRml(sh, slot.at, o.shapes)).reverse().join('')}</Node>`).join('');
     inner = `<Solo activeComponentId="${p.options[0].rid}" name="${p.name}" id="${p.rid}">${opts}</Solo>`;
   }
   return `<Node x="${x}" y="${y}" name="${slot.name}" id="${slot.rid}">${inner}</Node>`;
 }
+// ——— Extremidad de fideo (rubber hose) ———
+// Una curva con dos vértices: hombro/cadera (fijo, = pivote de la parte) y mano/tobillo (se anima).
+// Trazo de tinta grueso + trazo de color encima. En la punta, un Node (guante o zapato) que sigue la curva.
+// Pose = { to: [x, y] (coordenadas del dibujo), bend: curvatura (fracción del largo; + dobla hacia un lado, − hacia el otro), tilt }.
+function noodleGeometry(part, pose) {
+  const [sx, sy] = part.pivot, ex = pose.to[0] - sx, ey = pose.to[1] - sy;
+  const L = Math.hypot(ex, ey) || 1, nx = -ey / L, ny = ex / L, b = (pose.bend || 0) * L;
+  const c1 = [ex / 3 + nx * b, ey / 3 + ny * b], c2 = [ex * 2 / 3 + nx * b, ey * 2 / 3 + ny * b];
+  const ang = (x, y) => Math.atan2(y, x);
+  return {
+    ex, ey,
+    outRotation: ang(c1[0], c1[1]), outDistance: Math.hypot(c1[0], c1[1]),
+    inRotation: ang(c2[0] - ex, c2[1] - ey), inDistance: Math.hypot(c2[0] - ex, c2[1] - ey),
+    // El guante apunta en la dirección en que llega la curva; el zapato queda plano (+ tilt).
+    endRotation: part.noodle.end?.rotate === false ? (pose.tilt || 0) : ang(ex - c2[0], ey - c2[1]) + (pose.tilt || 0)
+  };
+}
+function noodleRml(part, parentPivot, registry) {
+  const n = part.noodle, g = noodleGeometry(part, n);
+  part.rid = newId(); part.v1 = newId(); part.v2 = newId();
+  part.rest = { x: part.pivot[0] - parentPivot[0], y: part.pivot[1] - parentPivot[1] };
+  registry[part.name] = part;
+  const r = v => Math.round(v * 1000) / 1000;
+  let end = '';
+  if (n.end) {
+    const e = n.end;
+    e.rid = newId();
+    registry[e.name] = e;
+    const shapes = (e.shapes || []).map(sh => shapeRml(sh, [0, 0], e.shapes));
+    const slots = (e.slots || []).map(sl => slotRml(sl, [0, 0], registry));
+    const sc = e.scale ? ` scaleX="${e.scale}" scaleY="${e.scale}"` : '';
+    end = `<Node x="${r(g.ex)}" y="${r(g.ey)}" rotation="${r(g.endRotation)}"${sc} name="${e.name}" id="${e.rid}">${[...shapes, ...slots].reverse().join('')}</Node>`;
+  }
+  const path = `<PointsPath isClosed="false" name="Path"><CubicDetachedVertex x="0" y="0" inRotation="0" inDistance="0" outRotation="${r(g.outRotation)}" outDistance="${r(g.outDistance)}" id="${part.v1}"/>` +
+    `<CubicDetachedVertex x="${r(g.ex)}" y="${r(g.ey)}" inRotation="${r(g.inRotation)}" inDistance="${r(g.inDistance)}" outRotation="0" outDistance="0" id="${part.v2}"/></PointsPath>`;
+  const strokes = `<Stroke thickness="${n.width + n.inkWidth * 2}" cap="round" join="round" name="Tinta"><SolidColor colorValue="${argb(n.ink)}" name="C"/></Stroke>` +
+    `<Stroke thickness="${n.width}" cap="round" join="round" name="Color"><SolidColor colorValue="${argb(n.color)}" name="C"/></Stroke>`;
+  return `<Node x="${part.rest.x}" y="${part.rest.y}" name="${part.name}" id="${part.rid}">${end}<Shape name="${part.name}Trazo">${path}${strokes}</Shape></Node>`;
+}
+
 function partRml(part, parentPivot, registry) {
+  if (part.noodle) return noodleRml(part, parentPivot, registry);
   part.rid = newId();
   part.rest = { x: part.pivot[0] - parentPivot[0], y: part.pivot[1] - parentPivot[1] };
   registry[part.name] = part;
@@ -135,7 +176,8 @@ function partRml(part, parentPivot, registry) {
     ...kids.filter(k => !k.behind).map(c => partRml(c, part.pivot, registry)),
     ...(part.slots || []).map(sl => slotRml(sl, part.pivot, registry))
   ];
-  return `<Node x="${part.rest.x}" y="${part.rest.y}" name="${part.name}" id="${part.rid}">${inner.reverse().join('')}</Node>`;
+  const sc = part.scale ? ` scaleX="${part.scale}" scaleY="${part.scale}"` : '';
+  return `<Node x="${part.rest.x}" y="${part.rest.y}"${sc} name="${part.name}" id="${part.rid}">${inner.reverse().join('')}</Node>`;
 }
 
 // ——— Animaciones ———
@@ -143,11 +185,32 @@ function partRml(part, parentPivot, registry) {
 // x e y son DESPLAZAMIENTOS desde la posición de reposo (más fácil de leer y reutilizar).
 const KEYS = { x: 13, y: 14, rotation: 15, scaleX: 16, scaleY: 17, opacity: 18, active: 296 };
 const EASE = { inOut: [0.42, 0, 0.58, 1], out: [0, 0, 0.58, 1], in: [0.42, 0, 1, 1], soft: [0.37, 0, 0.63, 1] };
+// pose (solo extremidades de fideo): [[frame, { to, bend, tilt }, ease?], ...] → anima los vértices de la curva y el guante/zapato.
+const VKEYS = { x: 24, y: 25, inRotation: 84, inDistance: 85, outRotation: 86, outDistance: 87 };
+function keyframe(frame, v, ease) {
+  const [x1, y1, x2, y2] = EASE[ease];
+  return `<KeyFrameDouble value="${Math.round(v * 10000) / 10000}" frame="${frame}" interpolationType="cubic"><CubicEaseInterpolator x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/></KeyFrameDouble>`;
+}
+function poseRml(part, frames) {
+  const geo = frames.map(([frame, pose, ease = 'soft']) => ({ frame, ease, g: noodleGeometry(part, { bend: part.noodle.bend, ...pose }) }));
+  const track = (key, pick) => `<KeyedProperty propertyKey="${key}">${geo.map(({ frame, ease, g }) => keyframe(frame, pick(g), ease)).join('')}</KeyedProperty>`;
+  // El ángulo del guante no debe dar la vuelta larga entre -π y π.
+  let prev = null;
+  geo.forEach(({ g }) => { if (prev !== null) { while (g.endRotation - prev > Math.PI) g.endRotation -= 2 * Math.PI; while (g.endRotation - prev < -Math.PI) g.endRotation += 2 * Math.PI; } prev = g.endRotation; });
+  return `<KeyedObject objectId="${part.v1}">${track(VKEYS.outRotation, g => g.outRotation)}${track(VKEYS.outDistance, g => g.outDistance)}</KeyedObject>` +
+    `<KeyedObject objectId="${part.v2}">${track(VKEYS.x, g => g.ex)}${track(VKEYS.y, g => g.ey)}${track(VKEYS.inRotation, g => g.inRotation)}${track(VKEYS.inDistance, g => g.inDistance)}</KeyedObject>` +
+    (part.noodle.end ? `<KeyedObject objectId="${part.noodle.end.rid}">${track(13, g => g.ex)}${track(14, g => g.ey)}${track(15, g => g.endRotation)}</KeyedObject>` : '');
+}
 function animationRml(anim, registry) {
   anim.rid = newId();
   const objects = Object.entries(anim.tracks).map(([name, props]) => {
     const obj = registry[name];
     if (!obj) throw new Error(`Animación ${anim.name}: no existe ${name}`);
+    const { pose, ...rest } = props;
+    if (pose && !obj.noodle) throw new Error(`Animación ${anim.name}: ${name} no es una extremidad de fideo`);
+    const poseXml = pose ? poseRml(obj, pose) : '';
+    if (!Object.keys(rest).length) return poseXml;
+    props = rest;
     const keyed = Object.entries(props).map(([prop, frames]) => {
       if (!(prop in KEYS)) throw new Error(`Animación ${anim.name}: propiedad desconocida ${prop}`);
       const body = frames.map(([frame, value, ease = 'soft']) => {
@@ -162,7 +225,7 @@ function animationRml(anim, registry) {
       }).join('');
       return `<KeyedProperty propertyKey="${KEYS[prop]}">${body}</KeyedProperty>`;
     }).join('');
-    return `<KeyedObject objectId="${obj.rid}">${keyed}</KeyedObject>`;
+    return poseXml + `<KeyedObject objectId="${obj.rid}">${keyed}</KeyedObject>`;
   }).join('');
   return `<LinearAnimation loopValue="${anim.loop === false ? 'oneShot' : 'loop'}" duration="${anim.frames}" fps="60" name="${anim.name}" id="${anim.rid}">${objects}</LinearAnimation>`;
 }
@@ -170,7 +233,7 @@ function animationRml(anim, registry) {
 // ——— Máquina de estados "Mascota" (igual para todas las especies) ———
 // Capa "Cuerpo": la app fija el número accion (ACTIONS) y la mascota pasa a esa animación con una mezcla suave.
 // Capa "Ojos": parpadeo independiente, así parpadea haga lo que haga.
-const ACTIONS = [['Idle', 0], ['Caminar', 1], ['Alcanzar', 2]];
+const ACTIONS = [['Idle', 0], ['Caminar', 1], ['Alcanzar', 2], ['Celebrar', 3]];
 function stateMachineRml(spec, anims) {
   const smId = newId(), inputId = newId();
   const byName = Object.fromEntries(anims.map(a => [a.name, a]));
@@ -196,11 +259,11 @@ function buildSpecies(id, index) {
   // (si no, al pasar de Caminar a Alcanzar las canillas quedarían dobladas). Los objetos (Solo) no se tocan.
   const bodyAnims = spec.animations.filter(a => ACTIONS.some(([n]) => n === a.name));
   const REST = { rotation: 0, x: 0, y: 0, scaleX: 1, scaleY: 1, opacity: 1 };
-  const used = new Set(bodyAnims.flatMap(a => Object.entries(a.tracks).flatMap(([n, p]) => Object.keys(p).filter(k => k in REST).map(k => `${n}|${k}`))));
+  const used = new Set(bodyAnims.flatMap(a => Object.entries(a.tracks).flatMap(([n, p]) => Object.keys(p).filter(k => k in REST || k === 'pose').map(k => `${n}|${k}`))));
   bodyAnims.forEach(a => used.forEach(key => {
     const [n, k] = key.split('|');
     a.tracks[n] = a.tracks[n] || {};
-    if (!a.tracks[n][k]) a.tracks[n][k] = [[0, REST[k]]];
+    if (!a.tracks[n][k]) a.tracks[n][k] = k === 'pose' ? [[0, { to: registry[n].noodle.to, bend: registry[n].noodle.bend }]] : [[0, REST[k]]];
   }));
   const anims = spec.animations.map(a => animationRml(a, registry)).join('');
   const sm = stateMachineRml(spec, spec.animations);
