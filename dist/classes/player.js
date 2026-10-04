@@ -196,6 +196,7 @@
     if (item.type === 'match') return item.pairs.every((_, i) => Number(value?.[i]) === i);
     if (item.type === 'pick') return value === item.answer;
     // Escrita: autocorrección honesta; cuenta solo si escribiste algo y marcaste todas las ideas de la pauta.
+    if (item.type === 'build' || item.type === 'arrows') return Boolean(window.NexoMolEditor?.isCorrect(item, value));
     if (item.type === 'write') return String(value?.text || '').trim().length >= MIN_WRITE && item.rubric.every((_, i) => value?.checks?.[i] === true);
     return Boolean(item.options[value]?.correct);
   }
@@ -210,6 +211,8 @@
     if (item.type === 'pick') return item.targets[rec.value]?.label;
     if (item.type === 'order') return rec.value.map(id => item.cards.find(c => c.id === id)?.text).join(' < ');
     if (item.type === 'write') return 'tu respuesta escrita';
+    if (item.type === 'build') return 'tu dibujo';
+    if (item.type === 'arrows') return 'tus flechas';
     return 'tu propuesta';
   }
 
@@ -257,6 +260,10 @@
         ${done && !rec.correct && retry ? `<p class="cr-solution">${item.pairs.map(p => `${md(p.left)} → ${md(p.right)}`).join(' · ')}</p>` : ''}
         ${check(Object.keys(pairs).length === item.pairs.length)}</div>`;
     }
+    if (item.type === 'build' || item.type === 'arrows') {
+      const E = window.NexoMolEditor;
+      return E ? E[item.type === 'build' ? 'buildMarkup' : 'arrowsMarkup'](item, w, { rec, retry, done, actBtn }) : '<p class="cr-act-help">Cargando el editor…</p>';
+    }
     if (item.type === 'write') {
       const text = done ? rec.value.text : (w.text || '');
       if (!done && !w.revealed) return `<div class="cr-write"><p class="cr-act-help">Escríbelo con tus palabras. Después verás la respuesta modelo y marcarás qué ideas tenías.</p>
@@ -291,6 +298,8 @@
         const mc = cls.misconceptions[t.misconception]; const reason = id === item.answer ? item.explain : (mc ? mc.why : t.note);
         return reason ? `<li class="${id === item.answer ? 'is-ok' : ''}"><b>${esc(t.label)}</b>${id === item.answer ? ' (correcta)' : ''}: ${md(reason)}</li>` : ''; }).join('')}</ul>`;
       else if (item.type === 'write') extra = '';
+      else if (item.type === 'build') extra = window.NexoMolEditor?.solution(item) || '';
+      else if (item.type === 'arrows') extra = '';
       else if (item.type === 'order') extra = `<p>Orden correcto: ${item.answer.map(id => md(item.cards.find(c => c.id === id).text)).join(' &lt; ')}</p>`;
       return `<details class="cr-why" open><summary>La explicación completa</summary><p>${md(item.explain)}</p>${extra}</details>`;
     }
@@ -425,7 +434,7 @@
         sage.text = `${hint ? 'Bien, con una pista.' : record.kind === 'fragil' ? 'Bien, aunque dudabas.' : '¡Exacto, sin ayuda!'} ${item.explain}`; sage.mood = 'proud'; sage.actions = cont();
       } else {
         const mc = mcOf(cls, item, record);
-        sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
+        sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${window.NexoMolEditor?.feedback(item, record) || item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
         sage.mood = 'concerned'; sage.actions = cont();
       }
       center = `<article class="cr-card ${record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
@@ -593,6 +602,9 @@
       api.app.querySelector(`[data-cr-conf="${range.dataset.crConf}"]`)?.focus({ preventScroll: true });
     };
     root.addEventListener('change', commit);
+    // Editor de moléculas y flechas: maneja sus propios toques y guarda en el trabajo de la actividad.
+    window.NexoMolEditor?.mount(root, { work: (itemId, retry) => workOf(s, allItems(cls).find(x => x.item.id === itemId).item, retry),
+      item: itemId => allItems(cls).find(x => x.item.id === itemId)?.item, commit: () => rerender(id, api) });
     root.addEventListener('pointerup', commit);
     root.addEventListener('input', event => {
       const range = event.target.closest('[data-cr-conf]');
@@ -721,7 +733,9 @@
     else if (action === 'act-target' || action === 'act-check') {
       const value = action === 'act-target' ? button.dataset.target
         : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign }
-        : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])] } : { ...w.pairs };
+        : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])] }
+        : item.type === 'build' ? { graph: JSON.parse(JSON.stringify(w.graph || item.start || { atoms: [], bonds: [] })) }
+        : item.type === 'arrows' ? [...(w.arrows || [])] : { ...w.pairs };
       const correct = isCorrect(item, value);
       const record = { value, correct, at: new Date().toISOString() };
       if (retry) s.retries[item.id] = record;

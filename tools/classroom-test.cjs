@@ -2,7 +2,7 @@
 const fs = require('node:fs'), path = require('node:path'), vm = require('node:vm'), assert = require('node:assert');
 const dir = path.join(__dirname, '..', 'dist', 'classes');
 const context = { window: {} }; vm.createContext(context);
-for (const file of ['catalog.js', 'player.js']) vm.runInContext(fs.readFileSync(path.join(dir, file), 'utf8'), context, { filename: file });
+for (const file of ['catalog.js', 'molecule.js', 'editor.js', 'player.js']) vm.runInContext(fs.readFileSync(path.join(dir, file), 'utf8'), context, { filename: file });
 const catalog = context.window.NexoClassCatalog;
 let items = 0;
 for (const [id, file] of Object.entries(catalog)) {
@@ -20,12 +20,20 @@ for (const [id, file] of Object.entries(catalog)) {
       if (type === 'order') { assert.equal(item.answer.length, item.cards.length, `${item.id}: el orden debe usar todas las tarjetas`); for (const cid of item.answer) assert.ok(item.cards.some(c => c.id === cid), `${item.id}: tarjeta ${cid} no existe`); }
       if (type === 'classify') for (const c of item.cards) assert.ok(item.buckets.some(bk => bk.id === c.bucket), `${item.id}: ${c.id} sin caldero válido`);
       if (type === 'match') assert.ok(item.pairs.length >= 2 && item.pairs.every(p => p.left && p.right), `${item.id}: pares incompletos`);
+      if (type === 'build') { const M = context.window.NexoMolecule; assert.ok(item.target?.atoms?.length && item.start && M.problems(item.target).length === 0, `${item.id}: el dibujo necesita base (start) y una respuesta válida`); assert.ok(!M.same(item.start, item.target), `${item.id}: la base ya es la respuesta`); }
+      if (type === 'arrows') { assert.ok(item.scene?.atoms?.length && item.answer?.length, `${item.id}: flechas sin escena o sin respuesta`);
+        for (const [from, to] of item.answer) { assert.ok(/^(lp|b):/.test(from), `${item.id}: una flecha debe salir de un par libre o un enlace`);
+          if (from.startsWith('lp:')) assert.ok(item.lonePairs?.[from.slice(3)], `${item.id}: ${from} no tiene par libre dibujado`);
+          if (from.startsWith('b:')) assert.ok(item.scene.bonds[Number(from.slice(2))], `${item.id}: el enlace ${from} no existe`);
+          assert.ok(to.startsWith('a:') ? item.scene.atoms.some(a => a.id === to.slice(2)) : item.scene.bonds[Number(to.slice(2))], `${item.id}: el destino ${to} no existe`); } }
       if (type === 'write') assert.ok(item.model && item.model.length >= 40 && item.rubric?.length >= 2 && item.rubric.every(Boolean), `${item.id}: la escrita necesita respuesta modelo y al menos 2 ideas en la pauta`);
       if (cls.concepts) assert.ok(cls.concepts.some(c => c.id === item.concept), `${item.id}: sin concepto (hoja del árbol) válido`);
       if (type === 'pick') { assert.ok(item.targets[item.answer], `${item.id}: respuesta sin objetivo`); assert.ok(item.molecules.flat().some(p => p.target === item.answer), `${item.id}: la respuesta no se puede tocar`); }
       const NX = context.window.NexoClassroom;
-      const solution = type === 'order' ? item.answer : type === 'classify' ? Object.fromEntries(item.cards.map(c => [c.id, c.bucket])) : type === 'match' ? Object.fromEntries(item.pairs.map((_, i) => [i, i])) : type === 'pick' ? item.answer : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : item.options.findIndex(o => o.correct);
+      const solution = type === 'order' ? item.answer : type === 'classify' ? Object.fromEntries(item.cards.map(c => [c.id, c.bucket])) : type === 'match' ? Object.fromEntries(item.pairs.map((_, i) => [i, i])) : type === 'pick' ? item.answer : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : type === 'build' ? { graph: item.target } : type === 'arrows' ? item.answer : item.options.findIndex(o => o.correct);
       assert.ok(NX.isCorrect(item, solution), `${item.id}: la solución propia no se corrige como correcta`);
+      if (type === 'build') assert.ok(!NX.isCorrect(item, { graph: item.start }), `${item.id}: la base sin completar no debe contar como correcta`);
+      if (type === 'arrows') assert.ok(!NX.isCorrect(item, item.answer.slice(1)), `${item.id}: faltando una flecha no debe contar como correcta`);
       if (type === 'write') assert.ok(!NX.isCorrect(item, { text: item.model, checks: item.rubric.map((_, i) => i > 0) }) && !NX.isCorrect(item, { text: 'no sé', checks: item.rubric.map(() => true) }), `${item.id}: la escrita no debe contar sin todas las ideas o sin texto`);
       assert.ok(item.explain && item.slide, `${item.id}: falta explicación o diapositiva`);
       assert.ok(cls.sources[item.source], `${item.id}: fuente inexistente`);

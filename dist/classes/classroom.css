@@ -487,3 +487,43 @@ body[data-nexo-ambient-motion="reduced"] .cr-spot .cr-spot-glow { animation: non
 .cr-leaf-group { display: grid; gap: 2px; }
 .cr-leaf-group > b { font-family: var(--font-title); color: var(--ink); }
 .cr-calib { margin: 8px 0 0; color: var(--ink); line-height: 1.5; }
+
+/* ───── Editor de moléculas y flechas (etapa 2) ───── */
+.mol-editor { display: grid; gap: 8px; }
+.mol-tools { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.mol-tool { min-width: 44px; min-height: 40px; padding: 6px 10px; border-radius: 10px; border: 1px solid #b89c6c; background: #fffaf0; color: var(--ink);
+  font: 700 .95rem var(--font-ui); cursor: pointer; }
+.mol-tool.is-on { background: #3a2b1f; color: #ffe1a6; border-color: #3a2b1f; }
+.mol-tool:disabled { opacity: .45; cursor: default; }
+.mol-tool:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.mol-sep { flex: 1; }
+.mol-canvas { width: 100%; height: auto; display: block; border-radius: 12px; touch-action: none; user-select: none; -webkit-user-select: none; cursor: crosshair; }
+.mol-canvas.is-done { cursor: default; }
+.mol-bg { fill: #fffdf6; stroke: #e2cfa6; stroke-width: 1.5; }
+.mol-canvas:not(.is-done) .mol-bg { fill: #fffdf6; }
+.mol-bond line { stroke: #2b2118; stroke-width: 2.6; stroke-linecap: round; }
+.mol-bond-hit { stroke: transparent; stroke-width: 18; cursor: pointer; }
+.mol-hit { fill: transparent; }
+.mol-atom { cursor: pointer; }
+.mol-label { font: 700 17px var(--font-ui); fill: #2b2118; paint-order: stroke; stroke: #fffdf6; stroke-width: 6px; }
+.mol-atom.el-N .mol-label { fill: #2952a3; } .mol-atom.el-O .mol-label { fill: #b3261e; } .mol-atom.el-Cl .mol-label, .mol-atom.el-Br .mol-label { fill: #2f6b4a; }
+.mol-charge { font: 700 15px var(--font-ui); fill: #8a5d17; paint-order: stroke; stroke: #fffdf6; stroke-width: 4px; }
+.mol-atom.is-sel .mol-hit { fill: rgb(232 192 106 / .35); stroke: #8a5d17; stroke-width: 2; }
+.mol-atom.is-bad .mol-hit { fill: rgb(179 38 30 / .18); stroke: #b3261e; stroke-width: 2.5; stroke-dasharray: 4 3; }
+.mol-atom.is-suspect .mol-hit { fill: rgb(226 185 59 / .25); stroke: #b8860b; stroke-width: 2.5; stroke-dasharray: 4 3; }
+.mol-status { margin: 0; font-size: .92rem; color: var(--ink-soft); }
+.mol-status.is-bad { color: #9a3426; font-weight: 600; }
+.mol-status.is-ok { color: var(--right); font-weight: 600; }
+.mol-formula { margin: 0; font-size: .88rem; color: var(--ink-soft); }
+.mol-formula b { color: var(--ink); font-variant-numeric: tabular-nums; }
+/* Flechas */
+.mol-pick { cursor: pointer; }
+.mol-pick.is-sel .mol-lp-dot { fill: #e8a400; } .mol-pick.is-sel line { stroke: #e8a400; }
+.mol-lp-hit { fill: transparent; }
+.mol-lp .mol-lp-hit:hover, .mol-lp.is-sel .mol-lp-hit { fill: rgb(232 192 106 / .3); }
+.mol-lp-dot { fill: #2b2118; }
+.mol-arrow { fill: none; stroke: #b3261e; stroke-width: 2.6; stroke-linecap: round; cursor: pointer; }
+.mol-arrow.is-right { stroke: #2f6b4a; } .mol-arrow.is-wrong { stroke: #b3261e; stroke-dasharray: 6 4; }
+.mol-arrow.is-answer { stroke: #2f6b4a; stroke-dasharray: 3 4; opacity: .8; }
+.mol-electron { fill: #3fbf7a; filter: drop-shadow(0 0 4px #3fe39a); }
+@media (prefers-reduced-motion: reduce) { .mol-electron { display: none; } }

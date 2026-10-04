@@ -65,6 +65,8 @@ Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por mis
 | `classify` | Pone tarjetas en calderos | "Aromático, antiaromático o no aromático" |
 | `match` | Une pares | Reactivo → producto, estructura → nombre |
 | `pick` | Toca una parte de la molécula | "¿Cuál N es más básico?", "¿qué grupo manda?" |
+| `build` | Dibuja la molécula tocando, partiendo de una base (`start`); se compara con `target` | "Dibuja el producto". Agrega `smiles` para que RDKit lo revise |
+| `arrows` | Traza flechas de mecanismo sobre una escena (`scene`, `lonePairs`, `answer`, `notes` por flecha equivocada) | "Dibuja las flechas del primer paso" |
 | `write` | Escribe la respuesta, la compara con la modelo y marca qué ideas tenía | "Explícalo con tus palabras". Es la única que vale **escalón 5**: sin ella, las hojas no pasan de brote |
 
 ### Conceptos, escalones y confianza (motor de evidencia)

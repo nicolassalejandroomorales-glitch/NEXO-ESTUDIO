@@ -11,8 +11,8 @@
     1: 'Ver', 2: 'Reconocer', 3: 'Completar', 4: 'Producir con ayuda', 5: 'Producir solo', 6: 'Mezclado y en el tiempo'
   };
   // Escalón por defecto según la actividad: elegir es reconocer; ordenar, clasificar, unir y tocar es completar;
-  // escribir la respuesta es producir. Una actividad puede declarar su propio "step".
-  const DEFAULT_STEP = { choice: 2, order: 3, classify: 3, match: 3, pick: 3, write: 5 };
+  // dibujar una molécula o flechas a partir de una base es producir con ayuda; escribir la respuesta es producir. Una actividad puede declarar su propio "step".
+  const DEFAULT_STEP = { choice: 2, order: 3, classify: 3, match: 3, pick: 3, build: 4, arrows: 4, write: 5 };
   const stepOf = item => Number(item?.step) || DEFAULT_STEP[item?.type || 'choice'] || 2;
 
   /* Hojas del árbol (de menos a más). "amarilla" y "seca" se superponen a la hoja que corresponda. */

@@ -763,6 +763,49 @@
     'm7-c1': 'am.diazonio', 'm7-t1': 'am.hofmann', 'm7-t2': 'am.diazonio', 'm7-w1': 'am.acilacion',
     'm8-d1': 'am.espectro', 'm8-d2': 'am.espectro', 'm8-p1': 'am.espectro', 'm8-p2': 'am.espectro', 'm8-p3': 'am.espectro', 'm8-t1': 'am.espectro'
   };
+  /* Actividades de dibujo (etapa 2): construir moléculas y trazar flechas de mecanismo.
+     Las estructuras se revisan con RDKit en tools/molecule-test.cjs ("smiles" es la respuesta en notación química). */
+  const mission = id => cls.missions.find(m => m.id === id);
+  const atom = (id, el, x, y, q = 0) => ({ id, el, x, y, q });
+  mission('m1').stages.practice.push(
+    { id: 'm1-a1', type: 'arrows', source: SRC, concept: 'am.par-libre', slide: 5,
+      prompt: 'La metilamina atrapa el H⁺ del HCl. Dibuja las 2 flechas del mecanismo.',
+      scene: { atoms: [atom('c', 'C', 80, 140), atom('n', 'N', 150, 140), atom('h', 'H', 265, 140), atom('cl', 'Cl', 335, 140)], bonds: [{ a: 'c', b: 'n', o: 1 }, { a: 'h', b: 'cl', o: 1 }] },
+      lonePairs: { n: 1, cl: 3 }, lpAngle: { n: -90 },
+      answer: [['lp:n', 'a:h'], ['b:1', 'a:cl']],
+      notes: { 'lp:n>a:cl': 'El N no ataca al Cl: el Cl ya tiene sus electrones completos. El N busca el H, que es el que sale como H⁺.',
+        'b:1>a:h': 'Cuando se rompe el enlace H–Cl, los electrones se van con el Cl, que es más electronegativo. Así queda Cl⁻.',
+        'lp:n>b:1': 'Casi: el par del N ataca al H (al átomo), y el enlace H–Cl se rompe aparte.',
+        'lp:cl>a:h': 'El Cl ya está unido a ese H: sus pares no atacan. El que ataca es el N de la amina.' },
+      explain: 'El par libre del N ataca al H y, al mismo tiempo, el enlace H–Cl se rompe: sus electrones se van al Cl. Resultado: CH₃–NH₃⁺ y Cl⁻.',
+      hint: 'Las flechas salen de electrones (el par libre del N o el enlace H–Cl) y llegan a quien los recibe.' },
+    { id: 'm1-b1', type: 'build', source: SRC, concept: 'base.carga', slide: 5, smiles: 'C[NH3+]',
+      prompt: 'Dibuja lo que se forma: la metilamina después de atrapar el H⁺. Ya tienes la metilamina; complétala.',
+      start: { atoms: [atom('c', 'C', 150, 130), atom('n', 'N', 240, 130)], bonds: [{ a: 'c', b: 'n', o: 1 }] },
+      target: { atoms: [atom('c', 'C', 150, 130), atom('n', 'N', 240, 130, 1)], bonds: [{ a: 'c', b: 'n', o: 1 }] },
+      explain: 'Al atrapar el H⁺, el N queda con 4 enlaces (3 H y el C) y sin par libre. Carga formal: 5 − 0 − 4 = +1. Se escribe CH₃–NH₃⁺.',
+      hint: 'Con 4 enlaces el N queda con carga. Elige el botón ± y toca el N.' });
+  mission('m7').stages.practice.push(
+    { id: 'm7-a1', type: 'arrows', source: SRC, concept: 'am.acilacion', slide: 35,
+      prompt: 'Primer paso de la acilación: la metilamina ataca al cloruro de acetilo. Dibuja las 2 flechas.',
+      scene: { atoms: [atom('c1', 'C', 45, 150), atom('n', 'N', 115, 150), atom('c2', 'C', 250, 150), atom('o', 'O', 250, 70), atom('c3', 'C', 320, 190), atom('cl', 'Cl', 195, 205)],
+        bonds: [{ a: 'c1', b: 'n', o: 1 }, { a: 'c2', b: 'o', o: 2 }, { a: 'c2', b: 'c3', o: 1 }, { a: 'c2', b: 'cl', o: 1 }] },
+      lonePairs: { n: 1, o: 2, cl: 3 }, lpAngle: { n: -40 },
+      answer: [['lp:n', 'a:c2'], ['b:1', 'a:o']],
+      notes: { 'lp:n>a:o': 'El N no ataca al O: el O es rico en electrones (δ−). El N busca al carbono del C=O, que es δ+.',
+        'lp:n>a:cl': 'El Cl sale después, en el segundo paso. Primero el N ataca al carbono del C=O.',
+        'b:3>a:cl': 'Eso pasa en el segundo paso, cuando vuelve a formarse el C=O. En el primero, los electrones del C=O suben al O.',
+        'b:1>a:c2': 'Los electrones del C=O se van hacia el O, que es más electronegativo, no hacia el C.' },
+      explain: 'El par libre del N ataca al carbono δ+ del C=O y los electrones del enlace C=O suben al oxígeno. Queda un intermediario con O⁻; después vuelve el C=O y sale el Cl⁻.',
+      hint: 'El N busca el átomo más pobre en electrones. Cuando llega, el C=O tiene que soltar un par: ¿hacia dónde?' },
+    { id: 'm7-b1', type: 'build', source: SRC, concept: 'am.acilacion', slide: 35, smiles: 'CCCNC(C)=O',
+      prompt: 'Dibuja la amida que se forma con propilamina + cloruro de acetilo. Ya tienes la propilamina; agrégale lo que falta.',
+      start: { atoms: [atom('a', 'C', 60, 160), atom('b', 'C', 115, 125), atom('c', 'C', 170, 160), atom('n', 'N', 225, 125)], bonds: [{ a: 'a', b: 'b', o: 1 }, { a: 'b', b: 'c', o: 1 }, { a: 'c', b: 'n', o: 1 }] },
+      target: { atoms: [atom('a', 'C', 60, 160), atom('b', 'C', 115, 125), atom('c', 'C', 170, 160), atom('n', 'N', 225, 125), atom('d', 'C', 280, 160), atom('o', 'O', 280, 220), atom('e', 'C', 335, 125)],
+        bonds: [{ a: 'a', b: 'b', o: 1 }, { a: 'b', b: 'c', o: 1 }, { a: 'c', b: 'n', o: 1 }, { a: 'n', b: 'd', o: 1 }, { a: 'd', b: 'o', o: 2 }, { a: 'd', b: 'e', o: 1 }] },
+      explain: 'El N cambia uno de sus H por el grupo acetilo (CH₃–C=O) y el Cl se va. Producto: N-propilacetamida, CH₃CH₂CH₂–NH–CO–CH₃.',
+      hint: 'Al N se le une el carbono del C=O. Ese carbono lleva un O con doble enlace y un CH₃. El Cl no queda en el producto.' });
+
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

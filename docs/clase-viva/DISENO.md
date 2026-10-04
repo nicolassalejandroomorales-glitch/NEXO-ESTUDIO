@@ -201,8 +201,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | Etapa | Qué | Estado | Modelo sugerido |
 |---|---|---|---|
 | 1 | Motor de evidencia: escalones, confianza, hojas del árbol; conectado con FSRS | **Hecha** | Opus 5.5 |
-| 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Siguiente** | Opus 5.5 |
-| 3 | **Piloto:** misión Reacciones completa con todos sus momentos | Pendiente | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
+| 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Hecha** | Opus 5.5 |
+| 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Siguiente** | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
 | 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | Pendiente | Opus 5.5 |
 | 5 | Formulario con investigación y recetario de pociones | Pendiente | Opus 5.5 |
 | 6 | Las otras misiones de Aminas al modelo nuevo | Pendiente | Opus 5.5 |
@@ -223,6 +223,11 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   ruta según el porqué. Nueva actividad **escrita** con autocorrección por ideas (escalón 5): 3 preguntas (basicidad, equilibrio, acilación).
   22 conceptos de Aminas (4 raíces de base) y cada actividad con su concepto. Vista previa del árbol en el cierre y en "Camino al 7".
   Pruebas: `tools/class-evidence-test.cjs` y `tools/classroom-test.cjs`.
+- **Etapa 2 hecha (4 oct):** `dist/classes/molecule.js` (grafo de la molécula, valencias, H implícitos, fórmula, "¿es la misma molécula?",
+  explicación del error: piezas sueltas, átomos que faltan o sobran, cargas, átomos conectados distinto) y `dist/classes/editor.js`
+  (dibujar tocando: átomos, enlaces simple/doble/triple, cargas, borrar, deshacer; flechas desde pares libres o enlaces, con los electrones viajando).
+  Actividades nuevas `build` y `arrows` (escalón 4): 4 de ejemplo (protonación y acilación). RDKit (ya estaba en `dist/vendor/rdkit`) revisa en
+  `tools/molecule-test.cjs` que el editor y RDKit coincidan y que cada molécula de las clases sea válida.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 
