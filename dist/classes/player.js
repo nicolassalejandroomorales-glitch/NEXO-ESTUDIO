@@ -9,18 +9,19 @@
     prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.' }
   };
   const SCENES = ['dawn', 'day', 'dusk', 'night'];
-  /* Torre del alquimista por momento del día (assets/classroom/README.md). Mientras falte la versión HD
-     se usan las miniaturas, ampliadas y desenfocadas (is-mini). */
-  const TOWER = { mini: true, dawn: 'assets/classroom/torre-amanecer-mini.jpg', day: 'assets/classroom/torre-mediodia-mini.jpg',
-    dusk: 'assets/classroom/torre-atardecer-mini.jpg', night: 'assets/classroom/torre-noche-mini.jpg' };
+  /* Torre del alquimista por momento del día (assets/classroom/README.md). Pinturas HD de Canva entregadas por Niquito. */
+  const TOWER = { dawn: 'assets/classroom/torre-amanecer.webp', day: 'assets/classroom/torre-atardecer.webp',
+    dusk: 'assets/classroom/torre-atardecer.webp', night: 'assets/classroom/torre-noche.webp' }; // mediodía: pendiente la versión HD
   /* Objetos tocables de cada pintura, en % del arte 16:9: [x, y, ancho, alto]. Igual que en el refugio:
      invisibles, solo brillan al pasar el mouse. Se usan los de la pintura que domina a esa hora. */
   const HOTSPOTS = {
-    day: { sage: [6, 30, 16, 62], book: [20, 55, 15, 20], board: [38, 18, 27, 40], window: [15, 12, 10, 33], flasks: [74, 58, 21, 20] },
-    dawn: { sage: [9, 35, 13, 60], book: [20, 50, 13, 22], board: [37, 15, 26, 40], window: [21, 15, 9, 35], flasks: [70, 55, 25, 17] },
-    dusk: { sage: [10, 30, 19, 65], book: [22, 42, 16, 18], board: [46, 10, 27, 35], window: [7, 2, 17, 46], flasks: [81, 58, 17, 24] },
-    night: { sage: [8, 40, 21, 55], book: [28, 55, 12, 17], board: [37, 8, 26, 54], window: [8, 10, 12, 30], flasks: [78, 55, 19, 20] }
+    dawn: { sage: [10, 24, 15, 70], book: [20, 49, 12, 15], board: [36, 20, 28, 35], window: [22.5, 12, 9.5, 43], flasks: [73, 50, 26, 30] },
+    dusk: { sage: [12, 20, 12, 68], book: [19, 40, 13, 14], board: [45.5, 17, 31.5, 33], window: [5, 7, 15.5, 58], flasks: [80, 56, 16, 24] },
+    night: { sage: [9.5, 24, 22, 71], book: [24.5, 46, 15, 14], board: [36, 9, 30, 57], window: [8, 4, 16, 31], flasks: [77, 54, 21, 20] }
   };
+  // El arte generado (tools/classroom-art/build_tower.py) es la fuente de verdad cuando está cargado.
+  const ART = window.NexoTowerArt;
+  if (ART) { Object.assign(TOWER, ART.scenes); Object.assign(HOTSPOTS, ART.hotspots); } else HOTSPOTS.day = HOTSPOTS.dusk;
   const SPOT_LABEL = { sage: 'Pedirle al sabio que explique desde cero', book: 'Abrir el glosario del sabio', board: 'Ver las diapositivas de la clase',
     window: 'Cambiar la hora de la torre', flasks: 'Mezclar los frascos: dato curioso' };
   const HOURS = [7, 12.5, 18.6, 22];
@@ -36,7 +37,7 @@
     const state = api.getState();
     if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {};
     const s = state.classSessions[id] ||= {};
-    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
+    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
     if (!Number.isInteger(s.beat)) s.beat = 0;
     return s;
   }
@@ -66,7 +67,8 @@
       out.push({ kind: 'close' });
       return out;
     }
-    const missions = s.path === 'misiones' ? [missionById(cls, s.mission) || cls.missions[0]] : cls.missions;
+    if (s.path === 'misiones' && !missionById(cls, s.mission)) { out.push({ kind: 'pick' }); return out; }
+    const missions = s.path === 'misiones' ? [missionById(cls, s.mission)] : cls.missions;
     missions.forEach(m => {
       say(`Hoy estudiaremos **${m.title}**: ${m.subtitle.charAt(0).toLowerCase()}${m.subtitle.slice(1)}.`, m);
       say('Antes de enseñarte, muéstrame qué sabes. En este reto no hay pistas.', m);
@@ -102,6 +104,7 @@
 
   function beatDone(s, b) {
     if (b.kind === 'path') return Boolean(s.path);
+    if (b.kind === 'pick') return Boolean(s.mission);
     if (b.kind === 'question') return Boolean(s.answers[b.item.id]);
     if (b.kind === 'rescue') return Boolean(s.retries[b.item.id]);
     if (b.kind === 'step') return !b.step.ask || Boolean(s.revealed[`${b.m.id}-w${b.i}`]);
@@ -111,13 +114,18 @@
 
   /* ───────── Piezas de la escena ───────── */
 
-  function scene(cls) {
+  function scene(cls, s, b) {
     const art = cls.scene || TOWER;
-    const spots = HOTSPOTS[dominantScene()];
-    return `<div class="cr-scene ${art.mini ? 'is-mini' : ''}"><div class="cr-art">
+    const sceneKey = dominantScene(), spots = HOTSPOTS[sceneKey], glows = ART?.glows?.[sceneKey] || {};
+    const [fx, fy, fw, fh] = spots.flasks, [bx, by, bw, bh] = spots.board;
+    const mode = b?.kind === 'lesson' || b?.kind === 'rescue' ? 'teaching' : b?.kind === 'question' ? 'testing' : '';
+    return `<div class="cr-scene ${art.mini ? 'is-mini' : ''} ${mode ? `is-${mode}` : ''} ${s.burst ? `burst-${s.burst}` : ''}"><div class="cr-art">
       ${SCENES.map(key => `<div class="cr-scene-layer is-${key}" aria-hidden="true" ${art[key] ? `style="background-image:url('${esc(art[key])}')"` : ''}></div>`).join('')}
       <div class="cr-scene-shade" aria-hidden="true"></div>
-      ${Object.entries(spots).map(([id, [x, y, w, h]]) => `<button class="cr-spot is-${id}" data-cr="spot" data-spot="${id}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" aria-label="${esc(SPOT_LABEL[id])}" title="${esc(SPOT_LABEL[id])}"></button>`).join('')}
+      <div class="cr-life cr-board-glow" aria-hidden="true" style="left:${bx}%;top:${by}%;width:${bw}%;height:${bh}%"></div>
+      <div class="cr-life cr-bubbles" aria-hidden="true" style="left:${fx}%;top:${fy}%;width:${fw}%;height:${fh}%">${'<i></i>'.repeat(7)}</div>
+      ${s.burst ? `<div class="cr-life cr-burst" aria-hidden="true" style="left:${fx}%;top:${fy - 8}%;width:${fw}%;height:${fh + 8}%">${'<i></i>'.repeat(12)}</div>` : ''}
+      ${Object.entries(spots).map(([id, [x, y, w, h]], i) => `<button class="cr-spot is-${id}" data-cr="spot" data-spot="${id}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%;--i:${i}" aria-label="${esc(SPOT_LABEL[id])}" title="${esc(SPOT_LABEL[id])}">${glows[id] ? `<img class="cr-spot-glow" src="${esc(glows[id])}" alt="">` : ''}</button>`).join('')}
       </div><div class="cr-motes" aria-hidden="true"></div></div>`;
   }
 
@@ -144,7 +152,100 @@
     }).join('')}</ol>`;
   }
 
+  /* ───────── Actividades ─────────
+     choice (alternativas) · order (ordenar tarjetas) · classify (clasificar en calderos)
+     match (unir pares) · pick (tocar la parte correcta de una molécula). */
+  const seeded = (list, seed) => list.map((x, i) => [x, [...`${seed}${i}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7)]).sort((a, b) => a[1] - b[1]).map(([x]) => x);
+  const recordOf = (s, item, retry) => retry ? s.retries[item.id] : s.answers[item.id];
+  const workOf = (s, item, retry) => (s.work[retry ? `${item.id}::r` : item.id] ||= {});
+  const actBtn = (item, retry, action, attrs, inner, cls = '', disabled = false) =>
+    `<button class="${cls}" data-cr="${action}" data-item="${esc(item.id)}" data-retry="${retry ? 1 : 0}" ${attrs} ${disabled ? 'disabled' : ''}>${inner}</button>`;
+
+  function isCorrect(item, value) {
+    if (item.type === 'order') return JSON.stringify(value) === JSON.stringify(item.answer);
+    if (item.type === 'classify') return item.cards.every(c => value?.[c.id] === c.bucket);
+    if (item.type === 'match') return item.pairs.every((_, i) => Number(value?.[i]) === i);
+    if (item.type === 'pick') return value === item.answer;
+    return Boolean(item.options[value]?.correct);
+  }
+  function mcOf(cls, item, rec) {
+    if (!rec || rec.correct) return null;
+    if (!item.type || item.type === 'choice') return cls.misconceptions[item.options[rec.choice]?.misconception];
+    if (item.type === 'pick') return cls.misconceptions[item.targets[rec.value]?.misconception] || cls.misconceptions[item.misconception];
+    return cls.misconceptions[item.misconception];
+  }
+  function answerText(item, rec) {
+    if (!item.type || item.type === 'choice') return item.options[rec.choice]?.text;
+    if (item.type === 'pick') return item.targets[rec.value]?.label;
+    if (item.type === 'order') return rec.value.map(id => item.cards.find(c => c.id === id)?.text).join(' < ');
+    return 'tu propuesta';
+  }
+
+  function activityMarkup(cls, s, item, { retry = false } = {}) {
+    const rec = recordOf(s, item, retry), w = workOf(s, item, retry);
+    if (!item.type || item.type === 'choice') return optionsMarkup(cls, s, item, { retry });
+    const done = Boolean(rec);
+    const check = ready => done ? '' : `<div class="cr-check">${actBtn(item, retry, 'act-check', '', 'Comprobar ▸', 'cr-btn cr-primary', !ready)}</div>`;
+
+    if (item.type === 'order') {
+      const seq = done ? rec.value : (w.seq ||= []);
+      const pool = seeded(item.cards, item.id).filter(c => !seq.includes(c.id));
+      return `<div class="cr-order"><p class="cr-act-help">${esc(item.direction || 'Toca las tarjetas en orden.')}</p>
+        <ol class="cr-slots">${item.cards.map((_, i) => {
+          const id = seq[i], card = item.cards.find(c => c.id === id);
+          const tone = done ? (item.answer[i] === id ? 'is-right' : 'is-wrong') : '';
+          return `<li class="cr-slot ${card ? 'is-filled' : ''} ${tone}"><span class="cr-slot-n">${i + 1}</span>${card ? actBtn(item, retry, 'act-unpick', `data-i="${i}"`, md(card.text), 'cr-chip', done) : '<span class="cr-slot-empty">…</span>'}</li>`;
+        }).join('<li class="cr-slot-sep" aria-hidden="true">‹</li>')}</ol>
+        ${pool.length ? `<div class="cr-pool">${pool.map(c => actBtn(item, retry, 'act-pick', `data-card="${esc(c.id)}"`, md(c.text), 'cr-chip is-loose')).join('')}</div>` : ''}
+        ${done && !rec.correct && retry ? `<p class="cr-solution">Orden correcto: ${item.answer.map(id => md(item.cards.find(c => c.id === id).text)).join(' &lt; ')}</p>` : ''}
+        ${check(seq.length === item.cards.length)}</div>`;
+    }
+    if (item.type === 'classify') {
+      const assign = done ? rec.value : (w.assign ||= {});
+      const loose = seeded(item.cards, item.id).filter(c => !assign[c.id]);
+      return `<div class="cr-classify"><p class="cr-act-help">${done ? 'Así quedó tu clasificación.' : 'Toca una tarjeta y luego el caldero donde va.'}</p>
+        ${loose.length ? `<div class="cr-pool">${loose.map(c => actBtn(item, retry, 'act-sel', `data-card="${esc(c.id)}"`, md(c.text), `cr-chip is-loose ${w.sel === c.id ? 'is-selected' : ''}`, done)).join('')}</div>` : ''}
+        <div class="cr-buckets">${item.buckets.map(bk => `<div class="cr-bucket">
+          ${actBtn(item, retry, 'act-drop', `data-bucket="${esc(bk.id)}"`, `<b>${esc(bk.label)}</b>`, `cr-bucket-head ${w.sel && !done ? 'is-armed' : ''}`, done || !w.sel)}
+          <div class="cr-bucket-body">${item.cards.filter(c => assign[c.id] === bk.id).map(c => actBtn(item, retry, 'act-unassign', `data-card="${esc(c.id)}"`, md(c.text), `cr-chip ${done ? (c.bucket === bk.id ? 'is-right' : 'is-wrong') : ''}`, done)).join('')}</div></div>`).join('')}</div>
+        ${done && !rec.correct && retry ? `<p class="cr-solution">${item.buckets.map(bk => `<b>${esc(bk.label)}:</b> ${item.cards.filter(c => c.bucket === bk.id).map(c => md(c.text)).join(', ')}`).join(' · ')}</p>` : ''}
+        ${check(loose.length === 0)}</div>`;
+    }
+    if (item.type === 'match') {
+      const pairs = done ? rec.value : (w.pairs ||= {});
+      const rights = seeded(item.pairs.map((p, i) => ({ ...p, i })), item.id);
+      const usedRight = new Set(Object.values(pairs).map(Number));
+      return `<div class="cr-match"><p class="cr-act-help">${done ? 'Así uniste los pares.' : 'Toca uno de la izquierda y luego su pareja de la derecha.'}</p>
+        <div class="cr-match-cols"><div class="cr-match-col">${item.pairs.map((p, i) => {
+          const r = pairs[i];
+          const tone = done ? (Number(r) === i ? 'is-right' : 'is-wrong') : '';
+          return actBtn(item, retry, 'act-left', `data-i="${i}"`, `${r !== undefined ? `<span class="cr-pair-n">${rights.findIndex(x => x.i === Number(r)) + 1}</span>` : ''}${md(p.left)}`, `cr-chip ${w.left === i && !done ? 'is-selected' : ''} ${tone}`, done);
+        }).join('')}</div>
+        <div class="cr-match-col">${rights.map((p, k) => actBtn(item, retry, 'act-right', `data-i="${p.i}"`, `<span class="cr-pair-n">${k + 1}</span>${md(p.right)}`, `cr-chip ${usedRight.has(p.i) ? 'is-used' : ''}`, done || w.left === undefined)).join('')}</div></div>
+        ${done && !rec.correct && retry ? `<p class="cr-solution">${item.pairs.map(p => `${md(p.left)} → ${md(p.right)}`).join(' · ')}</p>` : ''}
+        ${check(Object.keys(pairs).length === item.pairs.length)}</div>`;
+    }
+    if (item.type === 'pick') {
+      const val = done ? rec.value : null;
+      const part = p => p.target
+        ? actBtn(item, retry, 'act-target', `data-target="${esc(p.target)}" aria-label="${esc(item.targets[p.target].label)}"`, md(p.t),
+          `cr-target ${done ? (p.target === item.answer && (rec.correct || retry) ? 'is-right' : p.target === val ? 'is-wrong' : 'is-muted') : ''}`, done)
+        : `<span class="cr-formula-part">${md(p.t)}</span>`;
+      return `<div class="cr-pick"><p class="cr-act-help">${done ? '' : 'Toca la parte de la molécula que responde la pregunta.'}</p>
+        ${(item.molecules || [item.parts]).map((parts, i) => `<div class="cr-formula">${item.captions?.[i] ? `<span class="cr-formula-cap">${esc(item.captions[i])}</span>` : ''}<div class="cr-formula-line">${parts.map(part).join('')}</div></div>`).join('')}</div>`;
+    }
+    return '';
+  }
+
   function whyOthers(cls, item) {
+    if (item.type && item.type !== 'choice') {
+      let extra = '';
+      if (item.type === 'pick') extra = `<ul>${Object.entries(item.targets).map(([id, t]) => {
+        const mc = cls.misconceptions[t.misconception]; const reason = id === item.answer ? item.explain : (mc ? mc.why : t.note);
+        return reason ? `<li class="${id === item.answer ? 'is-ok' : ''}"><b>${esc(t.label)}</b>${id === item.answer ? ' (correcta)' : ''}: ${md(reason)}</li>` : ''; }).join('')}</ul>`;
+      else if (item.type === 'order') extra = `<p>Orden correcto: ${item.answer.map(id => md(item.cards.find(c => c.id === id).text)).join(' &lt; ')}</p>`;
+      return `<details class="cr-why" open><summary>La explicación completa</summary><p>${md(item.explain)}</p>${extra}</details>`;
+    }
     const rows = item.options.map((o, i) => {
       const mc = cls.misconceptions[o.misconception];
       const reason = o.correct ? item.explain : mc ? mc.why : o.note;
@@ -163,7 +264,17 @@
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
       center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).map(([id, p]) =>
         `<button class="cr-path" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span><b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
-        ${cls.missions.length > 1 ? '' : '<p class="cr-soon">Por ahora está lista la Misión 1. Las demás llegan pronto.</p>'}`;
+        <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>`;
+      return { sage, center };
+    }
+    if (b.kind === 'pick') {
+      sage.text = 'Elige una misión. Te recomiendo ir en orden: cada una usa lo que aprendiste en la anterior.';
+      center = `<ol class="cr-mission-map">${cls.missions.map((m, i) => {
+        const items = allItems(cls, m.id), done = items.filter(({ item }) => s.answers[item.id]).length;
+        return `<li><button class="cr-mission-card ${done === items.length && items.length ? 'is-done' : ''}" data-cr="mission" data-mission="${m.id}">
+          <span class="cr-mission-n">${i + 1}</span><span class="cr-mission-txt"><b>${esc(m.title)}</b><small>${esc(m.subtitle)}</small></span>
+          <span class="cr-mission-meta">≈ ${m.minutes} min${m.pep ? ` · ${esc(m.pep)}` : ''}<br>${done}/${items.length} ${done === items.length && items.length ? '✓' : ''}</span></button></li>`;
+      }).join('')}</ol>`;
       return { sage, center };
     }
     if (b.kind === 'say') {
@@ -209,31 +320,33 @@
       } else if (record.correct) {
         sage.text = `${hint ? 'Bien, con una pista.' : '¡Exacto, sin ayuda!'} ${item.explain}`; sage.mood = 'proud'; sage.actions = cont();
       } else {
-        const mc = cls.misconceptions[item.options[record.choice].misconception];
-        sage.text = mc ? `**${mc.label}.** ${mc.why}` : 'No es esa. Lo revisaremos juntos más adelante.';
+        const mc = mcOf(cls, item, record);
+        sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
         sage.mood = 'concerned'; sage.actions = cont();
       }
       center = `<article class="cr-card ${record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
         <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
-        ${optionsMarkup(cls, s, item)}
+        ${activityMarkup(cls, s, item)}
         ${record?.correct ? whyOthers(cls, item) : ''}
         ${item.slide ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
       return { sage, center };
     }
     if (b.kind === 'rescue') {
       const item = b.item, record = s.answers[item.id], retry = s.retries[item.id];
-      const mc = cls.misconceptions[item.options[record.choice].misconception];
-      const block = mc?.prereq && missionById(cls, mc.prereq.mission)?.stages.explain.find(x => x.id === mc.prereq.block);
+      const mc = mcOf(cls, item, record);
+      const prereqMission = mc?.prereq && missionById(cls, mc.prereq.mission);
+      const block = prereqMission && [...(prereqMission.stages.fundamentals || []), ...prereqMission.stages.explain].find(x => x.id === mc.prereq.block);
+      const slideN = block?.slide || item.slide;
       if (!retry) {
-        sage.text = mc ? `Respondiste «${item.options[record.choice].text}». ${mc.why} Mira la diapositiva y vuelve a intentarlo.` : 'Miremos de nuevo esta pregunta.';
+        sage.text = `Respondiste «${answerText(item, record)}». ${mc ? mc.why : (item.wrong || 'Miremos de nuevo, con calma.')} Mira la diapositiva y vuelve a intentarlo.`;
         sage.mood = 'calm';
       } else {
         sage.text = retry.correct ? '¡Corregido! Así se aprende de un error.' : 'Todavía no. Vuelve a esta idea otro día: la repasaremos.';
         sage.mood = retry.correct ? 'proud' : 'concerned'; sage.actions = cont();
       }
-      center = `<div class="cr-lesson">${block?.slide ? projection(cls, block.slide) : ''}
-        <article class="cr-card"><p class="cr-eyebrow">Rescate${mc?.prereq ? ` · repasa: ${esc(mc.prereq.title)}` : ''}</p><p class="cr-q">${md(item.prompt)}</p>${optionsMarkup(cls, s, item, { retry: true })}${retry ? whyOthers(cls, item) : ''}</article></div>`;
+      center = `<div class="cr-lesson">${slideN ? projection(cls, slideN) : ''}
+        <article class="cr-card"><p class="cr-eyebrow">Rescate${mc?.prereq ? ` · repasa: ${esc(mc.prereq.title)}` : ''}</p><p class="cr-q">${md(item.prompt)}</p>${activityMarkup(cls, s, item, { retry: true })}${retry ? whyOthers(cls, item) : ''}</article></div>`;
       return { sage, center };
     }
     // Cierre
@@ -295,7 +408,7 @@
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
     api.app.innerHTML = `<section class="classroom ${entering ? 'is-entering' : ''}" aria-label="Torre del alquimista: ${esc(cls.title)}">
-      ${scene(cls)}
+      ${scene(cls, s, b)}
       <header class="cr-top">
         <button class="cr-btn cr-small cr-ghost" data-cr="exit">← Salir</button>
         <div class="cr-thread" role="progressbar" aria-label="Avance de la clase" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
@@ -315,6 +428,7 @@
       ${panel(cls, s, b)}
     </section>`;
     document.body.classList.add('in-classroom');
+    s.burst = null; // la reacción de la escena dura una sola vista
     api.hydrate();
     const root = api.app.querySelector('.classroom');
     root.addEventListener('click', event => onClick(event, id, api));
@@ -353,12 +467,13 @@
     }
     if (action === 'slides') { if (button.dataset.slide) s.slideOpen = button.dataset.slide; return rerender(id, api); }
     if (action === 'path') {
-      s.path = button.dataset.path; s.mission = s.mission || cls.missions[0].id; s.beat = 1; s.mascotMood = 'happy';
+      s.path = button.dataset.path; s.mission = null; s.beat = 1; s.mascotMood = 'happy';
       api.track?.('class_started', { class_id: id, path: s.path });
       return rerender(id, api);
     }
     if (action === 'mission') { s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
-    if (action === 'restart') { s.path = null; s.beat = 0; s.mascotMood = 'idle'; return rerender(id, api); }
+    if (action === 'restart') { s.path = null; s.mission = null; s.beat = 0; s.mascotMood = 'idle'; return rerender(id, api); }
+    if (action.startsWith('act-')) return onActivity(action, button, cls, s, b, id, api);
     if (action === 'next') { if (beatDone(s, b)) { s.beat += 1; s.mascotMood = 'idle'; } return rerender(id, api); }
     if (action === 'offer') { s.skipExplain[b.m.id] = button.dataset.skip === '1'; s.beat += 1; s.mascotMood = 'happy'; return rerender(id, api); }
     if (action === 'reveal') { s.revealed[button.dataset.key] = true; return rerender(id, api); }
@@ -387,11 +502,43 @@
         if (b.stage === 'diagnostic' || b.stage === 'transfer') delete s.hints[itemId];
         s.answers[itemId] = { choice, correct, hint: Boolean(s.hints[itemId]), stage: b.stage, at: new Date().toISOString() };
       }
-      s.mascotMood = correct ? 'happy' : 'worry';
+      s.mascotMood = correct ? 'happy' : 'worry'; s.burst = correct ? 'right' : 'wrong';
       api.track?.('class_answer', { class_id: id, correct, retry });
       return rerender(id, api);
     }
   }
 
-  window.NexoClassroom = { render, beats, PATHS };
+  function onActivity(action, button, cls, s, b, id, api) {
+    const retry = button.dataset.retry === '1';
+    const item = allItems(cls).find(entry => entry.item.id === button.dataset.item)?.item;
+    if (!item || recordOf(s, item, retry)) return;
+    const w = workOf(s, item, retry);
+    if (action === 'act-pick') { (w.seq ||= []).push(button.dataset.card); }
+    else if (action === 'act-unpick') { w.seq.splice(Number(button.dataset.i), 1); }
+    else if (action === 'act-sel') { w.sel = w.sel === button.dataset.card ? null : button.dataset.card; }
+    else if (action === 'act-drop' && w.sel) { (w.assign ||= {})[w.sel] = button.dataset.bucket; w.sel = null; }
+    else if (action === 'act-unassign') { delete w.assign[button.dataset.card]; }
+    else if (action === 'act-left') { w.left = Number(button.dataset.i); }
+    else if (action === 'act-right' && w.left !== undefined) {
+      const pairs = (w.pairs ||= {}); const r = Number(button.dataset.i);
+      for (const k of Object.keys(pairs)) if (Number(pairs[k]) === r) delete pairs[k];
+      pairs[w.left] = r; w.left = undefined;
+    }
+    else if (action === 'act-target' || action === 'act-check') {
+      const value = action === 'act-target' ? button.dataset.target
+        : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign } : { ...w.pairs };
+      const correct = isCorrect(item, value);
+      const record = { value, correct, at: new Date().toISOString() };
+      if (retry) s.retries[item.id] = record;
+      else {
+        if (b.stage === 'diagnostic' || b.stage === 'transfer') delete s.hints[item.id];
+        s.answers[item.id] = { ...record, hint: Boolean(s.hints[item.id]), stage: b.stage };
+      }
+      s.mascotMood = correct ? 'happy' : 'worry'; s.burst = correct ? 'right' : 'wrong';
+      api.track?.('class_answer', { class_id: id, correct, retry });
+    }
+    return rerender(id, api);
+  }
+
+  window.NexoClassroom = { render, beats, isCorrect, PATHS };
 })();
