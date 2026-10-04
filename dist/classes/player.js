@@ -271,7 +271,8 @@
       : `<header class="cr-top"><button class="cr-btn cr-small" data-cr="exit">← Salir</button><div class="cr-top-title"><small>Aula</small><b>${esc(cls.title)}</b></div><span></span></header>
          <div class="cr-body"><main class="cr-stage cr-stage-lobby" aria-labelledby="crTitle">${lobby(cls, api, s)}</main></div>`;
 
-    api.app.innerHTML = `<section class="classroom" style="--course:${esc(api.subject.color)}" aria-label="Aula de ${esc(cls.title)}">
+    const entering = !api.app.querySelector('.classroom'); // solo la primera vista anima la entrada al aula
+    api.app.innerHTML = `<section class="classroom ${entering ? 'is-entering' : ''}" style="--course:${esc(api.subject.color)}" aria-label="Aula de ${esc(cls.title)}">
       <div class="cr-bg" aria-hidden="true"></div>${body}${mascot(api, s, step)}</section>`;
     document.body.classList.add('in-classroom');
     api.hydrate();

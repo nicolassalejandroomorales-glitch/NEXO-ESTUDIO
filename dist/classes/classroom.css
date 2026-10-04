@@ -190,3 +190,15 @@ body[data-nexo-ambient-motion="reduced"] .cr-mascot-figure { animation: none !im
 .cr-mascot-figure .avatar { margin: 0; }
 /* Una alternativa ya respondida sigue legible (styles.css baja la opacidad de todo botón deshabilitado). */
 .classroom .cr-option:disabled { opacity: 1; cursor: default; }
+
+/* Entrada al aula: el fondo se acerca, el pergamino sube y la mascota aparece (solo al entrar). */
+.classroom.is-entering .cr-bg { animation: cr-bg-in 1.1s cubic-bezier(.2,.7,.2,1) both; }
+.classroom.is-entering .cr-stage { animation: cr-rise .7s .25s cubic-bezier(.2,.7,.2,1) both; }
+.classroom.is-entering .cr-mascot { animation: cr-pop .6s .55s cubic-bezier(.3,1.4,.5,1) both; }
+.classroom.is-entering .cr-top, .classroom.is-entering .cr-stepper, .classroom.is-entering .cr-controls { animation: cr-fade .5s .1s ease-out both; }
+@keyframes cr-bg-in { from { transform: scale(1.08); filter: brightness(.4); } to { transform: none; filter: none; } }
+@keyframes cr-rise { from { opacity: 0; transform: translateY(26px); } to { opacity: 1; transform: none; } }
+@keyframes cr-pop { from { opacity: 0; transform: translateY(20px) scale(.9); } to { opacity: 1; transform: none; } }
+@keyframes cr-fade { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .classroom.is-entering * , .classroom.is-entering .cr-bg { animation: none !important; } }
+body[data-nexo-ambient-motion="reduced"] .classroom.is-entering *, body[data-nexo-ambient-motion="reduced"] .classroom.is-entering .cr-bg { animation: none !important; }

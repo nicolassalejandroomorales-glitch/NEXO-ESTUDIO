@@ -802,6 +802,7 @@
     const evaluation=window.NexoPreparation.evaluations(subject,state.events).find(item=>item.id===evaluationId);
     if(!evaluation) return renderEvaluations(subjectId);
     const ids=evaluation.lessons.filter(id=>LESSONS[id]);
+    ids.filter(id=>window.NexoClassCatalog?.[id]).forEach(id=>loadClassroom(id).catch(()=>{})); // precarga: entrar al aula es instantáneo
     const selected=ids.includes(selectedId)?selectedId:null;
     const registered=ids.filter(understood).length;
     const points=window.NexoPreparation.layout(ids.length);
@@ -841,8 +842,10 @@
     return `<button class="lesson-node ${status} ${unlocked ? '' : 'locked'}" data-open-lesson="${id}" ${unlocked ? '' : 'disabled'}><span class="node-index">${status === 'dominado' ? '✓' : unlocked ? index + 1 : '⌁'}</span><span class="node-copy">${pepLabel?`<span class="home-lesson-pep">${esc(pepLabel)}</span>`:''}<b>${esc(lesson.title)}</b><small>${ORGANIC[id] && status === 'dominado' ? '<span class="status-chip dominado">Autoverificado</span>' : statusChip(status)} · ${lesson.duration || 35} min</small><em class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</em></span><i>${window.NexoClassCatalog?.[id] ? 'Entrar al aula →' : 'Próximamente'}</i></button>`;
   }
 
+  let lessonReturnHash = '';
   function openLesson(id) {
     if (!LESSONS[id]) return;
+    if (!location.hash.includes('/lesson/')) lessonReturnHash = location.hash; // al salir del aula se vuelve al mismo mapa
     routeTo('lesson', id);
   }
 
@@ -914,7 +917,7 @@
     const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
-      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=1'), window.NexoLoader.script('./classes/player.js?v=1'),
+      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=2'), window.NexoLoader.script('./classes/player.js?v=2'),
         window.NexoLoader.script(`./classes/${file}?v=1`)]).then(() => true);
     });
     promise.catch(() => classroomLoads.delete(id));
@@ -929,7 +932,7 @@
     if (window.NexoClassroom && window.NexoClasses?.[id]) {
       return window.NexoClassroom.render(id, { app, getState: () => state, saveState: () => saveState({ backup: false }),
         avatarMarkup, hydrate: () => requestAnimationFrame(() => hydrateAvatars(app)), track: (...args) => cloud.track(...args),
-        subject: { id: subject.id, name: subject.name, color: subject.color }, exit: () => routeTo('learn', 'course', subject.id) });
+        subject: { id: subject.id, name: subject.name, color: subject.color }, exit: () => { if (lessonReturnHash) location.hash = lessonReturnHash; else routeTo('learn', 'course', subject.id); } });
     }
     if (!classroomLoads.has(id)) {
       app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Abriendo el aula…</p></div></section>';
@@ -1609,6 +1612,7 @@
     if(button.dataset.sceneHotspot&&!button.dataset.route)return window.NexoHomeScene.activate(button.dataset.sceneHotspot,app);
     if (button.closest('.modal-backdrop') && button.classList.contains('modal-backdrop') && event.target !== button) return;
     if (button.dataset.devRoute && new URLSearchParams(location.search).get('nexoDev') === '1') return routeTo(...button.dataset.devRoute.split('/'));
+    if (button.dataset.grimoireNode && window.NexoClassCatalog?.[button.dataset.grimoireNode]) return openLesson(button.dataset.grimoireNode); // tema con aula: directo, sin paso extra
     if (button.dataset.grimoireEvaluation) return routeTo('learn','course',button.dataset.grimoireCourse,'evaluation',button.dataset.grimoireEvaluation,...(button.dataset.grimoireNode?[button.dataset.grimoireNode]:[]));
     if (button.dataset.grimoireRoute) return routeTo(...button.dataset.grimoireRoute.split('/'));
     if (button.dataset.route) return routeTo(button.dataset.route, ...(button.dataset.routeSub ? [button.dataset.routeSub] : []));
