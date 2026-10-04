@@ -4,6 +4,25 @@ Tema de este chat: **la mascota**. Meta: que deje de estar clavada en el escrito
 se mueve, saca libros de la biblioteca, mira por la ventana, duerme, y reacciona al clima real (se asusta con la tormenta).
 Estado: **borrador, esperando OK de Niquito** (3 oct 2026).
 
+## Fase 0 — Borrón y cuenta nueva (4 oct 2026, pedido por Niquito)
+
+Antes de la vida en la sala se borra todo lo viejo para rehacerlo con el diseño propio de Niquito (él trae una imagen de referencia).
+
+- **Se borran**: cerdito/gato/perro (bases, poses, Rive, `mascot-rive.js`, `vendor/rive`), los 27 cosméticos (`dist/avatar/*`, `assets/avatar/`),
+  la tienda y el vestuario actuales, la mascota de la barra lateral y las pruebas que solo revisaban eso. Todo sigue en el historial de Git.
+- **Átomos a cero** (una sola vez, con marca en el estado) y se quita el artículo "Modo sin distracciones". Se sigue ganando átomos al estudiar;
+  la economía se rediseña junto con la tienda nueva.
+- **Inicio**: escritorio vacío hasta que exista la mascota nueva. Tienda y Vestuario muestran "Disponible próximamente".
+- **No se toca Supabase**: el catálogo e inventario de la nube siguen ahí; la app local los ignora. Con sesión iniciada, el saldo de la nube
+  lo manda el servidor (no se puede poner en cero sin tocar Supabase) → pendiente para cuando se autorice.
+- Se conserva `dist/mascot/controller.js` (decide intención por habitación, sin arte): lo reutiliza el motor de vida.
+
+**Hecho (4 oct 2026, esperando aprobación visual)**: archivos borrados con `git rm`; `data.js` con `companions`/`rewards` vacíos;
+`app.js` con `avatarMarkup()` vacío, Tienda y Mascota en "Disponible próximamente" (los Desafíos siguen bajo la Tienda), migración
+`meta.shopReset202610`; bundle sin módulos de avatar; `smoke-test` y `mascot-controller-test` actualizados. Capturas en `capturas/fase0-*`.
+**Quedó pendiente de la Fase 0**: CSS muerto del avatar/tienda en `styles.css`, `arcane.css` y `update01.css` (no estorba; limpiarlo al hacer la tienda nueva),
+y pruebas de navegador/nube que aún mencionan la mascota vieja (`e2e-test`, `cloud-e2e`, `cloud-test`, `database-test`, `optimize-room-art`).
+
 ## Qué
 
 **1. Estaciones**: 4 lugares de la sala (anclas de `home-scene.js`, hoy solo el escritorio está calibrado).
