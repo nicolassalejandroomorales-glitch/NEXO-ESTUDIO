@@ -202,8 +202,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 |---|---|---|---|
 | 1 | Motor de evidencia: escalones, confianza, hojas del árbol; conectado con FSRS | **Hecha** | Opus 5.5 |
 | 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Hecha** | Opus 5.5 |
-| 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Siguiente** | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
-| 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | Pendiente | Opus 5.5 |
+| 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Hecha** (esperando tu prueba) | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
+| 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | **Siguiente** | Opus 5.5 |
 | 5 | Formulario con investigación y recetario de pociones | Pendiente | Opus 5.5 |
 | 6 | Las otras misiones de Aminas al modelo nuevo | Pendiente | Opus 5.5 |
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Pendiente | Sonnet 5.5 |
@@ -228,6 +228,13 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   (dibujar tocando: átomos, enlaces simple/doble/triple, cargas, borrar, deshacer; flechas desde pares libres o enlaces, con los electrones viajando).
   Actividades nuevas `build` y `arrows` (escalón 4): 4 de ejemplo (protonación y acilación). RDKit (ya estaba en `dist/vendor/rdkit`) revisa en
   `tools/molecule-test.cjs` que el editor y RDKit coincidan y que cada molécula de las clases sea válida.
+- **Etapa 3 hecha (4 oct):** la misión 7 (Reacciones) rehecha según el guion: caso de farmacia (paracetamol), diagnóstico, bases
+  (flecha curva, C=O δ+, E2) y **3 recetas** (acilación, diazonio, Hofmann). Cada receta: "adivina antes" que no cuenta (efecto del pretest),
+  lección, **mecanismo con controles** (atrás, reproducir, siguiente), práctica que se va soltando (flecha ya puesta → sin ayuda),
+  **casos gemelos**, **predice-observa-explica** con termómetro, **caldero** (ingredientes en orden; la poción mal hecha explica el error),
+  **el aprendiz que se equivocó** (encontrar y corregir el paso), dibujo del producto con aviso de "casi" (Zaitsev vs Hofmann) y la
+  **receta guardada** en el grimorio. Cierre: enséñale a tu compañero (escrito, con ideas clave detectadas) y encargo estilo PEP con opción en papel.
+  Tipos nuevos: `poe`, `recipe`, `spot` y `figures` en `choice`. Pruebas: `classroom-test` exige 3+ tipos por receta y cuadros con escena.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

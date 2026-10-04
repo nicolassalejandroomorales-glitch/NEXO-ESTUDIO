@@ -290,6 +290,8 @@
     'gabriel-stop': { label: 'Falta liberar la amina', why: 'La N-alquilftalimida es el intermedio. Hay que tratarla con hidrazina (o hidrolizar) para liberar R–NH₂.', prereq: { title: 'Síntesis de Gabriel', mission: 'm6', block: 'b63' } },
     'zaitsev-hofmann': { label: 'En Hofmann gana el alqueno MENOS sustituido', why: 'El grupo saliente –N(CH₃)₃⁺ es muy voluminoso: el estado de transición hacia el alqueno más sustituido tiene una interacción gauche que lo encarece. Se forma más rápido el menos sustituido (control cinético).', prereq: { title: 'Eliminación de Hofmann', mission: 'm7', block: 'b72' } },
     'tertiary-acyl': { label: 'Para formar amida el N necesita un H', why: 'En la acilación el N reemplaza a su H por el grupo acilo. Una amina terciaria no tiene H en el N: no forma amida.', prereq: { title: 'Acilación', mission: 'm7', block: 'b71' } },
+    'tertiary-acylation': { label: 'Una amina 3° no forma amida', why: 'La acilación cambia un H del N por el grupo acilo. Una amina terciaria no tiene H en el N: no puede formar la amida neutra.', prereq: { title: 'Aminas 1°, 2° y 3°', mission: 'm1', block: 'b1' } },
+    'e1-not-e2': { label: 'Eso es una E1, no una E2', why: 'Si primero sale el grupo y después la base saca el H, son dos pasos: eso es E1. La E2 ocurre en un solo paso, todo al mismo tiempo.', prereq: { title: 'Eliminación E2', mission: 'm7', block: 'f71' } },
     'nitration-confusion': { label: 'Eso nitra el anillo, no forma el diazonio', why: 'HNO₃/H₂SO₄ introduce un –NO₂ en el benceno. Para pasar de –NH₂ a –N₂⁺ se usa NaNO₂ con HCl, en frío (0–5 °C).', prereq: { title: 'Sales de diazonio', mission: 'm7', block: 'b73' } },
     'ir-peaks': { label: 'Cuenta los enlaces N–H', why: 'Cada tipo de amina da tantas señales N–H como permite su estructura: la 1° (NH₂) da dos picos (estiramiento simétrico y asimétrico), la 2° uno, la 3° ninguno.', prereq: { title: 'IR de aminas', mission: 'm8', block: 'b81' } },
     'n-rule': { label: 'Regla del nitrógeno', why: 'Un número impar de N da masa molecular impar; ningún N o un número par de N da masa par.', prereq: { title: 'Masa par o impar', mission: 'm8', block: 'f82' } }
@@ -382,6 +384,30 @@
       simple: 'En el espectrómetro de masas, la amina se rompe en el enlace C–C vecino al carbono unido al N. Queda un catión con el N, estabilizado por resonancia, que da una señal fuerte.',
       simpler: 'La amina se corta «al lado del vecino» del N, porque el pedazo con el N queda estable.' }
   );
+
+  /* ── Escenas de moléculas para la misión 7 (piloto de la clase viva). Coordenadas en el lienzo del editor (420 × 260). ── */
+  const A = (id, el, x, y, q = 0, extra = {}) => ({ id, el, x, y, q, ...extra });
+  const B = (a, b, o = 1) => ({ a, b, o });
+  const ring = (cx, cy, r, p) => { const atoms = [...Array(6)].map((_, i) => A(`${p}${i}`, 'C', cx + r * Math.cos(i * Math.PI / 3), cy + r * Math.sin(i * Math.PI / 3), 0, { hide: true }));
+    return { atoms, bonds: atoms.map((a, i) => B(a.id, atoms[(i + 1) % 6].id, i % 2 ? 1 : 2)) }; };
+  const benz = ring(150, 140, 40, 'r');
+  const PARACETAMOL = { atoms: [...benz.atoms, A('oh', 'O', 65, 140), A('nh', 'N', 235, 140), A('co', 'C', 275, 115, 0, { hide: true }), A('o', 'O', 275, 68), A('me', 'C', 320, 140)],
+    bonds: [...benz.bonds, B('r3', 'oh'), B('r0', 'nh'), B('nh', 'co'), B('co', 'o', 2), B('co', 'me')] };
+  const ACYL1 = { scene: { atoms: [A('c1', 'C', 45, 150), A('n', 'N', 115, 150), A('c2', 'C', 250, 150), A('o', 'O', 250, 70), A('c3', 'C', 320, 190), A('cl', 'Cl', 195, 205)],
+    bonds: [B('c1', 'n'), B('c2', 'o', 2), B('c2', 'c3'), B('c2', 'cl')] }, lonePairs: { n: 1, o: 2, cl: 3 }, lpAngle: { n: -40 } };
+  const ACYL2 = { scene: { atoms: [A('c1', 'C', 45, 150), A('n', 'N', 120, 150, 1), A('c2', 'C', 220, 150), A('o', 'O', 220, 70, -1), A('c3', 'C', 290, 185), A('cl', 'Cl', 220, 235)],
+    bonds: [B('c1', 'n'), B('n', 'c2'), B('c2', 'o'), B('c2', 'c3'), B('c2', 'cl')] }, lonePairs: { o: 3, cl: 3 }, lpAngle: { o: -90 } };
+  const AMIDE = { scene: { atoms: [A('c1', 'C', 45, 150), A('n', 'N', 120, 150), A('c2', 'C', 220, 150), A('o', 'O', 220, 70), A('c3', 'C', 290, 185)],
+    bonds: [B('c1', 'n'), B('n', 'c2'), B('c2', 'o', 2), B('c2', 'c3')] }, lonePairs: { n: 1 }, lpAngle: { n: 90 } };
+  const chain = (extra = [], extraBonds = [], double = null) => ({ atoms: [A('c1', 'C', 80, 175), A('c2', 'C', 140, 140), A('c3', 'C', 200, 175), A('c4', 'C', 260, 140), ...extra],
+    bonds: [B('c1', 'c2', double === 1 ? 2 : 1), B('c2', 'c3', double === 2 ? 2 : 1), B('c3', 'c4'), ...extraBonds] });
+  const QUAT = chain([A('n', 'N', 140, 75, 1, { label: 'N(CH₃)₃⁺' })], [B('c2', 'n')]);
+  const HOF2 = { scene: chain([A('n', 'N', 140, 75, 1, { label: 'N(CH₃)₃⁺' }), A('h1', 'H', 45, 215), A('oh', 'O', 100, 285, -1)], [B('c2', 'n'), B('c1', 'h1')]),
+    lonePairs: { oh: 3 }, lpAngle: { oh: -130 } };
+  const BUTENE1 = chain([], [], 1), BUTENE2 = chain([], [], 2), BUTANE = chain();
+  const DIETHYL = { atoms: [A('n', 'N', 150, 110), A('a1', 'C', 100, 140), A('a2', 'C', 50, 110), A('b1', 'C', 200, 140), A('b2', 'C', 250, 110)], bonds: [B('n', 'a1'), B('a1', 'a2'), B('n', 'b1'), B('b1', 'b2')] };
+  const TRIETHYL = { atoms: [...DIETHYL.atoms, A('e1', 'C', 150, 50), A('e2', 'C', 200, 20)], bonds: [...DIETHYL.bonds, B('n', 'e1'), B('e1', 'e2')] };
+  const BROMO = chain([A('br', 'Br', 140, 75)], [B('c2', 'br')]);
 
   cls.missions.push(
   /* ── Misión 2 ── */
@@ -635,51 +661,173 @@
   },
   /* ── Misión 7 ── */
   {
-    id: 'm7', title: 'Reacciones de aminas', subtitle: 'Acilación, eliminación de Hofmann y sales de diazonio', minutes: 18, slides: '34–40', pep: 'preguntas 4 y 6',
+    id: 'm7', title: 'Reacciones de aminas', subtitle: 'Tres recetas: acilación, sales de diazonio y eliminación de Hofmann', minutes: 35, slides: '34–40', pep: 'preguntas 4 y 6',
     stages: {
+      hook: { title: 'El paracetamol se fabrica con una reacción de esta misión', scene: PARACETAMOL, smiles: 'CC(=O)Nc1ccc(O)cc1',
+        sage: 'Aprendiz… antes de empezar, mira algo que seguro tienes en tu casa.',
+        text: 'El paracetamol se fabrica **acilando** el p-aminofenol con anhídrido acético: el –NH₂ se convierte en una amida (–NH–CO–CH₃). Es la receta 1 de hoy. Al final de la misión sabrás cómo funciona y por qué una amina 3° no podría hacerlo.' },
       diagnostic: [
-        q('m7-d1', 'En una E2 común, ¿qué alqueno suele predominar?', [{ text: 'El más sustituido (Zaitsev)', correct: true }, { text: 'El menos sustituido', note: 'Eso pasa en casos especiales, como Hofmann.' }, { text: 'Siempre mitad y mitad', note: 'Hay preferencia según estabilidad y estérico.' }], { explain: 'Normalmente gana el alqueno más sustituido. Hofmann es la excepción que veremos.', slide: 36 }),
-        q('m7-d2', '¿Qué reactivo convierte la anilina en sal de bencenodiazonio?', [{ text: 'NaNO₂ con HCl, en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CuCl', note: 'El CuCl se usa después, sobre la sal de diazonio.' }], { explain: 'NaNO₂/HCl a 0–5 °C transforma Ar–NH₂ en Ar–N₂⁺.', slide: 39 })
+        q('m7-d1', 'En una E2 común, ¿qué alqueno suele predominar?', [{ text: 'El más sustituido (Zaitsev)', correct: true }, { text: 'El menos sustituido', note: 'Eso pasa en casos especiales, como Hofmann.' }, { text: 'Siempre mitad y mitad', note: 'Hay preferencia según estabilidad y estérico.' }], { explain: 'Normalmente gana el alqueno más sustituido. Hofmann es la excepción que veremos.', slide: 36, concept: 'am.hofmann' }),
+        q('m7-d2', '¿Qué reactivo convierte la anilina en sal de bencenodiazonio?', [{ text: 'NaNO₂ con HCl, en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CuCl', note: 'El CuCl se usa después, sobre la sal de diazonio.' }], { explain: 'NaNO₂/HCl a 0–5 °C transforma Ar–NH₂ en Ar–N₂⁺.', slide: 39, concept: 'am.diazonio' }),
+        q('m7-d3', '¿Cuál de estas aminas forma una amida con cloruro de acetilo?', [{ text: 'Dietilamina', correct: true }, { text: 'Trietilamina', misconception: 'tertiary-acylation' }, { text: 'Ninguna: las aminas no reaccionan con cloruros de ácido', note: 'Sí reaccionan: es la acilación.' }], { explain: 'La dietilamina es secundaria: tiene un H en el N para cambiar por el acilo.', slide: 34, concept: 'am.acilacion' })
       ],
       fundamentals: [
+        { id: 'f69', title: 'Desde cero: leer una flecha curva', slide: 34,
+          body: 'Una flecha curva muestra el viaje de **dos electrones**. Nace donde están los electrones (un **par libre** o un **enlace**) y apunta adonde llegan (un **átomo**, o entre dos átomos para formar un enlace). Nunca nace de un H⁺ ni de una carga positiva: ahí no hay electrones para dar.',
+          deeper: 'Piensa en la flecha como una pelota que se lanza: sale de la mano que la tiene (el par libre o el enlace) y llega a la mano que la necesita (el átomo pobre en electrones). Si una flecha sale de un H⁺, es como lanzar una pelota que no tienes.' },
+        { id: 'f70', title: 'Desde cero: el carbono del C=O es δ+', slide: 34,
+          body: 'El oxígeno es más electronegativo que el carbono: en un C=O los electrones se van hacia el O. El O queda **δ−** y el C queda **δ+**, pobre en electrones. Si además el C tiene un Cl, queda todavía más pobre. Por eso los nucleófilos, como el N de una amina, atacan al **carbono** del C=O.',
+          deeper: 'Imagina una cuerda tirada desde los dos lados: el O tira más fuerte y se queda con más electrones. El C queda "con hambre" de electrones, y el par libre del N va justo ahí.' },
         { id: 'f71', deeper: 'Tres cosas pasan **al mismo tiempo**: la base saca un H del carbono vecino, esos electrones forman el doble enlace C=C y el grupo saliente se va con su par. Para que funcione, el H y el grupo saliente deben estar en **lados opuestos** (anti), como dos personas en los extremos de una cuerda.', title: 'Desde cero: eliminación E2', body: 'Una base quita un H del carbono **vecino** al que lleva el grupo saliente, se forma un doble enlace y el grupo sale, todo **en un paso**. El H y el grupo saliente deben estar **anticoplanares** (en lados opuestos).' },
         { id: 'f72', deeper: 'Un buen grupo saliente es uno que queda **estable** cuando se va con los electrones: I⁻, Br⁻, H₂O, N₂. El NH₂⁻ es una base fortísima e inestable: no quiere salir. El truco de Hofmann es convertir el N en **–N(CH₃)₃⁺**, que sale como trimetilamina neutra y estable.', title: 'Desde cero: buen grupo saliente', body: 'Sale bien un grupo que queda estable con el par de electrones: I⁻, Br⁻, H₂O, N₂. El NH₂⁻ es pésimo. Por eso, para eliminar una amina, primero se convierte en –N(CH₃)₃⁺, que sale como N(CH₃)₃ neutra.' }
       ],
-      explain: [
-        { id: 'b71', deeper: 'El N ataca al C=O del cloruro de ácido y el Cl se va. El N **cambia uno de sus H** por el grupo acilo (R–C=O). Para eso necesita tener al menos un H: las aminas **1° y 2°** pueden; la **3°** no tiene H que cambiar. El HCl que se forma lo atrapa otra amina o una base.', title: 'Acilación: de amina a amida', slide: 34, body: 'Una amina **1° o 2°** + cloruro de ácido (o anhídrido) → **amida** + HCl. El N cambia su H por el grupo acilo. Una terciaria no tiene H en el N: no forma amida.', rows: [['CH₃CH₂NH₂ + CH₃COCl', 'CH₃CH₂NH–COCH₃ + HCl']] },
-        { id: 'b72', title: 'Eliminación de Hofmann', slide: 35, body: '1) **CH₃I en exceso**: la amina se metila hasta sal de amonio cuaternario. 2) **Ag₂O, H₂O**: el contraión pasa a OH⁻. 3) **Calor**: E2 que da un alqueno + N(CH₃)₃. El producto principal es el alqueno **MENOS** sustituido.',
-          deeper: 'Por qué al revés de Zaitsev: el grupo saliente –N(CH₃)₃⁺ es enorme. En la conformación anticoplanar que lleva al alqueno más sustituido aparece una interacción gauche que sube la energía del estado de transición. El camino al menos sustituido es más barato y más rápido: control cinético (diap. 36–37).' },
-        { id: 'b73', deeper: '**Paso 1:** conviertes el NH₂ del anillo en –N₂⁺ con NaNO₂ y HCl **en hielo** (a temperatura ambiente se descompone). **Paso 2:** como el N₂ quiere irse como gas, lo reemplazas por lo que necesites: Cu con Cl, Br o CN (Sandmeyer); HBF₄ y calor para F; agua caliente para OH; KI para I.', title: 'Sales de diazonio', slide: 40, body: 'Ar–NH₂ + NaNO₂/HCl (0–5 °C) → **Ar–N₂⁺**. El N₂ es un grupo saliente excelente: muchos reactivos lo reemplazan.',
-          rows: [['CuCl / CuBr / CuCN (Sandmeyer)', 'Ar–Cl / Ar–Br / Ar–CN'], ['HBF₄, calor (Schiemann)', 'Ar–F'], ['H₂O, calor', 'Ar–OH (fenol)'], ['KI', 'Ar–I']] }
-      ],
-      worked: {
-        prompt: 'Eliminación de Hofmann de la 2-butanamina, CH₃–CH(NH₂)–CH₂–CH₃.',
-        steps: [
-          { text: 'CH₃I en exceso: el N se metila tres veces → **CH₃–CH(N(CH₃)₃⁺)–CH₂–CH₃ I⁻**.' },
-          { text: 'Ag₂O, H₂O: el I⁻ se cambia por **OH⁻**, que será la base.' },
-          { text: 'Calor: E2. El OH⁻ quita un H del **CH₃** (el lado menos impedido), no del CH₂.', ask: '¿De qué carbono saca el H la base?' },
-          { text: 'Producto principal: **1-buteno** (menos sustituido) + N(CH₃)₃ + H₂O.' }
-        ]
-      },
-      practice: [
-        q('m7-p1', 'En la eliminación de Hofmann, ¿qué alqueno predomina?', [{ text: 'El menos sustituido', correct: true }, { text: 'El más sustituido', misconception: 'zaitsev-hofmann' }, { text: 'No se forma alqueno', note: 'Sí: es una eliminación E2.' }], { explain: 'El grupo saliente voluminoso hace que gane el alqueno menos sustituido (control cinético).', slide: 36, hint: 'Piensa en el tamaño de –N(CH₃)₃⁺.' }),
-        match('m7-p2', 'Une cada reactivo con el producto que forma desde una sal de arildiazonio.', [['CuCl', 'Ar–Cl'], ['CuCN', 'Ar–CN'], ['HBF₄, calor', 'Ar–F'], ['H₂O, calor', 'Ar–OH (fenol)'], ['KI', 'Ar–I']],
-          { explain: 'Sandmeyer usa sales de cobre(I); Schiemann, HBF₄ para el flúor; agua caliente da fenol; KI da el yoduro.', slide: 40, hint: 'Sandmeyer = cobre.' }),
-        q('m7-p3', '¿Cuál NO forma amida con cloruro de acetilo?', [{ text: 'Trimetilamina', correct: true }, { text: 'Etilamina', note: 'Es primaria: forma amida.' }, { text: 'Dietilamina', note: 'Es secundaria: forma amida.' }], { explain: 'La acilación reemplaza un H del N por el acilo. La trimetilamina no tiene H en el N.', slide: 34, hint: '¿Cuál no tiene H en el N?' })
-      ],
+      explain: [],
+      practice: [],
       challenge: [
         order('m7-c1', 'Desafío: ordena la secuencia para obtener clorobenceno desde anilina.', [['diaz', 'Anilina + NaNO₂/HCl, 0–5 °C'], ['salt', 'Se forma la sal de bencenodiazonio'], ['cu', 'Se agrega CuCl (Sandmeyer)'], ['prod', 'Clorobenceno + N₂']], ['diaz', 'salt', 'cu', 'prod'],
-          { direction: 'Del primer al último paso.', explain: 'Diazotación, sal de diazonio, Sandmeyer con CuCl y sale N₂.', slide: 40, hint: 'Primero hay que fabricar el buen grupo saliente.' })
+          { direction: 'Del primer al último paso.', explain: 'Diazotación, sal de diazonio, Sandmeyer con CuCl y sale N₂.', slide: 40, hint: 'Primero hay que fabricar el buen grupo saliente.', concept: 'am.diazonio' })
       ],
       transfer: [
-        q('m7-t1', '2-Butanamina + 1) CH₃I exceso 2) Ag₂O, H₂O, calor. ¿Producto principal?', [{ text: '1-Buteno', correct: true }, { text: '2-Buteno', misconception: 'zaitsev-hofmann' }, { text: '2-Butanol', note: 'No es una sustitución: es una eliminación E2.' }], { explain: 'Hofmann: el alqueno menos sustituido.', slide: 36 }),
-        q('m7-t2', 'Estilo PEP (pregunta 4a): desde anilina, ¿cómo obtienes la sal C₆H₅N₂⁺?', [{ text: 'NaNO₂ / HCl en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CH₃I en exceso', note: 'Eso metila el N; no forma diazonio.' }], { explain: 'La diazotación con NaNO₂/HCl (0–5 °C) es la respuesta de la pauta.', slide: 39 }),
-        write('m7-w1', 'Explícalo con tus palabras: ¿por qué una amina terciaria no forma amida con cloruro de acetilo?',
+        q('m7-t1', '2-Butanamina + 1) CH₃I exceso 2) Ag₂O, H₂O, calor. ¿Producto principal?', [{ text: '1-Buteno', correct: true }, { text: '2-Buteno', misconception: 'zaitsev-hofmann' }, { text: '2-Butanol', note: 'No es una sustitución: es una eliminación E2.' }], { explain: 'Hofmann: el alqueno menos sustituido.', slide: 36, concept: 'am.hofmann' }),
+        q('m7-t2', 'Estilo PEP (pregunta 4a): desde anilina, ¿cómo obtienes la sal C₆H₅N₂⁺?', [{ text: 'NaNO₂ / HCl en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CH₃I en exceso', note: 'Eso metila el N; no forma diazonio.' }], { explain: 'La diazotación con NaNO₂/HCl (0–5 °C) es la respuesta de la pauta.', slide: 39, concept: 'am.diazonio' }),
+        write('m7-w1', 'Tu compañero pregunta: «¿por qué la trietilamina no forma amida con cloruro de acetilo, si la dietilamina sí?». Explícaselo con tus palabras.',
           'Para formar la amida, el N ataca al C=O y después cambia uno de sus H por el grupo acilo. Una amina terciaria no tiene H en el N, así que no puede completar ese cambio y no se forma la amida neutra.',
           ['Dije que la amina terciaria no tiene H en el N', 'Expliqué que en la acilación el N cambia un H por el grupo acilo', 'Concluí que sin ese H no se forma la amida'],
-          { explain: 'Acilar es cambiar un H del N por un acilo: sin H no hay cambio.', slide: 35 })
+          { explain: 'Acilar es cambiar un H del N por un acilo: sin H no hay cambio.', slide: 34, concept: 'am.acilacion', teach: true,
+            keywords: [{ label: 'No tiene H en el N', any: ['no tiene h', 'sin h', 'no tiene hidrogeno', 'no hay h', 'ningun h', 'no posee h'] }, { label: 'Cambia o reemplaza un H', any: ['cambia', 'reemplaza', 'sustituye', 'intercambia', 'pierde un h', 'saca un h'] }, { label: 'Grupo acilo', any: ['acilo', 'acetilo', 'c=o', 'carbonilo', 'co-ch3'] }] }),
+        write('m7-t3', 'Estilo PEP (pregunta 6): 2-butanamina + 1) CH₃I en exceso, 2) Ag₂O / H₂O, 3) calor. Escribe qué hace cada paso, el producto principal y por qué.',
+          'Paso 1: el CH₃I en exceso metila el N tres veces y queda la sal de amonio cuaternario (–N(CH₃)₃⁺ I⁻). Paso 2: el Ag₂O con agua cambia el I⁻ por OH⁻. Paso 3: con calor ocurre una E2 y sale N(CH₃)₃. El producto principal es el 1-buteno, el alqueno menos sustituido, porque el grupo saliente es muy voluminoso (eliminación de Hofmann).',
+          ['El CH₃I en exceso forma la sal de amonio cuaternario', 'El Ag₂O / H₂O cambia el contraión por OH⁻', 'El producto principal es el 1-buteno', 'Es el menos sustituido por el grupo saliente voluminoso (Hofmann)'],
+          { explain: 'Hofmann: metilación exhaustiva, OH⁻ como base y E2 hacia el alqueno menos sustituido.', slide: 36, concept: 'am.hofmann', paper: true })
       ]
-    }
+    },
+    parts: [
+      { id: 'r1', intro: 'Receta 1: **la acilación**. Convierte una amina en amida, como en el paracetamol.',
+        pretest: q('m7-pre1', '¿Dónde crees que ataca el nitrógeno de la amina en el cloruro de acetilo?', [{ text: 'En el carbono del C=O', correct: true }, { text: 'En el oxígeno' }, { text: 'En el cloro' }],
+          { figures: [{ ...ACYL1, caption: 'Metilamina + cloruro de acetilo' }], explain: 'El carbono del C=O está unido a dos átomos electronegativos (O y Cl): es δ+, pobre en electrones. Ahí va el par libre del N.', slide: 34, concept: 'am.acilacion' }),
+        explain: [
+          { id: 'b71', deeper: 'El N ataca al C=O del cloruro de ácido y el Cl se va. El N **cambia uno de sus H** por el grupo acilo (R–C=O). Para eso necesita tener al menos un H: las aminas **1° y 2°** pueden; la **3°** no tiene H que cambiar. El HCl que se forma lo atrapa otra amina o una base.', title: 'Acilación: de amina a amida', slide: 34, body: 'Una amina **1° o 2°** + cloruro de ácido (o anhídrido) → **amida** + HCl. El N cambia su H por el grupo acilo. Una terciaria no tiene H en el N: no forma amida.', rows: [['CH₃CH₂NH₂ + CH₃COCl', 'CH₃CH₂NH–COCH₃ + HCl']] },
+          { id: 'b71m', title: 'El mecanismo, paso a paso', slide: 34,
+            body: 'Mira cómo viajan los electrones. Puedes avanzar, retroceder o reproducirlo solo.',
+            deeper: 'Son dos movimientos: **entra** el N (y el C=O se abre) y **sale** el Cl (y el C=O se vuelve a cerrar). Por eso se llama adición–eliminación. Al final, el N cede un H⁺ y queda la amida neutra.',
+            frames: [
+              { ...ACYL1, arrows: [['lp:n', 'a:c2'], ['b:1', 'a:o']], caption: '**Paso 1.** El par libre del N ataca al carbono δ+ del C=O. Al mismo tiempo, los electrones del C=O suben al oxígeno.' },
+              { ...ACYL2, arrows: [['lp:o', 'b:2'], ['b:4', 'a:cl']], caption: '**Paso 2.** El O⁻ devuelve su par y se vuelve a formar el C=O. El enlace C–Cl se rompe y sale Cl⁻.' },
+              { ...AMIDE, arrows: [], caption: '**Paso 3.** Otra amina (o una base) quita el H⁺ del N. Queda la **amida** neutra, N-metilacetamida, y HCl atrapado como sal.' }
+            ] }
+        ],
+        practice: [
+          { id: 'm7-a0', type: 'arrows', source: SRC, concept: 'am.acilacion', slide: 34, step: 3, ...ACYL1, given: [['lp:n', 'a:c2']], answer: [['b:1', 'a:o']],
+            prompt: 'Te dejé puesta la primera flecha. Dibuja la que falta: cuando llega el N, ¿adónde se van los electrones del C=O?',
+            notes: { 'b:1>a:c2': 'Los electrones del C=O se van hacia el O, que es más electronegativo, no hacia el C.', 'b:3>a:cl': 'Eso pasa después, en el paso 2. Ahora el C=O se abre hacia el O.' },
+            explain: 'Cuando el N se une al carbono, el C no puede quedar con 5 enlaces: el enlace π del C=O se abre y sus electrones suben al O.', hint: 'El carbono no puede tener 5 enlaces. ¿Qué enlace se abre, y hacia el átomo más electronegativo?' },
+          { id: 'm7-a1', type: 'arrows', source: SRC, concept: 'am.acilacion', slide: 34, ...ACYL1, answer: [['lp:n', 'a:c2'], ['b:1', 'a:o']],
+            prompt: 'Ahora sin ayuda: dibuja las 2 flechas del primer paso de la acilación.',
+            notes: { 'lp:n>a:o': 'El N no ataca al O: el O es rico en electrones (δ−). El N busca al carbono del C=O, que es δ+.',
+              'lp:n>a:cl': 'El Cl sale después, en el segundo paso. Primero el N ataca al carbono del C=O.',
+              'b:3>a:cl': 'Eso pasa en el segundo paso, cuando vuelve a formarse el C=O. En el primero, los electrones del C=O suben al O.',
+              'b:1>a:c2': 'Los electrones del C=O se van hacia el O, que es más electronegativo, no hacia el C.' },
+            explain: 'El par libre del N ataca al carbono δ+ del C=O y los electrones del enlace C=O suben al oxígeno.',
+            hint: 'El N busca el átomo más pobre en electrones. Cuando llega, el C=O tiene que soltar un par: ¿hacia dónde?' },
+          { id: 'm7-a2', type: 'arrows', source: SRC, concept: 'am.acilacion', slide: 34, ...ACYL2, answer: [['lp:o', 'b:2'], ['b:4', 'a:cl']],
+            prompt: 'Paso 2: el intermediario se desarma. Dibuja las 2 flechas: se vuelve a formar el C=O y sale el cloruro.',
+            notes: { 'lp:o>a:c2': 'Casi: el par del O vuelve a formar el enlace C=O, así que la flecha llega al enlace C–O, no al átomo de C.',
+              'b:4>a:c2': 'El enlace C–Cl se rompe hacia el Cl, que se lleva los electrones y sale como Cl⁻.', 'lp:cl>a:c2': 'El Cl no ataca: es el que se va. Sus electrones se quedan con él.',
+              'b:1>a:n': 'El N se queda unido al carbono: es parte del producto. El que sale es el Cl.' },
+            explain: 'El O⁻ devuelve su par al enlace C–O (vuelve el C=O) y, para que el C no tenga 5 enlaces, el enlace C–Cl se rompe: sale Cl⁻, un buen grupo saliente.',
+            hint: 'Una flecha nace en el O⁻ y forma de nuevo el doble enlace. La otra rompe el enlace con el mejor grupo saliente.' },
+          q('m7-tw1', 'Casos gemelos: las dos aminas se parecen mucho. ¿Cuál forma amida con cloruro de acetilo?', [{ text: 'Solo la dietilamina', correct: true }, { text: 'Solo la trietilamina', note: 'Al revés: la trietilamina no tiene H en el N.' }, { text: 'Las dos', misconception: 'tertiary-acylation' }],
+            { figures: [{ scene: DIETHYL, lonePairs: { n: 1 }, caption: 'Dietilamina (2°)' }, { scene: TRIETHYL, lonePairs: { n: 1 }, lpAngle: { n: 90 }, caption: 'Trietilamina (3°)' }],
+              explain: 'La única diferencia es un H en el N. La dietilamina lo tiene y puede cambiarlo por el acilo; la trietilamina no.', slide: 34, hint: 'Mira el N de cada una: ¿cuál tiene un H para cambiar?', concept: 'am.acilacion' }),
+          { id: 'm7-b1', type: 'build', source: SRC, concept: 'am.acilacion', slide: 34, smiles: 'CCCNC(C)=O',
+            prompt: 'Dibuja la amida que se forma con propilamina + cloruro de acetilo. Ya tienes la propilamina; agrégale lo que falta.',
+            start: { atoms: [A('a', 'C', 60, 160), A('b', 'C', 115, 125), A('c', 'C', 170, 160), A('n', 'N', 225, 125)], bonds: [B('a', 'b'), B('b', 'c'), B('c', 'n')] },
+            target: { atoms: [A('a', 'C', 60, 160), A('b', 'C', 115, 125), A('c', 'C', 170, 160), A('n', 'N', 225, 125), A('d', 'C', 280, 160), A('o', 'O', 280, 220), A('e', 'C', 335, 125)],
+              bonds: [B('a', 'b'), B('b', 'c'), B('c', 'n'), B('n', 'd'), B('d', 'o', 2), B('d', 'e')] },
+            explain: 'El N cambia uno de sus H por el grupo acetilo (CH₃–C=O) y el Cl se va. Producto: N-propilacetamida, CH₃CH₂CH₂–NH–CO–CH₃.',
+            hint: 'Al N se le une el carbono del C=O. Ese carbono lleva un O con doble enlace y un CH₃. El Cl no queda en el producto.' }
+        ],
+        recipe: { title: 'Poción de amida', base: 'Amina **1° o 2°** (R–NH₂, R₂NH)', reagents: 'Cloruro de ácido R–CO–Cl (o anhídrido)', condition: 'Una base (o más amina) atrapa el HCl', result: '**Amida** R–NH–CO–R′', note: 'Una amina 3° no sirve: no tiene H en el N.' } },
+
+      { id: 'r2', intro: 'Receta 2: **las sales de diazonio**. Un truco para cambiar el NH₂ de un anillo por casi cualquier cosa.',
+        pretest: q('m7-pre2', 'Un grupo que puede salir de la molécula como gas N₂…', [{ text: 'Sale con mucha facilidad', correct: true }, { text: 'Casi nunca sale' }, { text: 'Solo sale si se agrega más HCl' }],
+          { explain: 'El N₂ es muy estable y se escapa como gas: es de los mejores grupos salientes que existen. Por eso la sal de diazonio es tan útil.', slide: 39, concept: 'am.diazonio' }),
+        explain: [
+          { id: 'b73', deeper: '**Paso 1:** conviertes el NH₂ del anillo en –N₂⁺ con NaNO₂ y HCl **en hielo** (a temperatura ambiente se descompone). **Paso 2:** como el N₂ quiere irse como gas, lo reemplazas por lo que necesites: Cu con Cl, Br o CN (Sandmeyer); HBF₄ y calor para F; agua caliente para OH; KI para I.', title: 'Sales de diazonio', slide: 40, body: 'Ar–NH₂ + NaNO₂/HCl (0–5 °C) → **Ar–N₂⁺**. El N₂ es un grupo saliente excelente: muchos reactivos lo reemplazan.',
+            rows: [['CuCl / CuBr / CuCN (Sandmeyer)', 'Ar–Cl / Ar–Br / Ar–CN'], ['HBF₄, calor (Schiemann)', 'Ar–F'], ['H₂O, calor', 'Ar–OH (fenol)'], ['KI', 'Ar–I']] },
+          { id: 'b74', title: 'Por qué en hielo', slide: 39,
+            body: 'Las sales de arildiazonio se preparan y se usan **en frío (0–5 °C)**. Si se calientan en agua, pierden N₂ y el agua entra en su lugar: se forma **fenol**. Por eso la diazotación siempre se hace en un baño de hielo.',
+            deeper: 'La sal de diazonio es como un globo inflado: mientras está frío aguanta, pero con calor el N₂ "se escapa" y deja el anillo libre para que el agua lo ocupe. Si quieres fenol, calientas a propósito; si quieres otra cosa, la mantienes fría hasta agregar el reactivo.' }
+        ],
+        practice: [
+          { id: 'm7-poe1', type: 'poe', source: SRC, concept: 'am.diazonio', slide: 39,
+            prompt: 'Predice, observa y explica: ¿qué le pasa a una sal de bencenodiazonio en agua si la calientas?',
+            predict: 'Antes de mover el termómetro: ¿qué crees que pasará sobre 5 °C?',
+            options: [{ text: 'Se descompone: burbujea N₂ y se forma fenol', correct: true }, { text: 'No pasa nada: es muy estable' }, { text: 'Vuelve a formarse la anilina' }],
+            sim: { name: 'Temperatura', unit: '°C', min: 0, max: 40, step: 1, start: 2, threshold: 5, label: 'Mueve el termómetro y mira el matraz.',
+              below: 'La sal de bencenodiazonio se mantiene **estable** en el frío.', above: '¡Burbujea **N₂**! La sal se descompone y el agua entra en su lugar: se forma **fenol** (C₆H₅–OH).' },
+            explain: 'Sobre unos 5 °C la sal de diazonio pierde N₂ (gas) y el agua la reemplaza: fenol. Por eso se trabaja en hielo.',
+            hint: 'El N₂ es un grupo saliente buenísimo… ¿qué lo detiene? El frío.' },
+          { id: 'm7-rc1', type: 'recipe', source: SRC, concept: 'am.diazonio', slide: 40,
+            prompt: 'El caldero pide: **clorobenceno** desde anilina. Elige los ingredientes en orden.', base: 'Anilina (C₆H₅–NH₂)', target: 'clorobenceno',
+            ingredients: [{ id: 'nitro', label: 'HNO₃ / H₂SO₄' }, { id: 'diaz', label: 'NaNO₂ / HCl, 0–5 °C' }, { id: 'cucl', label: 'CuCl' }, { id: 'cubr', label: 'CuBr' }, { id: 'hbf4', label: 'HBF₄, calor' }, { id: 'mei', label: 'CH₃I en exceso' }, { id: 'heat', label: 'H₂O, calor' }],
+            answer: ['diaz', 'cucl'],
+            notes: { nitro: 'HNO₃/H₂SO₄ nitra el anillo (pone un –NO₂): no forma la sal de diazonio.', cubr: 'CuBr pone Br, no Cl: saldría bromobenceno.', hbf4: 'HBF₄ y calor ponen F (Schiemann): saldría fluorobenceno.',
+              mei: 'CH₃I metila el N; no lo convierte en un grupo saliente para el anillo.', heat: 'Agua caliente sobre la sal de diazonio da fenol, no clorobenceno.' },
+            orderNote: 'Primero hay que fabricar el grupo saliente: sin la sal de diazonio, el CuCl no tiene nada que reemplazar.',
+            explain: 'Diazotación (NaNO₂/HCl en frío) y después Sandmeyer con CuCl: sale N₂ y entra el Cl.', hint: 'Paso 1: fabricar el mejor grupo saliente. Paso 2: el cobre que trae el Cl.' },
+          { id: 'm7-rc2', type: 'recipe', source: SRC, concept: 'am.diazonio', slide: 40,
+            prompt: 'Otro pedido: **fluorobenceno** desde anilina.', base: 'Anilina (C₆H₅–NH₂)', target: 'fluorobenceno',
+            ingredients: [{ id: 'diaz', label: 'NaNO₂ / HCl, 0–5 °C' }, { id: 'cucl', label: 'CuCl' }, { id: 'hbf4', label: 'HBF₄, calor' }, { id: 'ki', label: 'KI' }, { id: 'nitro', label: 'HNO₃ / H₂SO₄' }],
+            answer: ['diaz', 'hbf4'],
+            notes: { cucl: 'CuCl pone Cl (Sandmeyer). Para el flúor se usa HBF₄ con calor (Schiemann).', ki: 'KI pone I: saldría yodobenceno.', nitro: 'HNO₃/H₂SO₄ nitra el anillo: no forma la sal de diazonio.' },
+            orderNote: 'Primero la sal de diazonio; después el reactivo que reemplaza al N₂.',
+            explain: 'El flúor no entra con cobre: se usa la reacción de Schiemann, HBF₄ y calor sobre la sal de diazonio.', hint: 'El flúor tiene su propia reacción, con un nombre distinto a Sandmeyer.' },
+          match('m7-p2', 'Une cada reactivo con el producto que forma desde una sal de arildiazonio.', [['CuCl', 'Ar–Cl'], ['CuCN', 'Ar–CN'], ['HBF₄, calor', 'Ar–F'], ['H₂O, calor', 'Ar–OH (fenol)'], ['KI', 'Ar–I']],
+            { explain: 'Sandmeyer usa sales de cobre(I); Schiemann, HBF₄ para el flúor; agua caliente da fenol; KI da el yoduro.', slide: 40, hint: 'Sandmeyer = cobre.', concept: 'am.diazonio' }),
+          { id: 'm7-fx1', type: 'spot', source: SRC, concept: 'am.diazonio', slide: 40,
+            prompt: 'Un aprendiz quiso preparar clorobenceno desde anilina. Revisa su hoja: ¿en qué paso se equivocó?',
+            steps: ['Anilina + NaNO₂ / HCl a 0–5 °C', 'Se forma la sal de bencenodiazonio, C₆H₅–N₂⁺', 'Agrega HBF₄ y calienta', 'Obtiene clorobenceno, C₆H₅–Cl'], wrong: 2,
+            stepNotes: { 0: 'Ese paso está bien: así se forma la sal de diazonio.', 1: 'Correcto: esa es la sal que se forma.', 3: 'Ese es el resultado que él creyó obtener; el error está antes.' },
+            fix: { question: '¿Qué debió usar en ese paso?', options: [{ text: 'CuCl (Sandmeyer)', correct: true }, { text: 'Más HBF₄', note: 'HBF₄ pone F, no Cl.' }, { text: 'HNO₃ / H₂SO₄', note: 'Eso nitra el anillo.' }] },
+            explain: 'HBF₄ y calor ponen F (Schiemann): habría obtenido fluorobenceno. Para el Cl se usa CuCl.', hint: '¿Qué pone el HBF₄? ¿Era eso lo que quería?' }
+        ],
+        recipe: { title: 'Poción de diazonio', base: 'Amina aromática Ar–NH₂', reagents: 'NaNO₂ + HCl', condition: '**0–5 °C** (en hielo)', result: 'Sal de diazonio **Ar–N₂⁺**',
+          note: 'Después: CuCl → Ar–Cl · CuBr → Ar–Br · CuCN → Ar–CN · HBF₄, calor → Ar–F · H₂O, calor → Ar–OH · KI → Ar–I.' } },
+
+      { id: 'r3', intro: 'Receta 3: **la eliminación de Hofmann**. Una amina se transforma en alqueno… pero no en el que esperarías.',
+        explain: [
+          { id: 'b72', title: 'Eliminación de Hofmann', slide: 35, body: '1) **CH₃I en exceso**: la amina se metila hasta sal de amonio cuaternario. 2) **Ag₂O, H₂O**: el contraión pasa a OH⁻. 3) **Calor**: E2 que da un alqueno + N(CH₃)₃. El producto principal es el alqueno **MENOS** sustituido.',
+            deeper: 'Por qué al revés de Zaitsev: el grupo saliente –N(CH₃)₃⁺ es enorme. En la conformación anticoplanar que lleva al alqueno más sustituido aparece una interacción gauche que sube la energía del estado de transición. El camino al menos sustituido es más barato y más rápido: control cinético (diap. 36–37).' },
+          { id: 'b72m', title: 'Hofmann, paso a paso', slide: 36,
+            body: 'Mira cómo la base elige el H más fácil de alcanzar.',
+            deeper: 'El N(CH₃)₃⁺ es como un vecino gigante: la base no se acerca al H que está "a su lado" en el CH₂, y prefiere el H del CH₃ de la punta. Por eso el doble enlace queda en la orilla: 1-buteno.',
+            frames: [
+              { scene: QUAT, arrows: [], caption: '**Paso 1.** CH₃I en exceso metila el N tres veces: queda –N(CH₃)₃⁺, una sal de amonio cuaternario. **Paso 2.** Ag₂O / H₂O cambia el I⁻ por OH⁻.' },
+              { ...HOF2, arrows: [['lp:oh', 'a:h1'], ['b:4', 'b:0'], ['b:3', 'a:n']], caption: '**Paso 3 (con calor).** El OH⁻ saca un H del CH₃ (el más accesible), esos electrones forman el C=C y sale N(CH₃)₃. Todo en un paso: E2.' },
+              { scene: { atoms: [...BUTENE1.atoms, A('n', 'N', 340, 150, 0, { label: 'N(CH₃)₃' }), A('w', 'O', 340, 215, 0, { label: 'H₂O' })], bonds: BUTENE1.bonds }, arrows: [],
+                caption: '**Resultado.** 1-buteno, el alqueno **menos** sustituido, más trimetilamina y agua.' }
+            ] }
+        ],
+        practice: [
+          q('m7-e2', 'Repaso rápido antes de seguir: en una E2, ¿qué pasa?', [{ text: 'En un solo paso: la base saca un H del C vecino, se forma el C=C y sale el grupo saliente', correct: true }, { text: 'Primero sale el grupo saliente y después la base saca el H', misconception: 'e1-not-e2' }, { text: 'La base ataca al carbono y reemplaza al grupo saliente', note: 'Eso es una sustitución (SN2), no una eliminación.' }],
+            { explain: 'La E2 es concertada: todo ocurre al mismo tiempo, con el H y el grupo saliente en lados opuestos.', slide: 35, hint: 'La "2" de E2 significa que en el paso clave participan dos especies a la vez: la base y el sustrato.', concept: 'base.sn-e' }),
+          q('m7-tw2', 'Casos gemelos: la misma cadena, distinto grupo saliente. ¿Qué alqueno predomina en cada caso?', [{ text: 'A da 1-buteno (Hofmann) y B da 2-buteno (Zaitsev)', correct: true }, { text: 'Los dos dan 2-buteno', misconception: 'zaitsev-hofmann' }, { text: 'Los dos dan 1-buteno', note: 'Con un grupo saliente pequeño, como Br, gana Zaitsev: el alqueno más sustituido.' }],
+            { figures: [{ scene: QUAT, caption: 'A: –N(CH₃)₃⁺ con OH⁻ y calor' }, { scene: BROMO, lonePairs: { br: 3 }, caption: 'B: –Br con CH₃CH₂O⁻ y calor' }],
+              explain: 'Lo único que cambia es el grupo saliente. El voluminoso –N(CH₃)₃⁺ empuja hacia el alqueno menos sustituido; el Br, pequeño, deja ganar al más estable.', slide: 36, hint: 'Compara el tamaño de los grupos salientes.', concept: 'am.hofmann' }),
+          order('m7-p1', 'Ordena los pasos de la eliminación de Hofmann, del primero al último.',
+            [['ag', 'Ag₂O, H₂O: el I⁻ se cambia por OH⁻'], ['me', 'CH₃I en exceso: la amina queda como sal de amonio cuaternario'], ['heat', 'Calor: E2, sale N(CH₃)₃ y se forma el alqueno menos sustituido']],
+            ['me', 'ag', 'heat'], { explain: 'Primero metilar (para tener un buen grupo saliente), después poner la base OH⁻ y al final calentar para la E2.', slide: 35, hint: 'Sin metilar, el –NH₂ no puede salir. ¿Qué tiene que pasar primero?', concept: 'am.hofmann' }),
+          { id: 'm7-b2', type: 'build', source: SRC, concept: 'am.hofmann', slide: 36, smiles: 'C=CCC',
+            prompt: 'Dibuja el producto principal de la eliminación de Hofmann de la 2-butanamina. Ya tienes la cadena de 4 carbonos: pon el doble enlace donde corresponde.',
+            start: BUTANE, target: BUTENE1,
+            near: [{ graph: BUTENE2, note: 'Ese es el 2-buteno, el producto de Zaitsev. En Hofmann el grupo saliente es grande y la base saca el H del CH₃: el doble enlace queda en la punta.' }],
+            explain: 'Hofmann da el alqueno menos sustituido: el doble enlace en la punta de la cadena, 1-buteno (CH₂=CH–CH₂–CH₃).',
+            hint: 'Toca un enlace para hacerlo doble. ¿De qué carbono sacó el H la base: del CH₃ de la punta o del CH₂?' }
+        ],
+        recipe: { title: 'Poción de Hofmann', base: 'Amina con H en el carbono vecino', reagents: '1) CH₃I en exceso · 2) Ag₂O, H₂O', condition: 'Calor', result: 'Alqueno **menos** sustituido + N(CH₃)₃',
+          note: 'Al revés de Zaitsev, porque –N(CH₃)₃⁺ es muy voluminoso.' } }
+    ]
   },
   /* ── Misión 8 ── */
   {
@@ -785,27 +933,6 @@
       target: { atoms: [atom('c', 'C', 150, 130), atom('n', 'N', 240, 130, 1)], bonds: [{ a: 'c', b: 'n', o: 1 }] },
       explain: 'Al atrapar el H⁺, el N queda con 4 enlaces (3 H y el C) y sin par libre. Carga formal: 5 − 0 − 4 = +1. Se escribe CH₃–NH₃⁺.',
       hint: 'Con 4 enlaces el N queda con carga. Elige el botón ± y toca el N.' });
-  mission('m7').stages.practice.push(
-    { id: 'm7-a1', type: 'arrows', source: SRC, concept: 'am.acilacion', slide: 35,
-      prompt: 'Primer paso de la acilación: la metilamina ataca al cloruro de acetilo. Dibuja las 2 flechas.',
-      scene: { atoms: [atom('c1', 'C', 45, 150), atom('n', 'N', 115, 150), atom('c2', 'C', 250, 150), atom('o', 'O', 250, 70), atom('c3', 'C', 320, 190), atom('cl', 'Cl', 195, 205)],
-        bonds: [{ a: 'c1', b: 'n', o: 1 }, { a: 'c2', b: 'o', o: 2 }, { a: 'c2', b: 'c3', o: 1 }, { a: 'c2', b: 'cl', o: 1 }] },
-      lonePairs: { n: 1, o: 2, cl: 3 }, lpAngle: { n: -40 },
-      answer: [['lp:n', 'a:c2'], ['b:1', 'a:o']],
-      notes: { 'lp:n>a:o': 'El N no ataca al O: el O es rico en electrones (δ−). El N busca al carbono del C=O, que es δ+.',
-        'lp:n>a:cl': 'El Cl sale después, en el segundo paso. Primero el N ataca al carbono del C=O.',
-        'b:3>a:cl': 'Eso pasa en el segundo paso, cuando vuelve a formarse el C=O. En el primero, los electrones del C=O suben al O.',
-        'b:1>a:c2': 'Los electrones del C=O se van hacia el O, que es más electronegativo, no hacia el C.' },
-      explain: 'El par libre del N ataca al carbono δ+ del C=O y los electrones del enlace C=O suben al oxígeno. Queda un intermediario con O⁻; después vuelve el C=O y sale el Cl⁻.',
-      hint: 'El N busca el átomo más pobre en electrones. Cuando llega, el C=O tiene que soltar un par: ¿hacia dónde?' },
-    { id: 'm7-b1', type: 'build', source: SRC, concept: 'am.acilacion', slide: 35, smiles: 'CCCNC(C)=O',
-      prompt: 'Dibuja la amida que se forma con propilamina + cloruro de acetilo. Ya tienes la propilamina; agrégale lo que falta.',
-      start: { atoms: [atom('a', 'C', 60, 160), atom('b', 'C', 115, 125), atom('c', 'C', 170, 160), atom('n', 'N', 225, 125)], bonds: [{ a: 'a', b: 'b', o: 1 }, { a: 'b', b: 'c', o: 1 }, { a: 'c', b: 'n', o: 1 }] },
-      target: { atoms: [atom('a', 'C', 60, 160), atom('b', 'C', 115, 125), atom('c', 'C', 170, 160), atom('n', 'N', 225, 125), atom('d', 'C', 280, 160), atom('o', 'O', 280, 220), atom('e', 'C', 335, 125)],
-        bonds: [{ a: 'a', b: 'b', o: 1 }, { a: 'b', b: 'c', o: 1 }, { a: 'c', b: 'n', o: 1 }, { a: 'n', b: 'd', o: 1 }, { a: 'd', b: 'o', o: 2 }, { a: 'd', b: 'e', o: 1 }] },
-      explain: 'El N cambia uno de sus H por el grupo acetilo (CH₃–C=O) y el Cl se va. Producto: N-propilacetamida, CH₃CH₂CH₂–NH–CO–CH₃.',
-      hint: 'Al N se le une el carbono del C=O. Ese carbono lleva un O con doble enlace y un CH₃. El Cl no queda en el producto.' });
-
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

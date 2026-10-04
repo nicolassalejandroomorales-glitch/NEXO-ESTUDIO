@@ -22,7 +22,10 @@ Clase (por ejemplo Aminas, PEP 1)
 └─ misiones (8 en Aminas). Cada misión:
    ├─ diagnostic   2–3 preguntas sin pistas → si aciertas todo, puedes saltar la lección
    ├─ fundamentals bases "desde cero" (prerrequisitos), con "Explícame más simple"
+   ├─ hook         (opcional) caso real del inicio: { title, text, sage, scene }
    ├─ explain      la materia, bloque por bloque, cada uno con su diapositiva
+   ├─ parts        (opcional) recetas: cada una con intro, pretest ("adivina antes", no cuenta),
+   │               explain (un bloque con frames = mecanismo con controles), practice (3+ tipos) y recipe guardada
    ├─ worked       ejemplo resuelto; algunos pasos hay que pensarlos antes de verlos
    ├─ practice     actividades variadas, con pista de la mascota
    ├─ challenge    (opcional) desafío extra en Expedición si vas sin ayuda
@@ -67,6 +70,10 @@ Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por mis
 | `pick` | Toca una parte de la molécula | "¿Cuál N es más básico?", "¿qué grupo manda?" |
 | `build` | Dibuja la molécula tocando, partiendo de una base (`start`); se compara con `target` | "Dibuja el producto". Agrega `smiles` para que RDKit lo revise |
 | `arrows` | Traza flechas de mecanismo sobre una escena (`scene`, `lonePairs`, `answer`, `notes` por flecha equivocada) | "Dibuja las flechas del primer paso" |
+| `poe` | Predice, mueve una simulación (`sim`: min, max, threshold, below/above) y compara | "¿Qué pasa si calientas el diazonio?" |
+| `recipe` | Echa ingredientes al caldero en orden (`ingredients`, `answer`, `notes` por ingrediente equivocado) | Secuencias de síntesis |
+| `spot` | Encuentra el paso malo del aprendiz (`steps`, `wrong`) y elige la corrección (`fix`) | Errores típicos de síntesis |
+| `choice` + `figures` | Elige mirando 2 dibujos lado a lado (casos gemelos) | Cuando cambia una sola cosa |
 | `write` | Escribe la respuesta, la compara con la modelo y marca qué ideas tenía | "Explícalo con tus palabras". Es la única que vale **escalón 5**: sin ella, las hojas no pasan de brote |
 
 ### Conceptos, escalones y confianza (motor de evidencia)

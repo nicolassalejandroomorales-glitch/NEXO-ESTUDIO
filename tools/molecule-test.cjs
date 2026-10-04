@@ -46,8 +46,13 @@ assert.equal(M.diff(propylamine, amideA).kind, 'formula');
   assert.equal(RDKit.get_mol(M.toMolblock(pentavalent)), null, 'RDKit también rechaza el C con 5 enlaces');
   // Moléculas de las clases
   let checked = 0;
-  for (const cls of Object.values(context.window.NexoClasses)) for (const m of cls.missions)
-    for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer']) for (const item of m.stages[stage] || []) {
+  for (const cls of Object.values(context.window.NexoClasses)) for (const m of cls.missions) {
+    if (m.stages.hook?.scene) { const got = smiles(m.stages.hook.scene); if (m.stages.hook.smiles) assert.equal(got, canon(m.stages.hook.smiles), `${m.id}: el caso de farmacia no dibuja ${m.stages.hook.smiles}`); checked++; }
+    for (const p of m.parts || []) for (const blk of p.explain || []) for (const f of blk.frames || []) { smiles(f.scene); checked++; }
+    const items = [...['diagnostic', 'practice', 'challenge', 'transfer'].flatMap(st => m.stages[st] || []), ...(m.parts || []).flatMap(p => [p.pretest, ...(p.practice || [])].filter(Boolean))];
+    for (const item of items) {
+      for (const f of item.figures || []) { smiles(f.scene); checked++; }
+      for (const n of item.near || []) { assert.ok(!M.same(n.graph, item.target), `${item.id}: un "casi" no puede ser la respuesta`); smiles(n.graph); }
       if (item.type === 'build') {
         const got = smiles(item.target); smiles(item.start);
         if (item.smiles) assert.equal(got, canon(item.smiles), `${item.id}: el dibujo de la respuesta no es ${item.smiles}`);
@@ -55,5 +60,6 @@ assert.equal(M.diff(propylamine, amideA).kind, 'formula');
       }
       if (item.type === 'arrows') { smiles(item.scene); checked++; }
     }
+  }
   console.log(`Moléculas: editor y RDKit de acuerdo (mismas moléculas, isómeros, cargas, valencias); ${checked} dibujos de las clases revisados por RDKit.`);
 })().catch(error => { console.error(error); process.exit(1); });

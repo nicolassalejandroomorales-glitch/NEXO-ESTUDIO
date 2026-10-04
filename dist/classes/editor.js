@@ -14,6 +14,8 @@
 
   /* ── Dibujo común ── */
   function atomLabel(g, a) {
+    if (a.hide) return { text: '', charge: '' };          // vértice de esqueleto (carbono sin rótulo, como en un anillo)
+    if (a.label) return { text: a.label, charge: '' };    // rótulo escrito a mano, p. ej. "N(CH₃)₃⁺"
     const h = M().implicitH(g, a), q = a.q || 0;
     const hs = h ? `H${h > 1 ? SUB[h] : ''}` : '';
     const charge = q ? (Math.abs(q) > 1 ? Math.abs(q) : '') + (q > 0 ? '⁺' : '⁻') : '';
@@ -23,7 +25,7 @@
     const a1 = M().atomById(g, b.a), a2 = M().atomById(g, b.b);
     if (!a1 || !a2) return '';
     const dx = a2.x - a1.x, dy = a2.y - a1.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-    const trim = 13, x1 = a1.x + ux * trim, y1 = a1.y + uy * trim, x2 = a2.x - ux * trim, y2 = a2.y - uy * trim, nx = -uy * 4.5, ny = ux * 4.5;
+    const t1 = a1.hide ? 0 : 13, t2 = a2.hide ? 0 : 13, x1 = a1.x + ux * t1, y1 = a1.y + uy * t1, x2 = a2.x - ux * t2, y2 = a2.y - uy * t2, nx = -uy * 4.5, ny = ux * 4.5;
     const line = (ox, oy) => `<line x1="${(x1 + ox).toFixed(1)}" y1="${(y1 + oy).toFixed(1)}" x2="${(x2 + ox).toFixed(1)}" y2="${(y2 + oy).toFixed(1)}"/>`;
     const lines = b.o === 2 ? line(nx, ny) + line(-nx, -ny) : b.o === 3 ? line(0, 0) + line(nx * 1.6, ny * 1.6) + line(-nx * 1.6, -ny * 1.6) : line(0, 0);
     return `<g class="mol-bond ${cls}">${lines}</g>`;
@@ -31,7 +33,7 @@
   function atomMarkup(g, a, { cls = '', attrs = '' } = {}) {
     const { text, charge } = atomLabel(g, a);
     return `<g class="mol-atom el-${esc(a.el)} ${cls}" transform="translate(${a.x.toFixed(1)} ${a.y.toFixed(1)})" ${attrs}>
-      <circle class="mol-hit" r="17"/><text class="mol-label" text-anchor="middle" dy="5">${esc(text)}</text>${charge ? `<text class="mol-charge" x="${(text.length * 4.6 + 4).toFixed(1)}" y="-8">${charge}</text>` : ''}</g>`;
+      <circle class="mol-hit" r="${a.hide ? 9 : 17}"/>${text ? `<text class="mol-label" text-anchor="middle" dy="5">${esc(text)}</text>` : ''}${charge ? `<text class="mol-charge" x="${(text.length * 4.6 + 4).toFixed(1)}" y="-8">${charge}</text>` : ''}</g>`;
   }
   // Dónde dibujar el par libre: del lado opuesto a los vecinos
   function lonePairSpot(g, a, k = 0, n = 1, fixed = null) {
@@ -57,6 +59,7 @@
     const g = done ? rec.value.graph : (w.graph ||= startGraph(item));
     const tool = w.tool || 'C', probs = M().problems(g), bad = new Set(probs.map(p => p.atom));
     const diff = done && !rec.correct ? M().diff(g, item.target) : null;
+    const nearNote = done && !rec.correct ? (item.near || []).find(n => M().same(g, n.graph))?.note : null;
     const suspects = new Set(diff?.suspects || []);
     const svg = `<svg class="mol-canvas ${done ? 'is-done' : ''}" viewBox="0 0 ${VB.w} ${VB.h}" data-mol-build="${esc(item.id)}" data-retry="${retry ? 1 : 0}" role="application" aria-label="Lienzo para dibujar la molécula">
       <rect class="mol-bg" width="${VB.w}" height="${VB.h}"/>
@@ -64,7 +67,7 @@
       ${g.atoms.map(a => atomMarkup(g, a, { cls: `${w.sel === a.id && !done ? 'is-sel' : ''} ${bad.has(a.id) ? 'is-bad' : ''} ${suspects.has(a.id) ? 'is-suspect' : ''}`, attrs: `data-mol-atom="${esc(a.id)}"` })).join('')}
     </svg>`;
     if (done) return `<div class="mol-editor is-done">${svg}
-      ${!rec.correct && diff?.message ? `<p class="mol-status is-bad">${esc(diff.message)}</p>` : ''}
+      ${!rec.correct && (nearNote || diff?.message) ? `<p class="mol-status is-bad">${esc(nearNote || diff.message)}</p>` : ''}
       ${rec.correct ? `<p class="mol-status is-ok">Es la molécula correcta: ${esc(M().formulaText(M().formula(g)))}.</p>` : ''}</div>`;
     const tools = [...ELEMENTS.map(el => [el, el, `Átomo de ${M().NAME[el]}`]), ['charge', '±', 'Cambiar la carga'], ['erase', 'Borrar', 'Borrar átomo o enlace']];
     const help = w.sel ? 'Toca un espacio vacío para agregar un átomo unido al seleccionado, u otro átomo para unirlos. Toca el seleccionado otra vez para soltarlo.'
@@ -101,7 +104,7 @@
     const lps = Object.entries(item.lonePairs || {});
     const box = fitBox(g), [bx, by, bw, bh] = box.split(' ');
     const svg = `<svg class="mol-canvas arrows" viewBox="${box}" data-mol-arrows="${esc(item.id)}" data-retry="${retry ? 1 : 0}" role="application" aria-label="Escena para trazar flechas">
-      <defs>${[['', '#b3261e'], ['-ok', '#2f6b4a']].map(([suf, col]) => `<marker id="ah-${esc(item.id)}${suf}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${col}"/></marker>`).join('')}</defs>
+      <defs>${[['', '#b3261e'], ['-ok', '#2f6b4a'], ['-given', '#5c4a37']].map(([suf, col]) => `<marker id="ah-${esc(item.id)}${suf}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${col}"/></marker>`).join('')}</defs>
       <rect class="mol-bg" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
       ${g.bonds.map((b, i) => `<g class="mol-pick ${w.from === `b:${i}` ? 'is-sel' : ''}" data-mol-pick="b:${i}">${bondLines(g, b)}<line class="mol-bond-hit" x1="${M().atomById(g, b.a).x}" y1="${M().atomById(g, b.a).y}" x2="${M().atomById(g, b.b).x}" y2="${M().atomById(g, b.b).y}"/></g>`).join('')}
       ${g.atoms.map(a => atomMarkup(g, a, { cls: 'mol-pick', attrs: `data-mol-pick="a:${esc(a.id)}"` })).join('')}
@@ -109,6 +112,7 @@
         return [...Array(n)].map((_, k) => { const s = lonePairSpot(g, a, k, n, item.lpAngle?.[id]), px = -Math.sin(s.ang) * 4, py = Math.cos(s.ang) * 4;
           const main = k === 0; return `<g class="mol-lp ${main ? 'mol-pick' : ''} ${main && w.from === `lp:${id}` ? 'is-sel' : ''}" ${main ? `data-mol-pick="lp:${esc(id)}"` : ''}><circle class="mol-lp-hit" cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="11"/>
           <circle class="mol-lp-dot" cx="${(s.x + px).toFixed(1)}" cy="${(s.y + py).toFixed(1)}" r="2.6"/><circle class="mol-lp-dot" cx="${(s.x - px).toFixed(1)}" cy="${(s.y - py).toFixed(1)}" r="2.6"/></g>`; }).join(''); }).join('')}
+      ${(item.given || []).map(([a, b]) => `<path class="mol-arrow is-given" d="${arrowPath(item, a, b)}" marker-end="url(#ah-${esc(item.id)}-given)"/>`).join('')}
       ${arrows.map(([a, b], i) => { const ok = answer.has(key([a, b]));
         return `<path class="mol-arrow ${done ? (ok ? 'is-right' : 'is-wrong') : ''}" d="${arrowPath(item, a, b)}" marker-end="url(#ah-${esc(item.id)}${done && ok ? '-ok' : ''})" ${done ? '' : `data-mol-arrow="${i}"`}/>`; }).join('')}
       ${showAnswer ? item.answer.map(([a, b]) => { const d = arrowPath(item, a, b);
@@ -121,9 +125,25 @@
         ${rec.correct ? '<p class="mol-status is-ok">¡Así se mueven los electrones! Mira cómo viajan por tus flechas.</p>'
           : `${notes.map(n => `<p class="mol-status is-bad">${esc(n)}</p>`).join('')}${missing ? `<p class="mol-status is-bad">Te ${missing === 1 ? 'falta una flecha' : `faltan ${missing} flechas`}.</p>` : ''}`}</div>`;
     }
-    const help = w.from ? 'Ahora toca adónde llegan esos electrones: un átomo o un enlace.' : 'Toca de dónde salen los electrones: un par libre (los dos puntitos) o un enlace. Toca una flecha para borrarla.';
+    const help = w.from ? 'Ahora toca adónde llegan esos electrones: un átomo o un enlace.'
+      : `${item.given?.length ? 'La flecha café ya está puesta. ' : ''}Toca de dónde salen los electrones: un par libre (los dos puntitos) o un enlace. Toca una flecha para borrarla.`;
     return `<div class="mol-editor">${svg}<p class="mol-status" aria-live="polite">${esc(help)}</p>
       <div class="cr-check">${actBtn(item, retry, 'act-check', '', 'Comprobar ▸', 'cr-btn cr-primary', !arrows.length)}</div></div>`;
+  }
+
+  /* ── Escena fija: dibujo sin edición, con flechas y electrones opcionales (caso, gemelos, mecanismo) ── */
+  let sceneSeq = 0;
+  function sceneMarkup(def, { arrows = [], animate = true, label = 'Molécula' } = {}) {
+    const g = def.scene, uid = `sc${++sceneSeq}`, box = fitBox(g, 46), [bx, by, bw, bh] = box.split(' ');
+    const lps = Object.entries(def.lonePairs || {});
+    return `<svg class="mol-canvas is-done mol-scene" viewBox="${box}" role="img" aria-label="${esc(label)}">
+      <defs><marker id="${uid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#b3261e"/></marker></defs>
+      <rect class="mol-bg" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
+      ${g.bonds.map(b => bondLines(g, b)).join('')}${g.atoms.map(a => atomMarkup(g, a)).join('')}
+      ${lps.map(([id, n]) => { const a = M().atomById(g, id); return [...Array(n)].map((_, k) => { const s = lonePairSpot(g, a, k, n, def.lpAngle?.[id]), px = -Math.sin(s.ang) * 4, py = Math.cos(s.ang) * 4;
+        return `<circle class="mol-lp-dot" cx="${(s.x + px).toFixed(1)}" cy="${(s.y + py).toFixed(1)}" r="2.6"/><circle class="mol-lp-dot" cx="${(s.x - px).toFixed(1)}" cy="${(s.y - py).toFixed(1)}" r="2.6"/>`; }).join(''); }).join('')}
+      ${arrows.map(([a, b]) => { const d = arrowPath(def, a, b); return `<path class="mol-arrow" d="${d}" marker-end="url(#${uid})"/>${animate ? `<circle class="mol-electron" r="3.5"><animateMotion dur="1.8s" repeatCount="indefinite" path="${d}"/></circle><circle class="mol-electron" r="3.5"><animateMotion dur="1.8s" begin=".25s" repeatCount="indefinite" path="${d}"/></circle>` : ''}`; }).join('')}
+    </svg>`;
   }
 
   /* ── Interacción ── */
@@ -214,7 +234,7 @@
   }
   function feedback(item, rec) {
     if (!rec || rec.correct) return '';
-    if (item.type === 'build') return M().diff(rec.value.graph, item.target).message;
+    if (item.type === 'build') return (item.near || []).find(n => M().same(rec.value.graph, n.graph))?.note || M().diff(rec.value.graph, item.target).message;
     const wrong = (rec.value || []).find(x => !item.answer.some(y => key(y) === key(x)));
     return wrong ? (item.notes?.[key(wrong)] || 'Revisa de dónde salen los electrones y quién los necesita.') : 'Te faltan flechas.';
   }
@@ -224,5 +244,5 @@
     return '';
   }
 
-  window.NexoMolEditor = { buildMarkup, arrowsMarkup, mount, isCorrect, feedback, solution };
+  window.NexoMolEditor = { buildMarkup, arrowsMarkup, sceneMarkup, mount, isCorrect, feedback, solution };
 })();
