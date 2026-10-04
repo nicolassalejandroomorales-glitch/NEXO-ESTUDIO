@@ -3,6 +3,7 @@
 // y escribe RML en rive/mascotas/. Luego compila con la Rive CLI oficial.
 //   node tools/mascots/build.cjs            → genera RML, verifica y saca captura (build/*.png)
 //   node tools/mascots/build.cjs --no-rive  → solo genera el RML
+//   node tools/mascots/build.cjs --ver=Capibara → captura de otra especie (nombre del artboard)
 //   node tools/mascots/build.cjs --estado=Alcanzar --advance=45 → captura de prueba de un cuadro (no usar para la app)
 'use strict';
 const fs = require('node:fs');
@@ -11,7 +12,8 @@ const { execFileSync } = require('node:child_process');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'rive', 'mascotas');
-const SPECIES = ['raptor'];
+const SPECIES = ['raptor', 'capibara', 'zorro'];
+const HEADROOM = 40;
 
 // ——— Ids: un solo espacio de nombres por documento ———
 let nextId = 10;
@@ -184,11 +186,12 @@ function stateMachineRml(spec, anims) {
     `<StateMachineLayer name="Cuerpo" id="${newId()}"><EntryState><StateTransition stateToId="${entry.id}"/></EntryState>${body}</StateMachineLayer>${blink}</StateMachine>` };
 }
 
-function buildSpecies(id) {
+function buildSpecies(id, index) {
   const spec = require(`./${id}.cjs`);
   const registry = {};
   const artId = newId(), styleId = newId();
-  const root = partRml(spec.root, [0, 0], registry);
+  // HEADROOM: espacio extra arriba (estirarse, sombreros). Todo el dibujo baja esa cantidad.
+  const root = partRml(spec.root, [0, -HEADROOM], registry);
   // Las acciones del cuerpo comparten capa: si una no anima algo que otra sí, lo devuelve al reposo
   // (si no, al pasar de Caminar a Alcanzar las canillas quedarían dobladas). Los objetos (Solo) no se tocan.
   const bodyAnims = spec.animations.filter(a => ACTIONS.some(([n]) => n === a.name));
@@ -201,7 +204,7 @@ function buildSpecies(id) {
   }));
   const anims = spec.animations.map(a => animationRml(a, registry)).join('');
   const sm = stateMachineRml(spec, spec.animations);
-  return `<Artboard defaultStateMachineId="${sm.id}" styleId="${styleId}" width="${spec.width}" height="${spec.height}" name="${spec.name}" id="${artId}">` +
+  return `<Artboard defaultStateMachineId="${sm.id}" styleId="${styleId}" width="${spec.width}" height="${spec.height + HEADROOM}" x="${index * (spec.width + 60)}" y="0" name="${spec.name}" id="${artId}">` +
     `<LayoutComponentStyle name="Style" id="${styleId}"/>` +
     (spec.background ? `<Fill name="Fondo"><SolidColor colorValue="${argb(spec.background)}" name="C"/></Fill>` : '') +
     root + sm.rml + anims + '</Artboard>';
@@ -219,7 +222,8 @@ if (!process.argv.includes('--no-rive')) {
   try { run(['rive/mascotas', '--verify']); console.log('Rive: verificado sin errores'); }
   catch (e) { console.error(e.stdout, e.stderr); process.exit(1); }
   const frame = process.argv.find(a => a.startsWith('--advance=')) || '--advance=1';
-  run(['rive/mascotas', '--screenshot', frame]);
+  const ver = process.argv.find(a => a.startsWith('--ver='));
+  run(['rive/mascotas', '--screenshot', frame, ...(ver ? ['--artboard=' + ver.slice(6)] : [])]);
   console.log('Captura: rive/mascotas/build/mascotas.png');
   run(['rive/mascotas', '--once']);
   const dest = path.join(ROOT, 'dist', 'assets', 'mascotas');

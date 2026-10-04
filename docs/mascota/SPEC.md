@@ -50,6 +50,10 @@ Mesa de luz para calcar: `/dev/ref/mesa.html?f=raptor|capibara|zorro`. Raptor v2
   (primera opción vacía), igual que `ObjetoMano` (`Nada | Libro`) en `RanuraMano`.
 - El generador vuelve al reposo lo que una acción no anima (evita piernas dobladas al cambiar de acción).
 - Captura de prueba de cualquier cuadro: `node tools/mascots/build.cjs --estado=Alcanzar --advance=45` (después recompilar sin `--estado`).
+- **v4 (4 oct 2026)**: las 3 especies en un solo `.riv` (un artboard por especie: `Velociraptor`, `Capibara`, `Zorro`), 400×340
+  (40 px de aire arriba para estirarse y sombreros). Capibara y zorro **llevan el libro en la boca** (su `RanuraMano` está bajo el hocico)
+  y para *Alcanzar* se paran en las patas traseras. Raptor: contorno encima de la crema (papada/cuello ya marcados) y zancada más amplia.
+  Página de prueba con selector de especie y acción: `/dev/mascotas.html`. Capturas: `capturas/v4-*`.
 - Pendiente del raptor: en el cuadro medio de la caminata las piernas se cruzan (falta zancada más amplia), pies algo planos,
   sombreado suave bajo la panza, y doblar la cola con huesos (más fluida).
 

@@ -71,10 +71,12 @@ module.exports = {
         name: 'Cuerpo', pivot: [190, 165],
         shapes: [
           { name: 'Cuerpo', d: 'M270 82 C260 100 252 112 238 121 C218 119 196 117 176 123 C160 131 156 160 168 176 C184 190 222 192 246 182 C264 174 278 166 284 150 C290 130 292 112 290 100 Z', fill: grad(220, 112, 225, 190), stroke: LINE },
-          { name: 'Pecho', d: 'M289 104 C291 122 288 141 280 158 C268 174 246 184 222 187 C238 178 256 166 266 150 C274 136 278 120 280 106 Z', fill: C.cream },
+          { name: 'Pecho', d: 'M289 104 C291 122 288 141 280 158 C268 174 246 184 222 187 C238 178 256 166 266 150 C274 136 278 120 280 106 Z', fill: grad(270, 110, 250, 186, C.cream, C.creamDark) },
           stripe('RayaC1', 240, 124, 233, 146, 6, 'Cuerpo'), stripe('RayaC2', 223, 121, 218, 145, 6, 'Cuerpo'),
           stripe('RayaC3', 207, 120, 203, 143, 6, 'Cuerpo'), stripe('RayaC4', 191, 121, 188, 141, 6, 'Cuerpo'),
-          stripe('RayaCuello', 256, 106, 247, 118, 5, 'Cuerpo')
+          stripe('RayaCuello', 256, 106, 247, 118, 5, 'Cuerpo'),
+          // Contorno encima de la crema: sin esto el cuello y la papada se veían vacíos.
+          { name: 'CuerpoBorde', d: 'M270 82 C260 100 252 112 238 121 C218 119 196 117 176 123 C160 131 156 160 168 176 C184 190 222 192 246 182 C264 174 278 166 284 150 C290 130 292 112 290 100 Z', stroke: LINE }
         ],
         slots: [{ name: 'RanuraCuello', at: [272, 104] }, { name: 'RanuraEspalda', at: [218, 120] }],
         parts: [
@@ -94,14 +96,16 @@ module.exports = {
             name: 'Cabeza', pivot: [276, 100],
             shapes: [
               { name: 'Cabeza', d: 'M262 78 C262 55 280 42 302 42 C322 42 336 52 344 60 C358 64 376 70 384 78 C390 86 386 98 372 100 C352 104 320 108 298 108 C280 108 264 98 262 78 Z', fill: grad(300, 42, 310, 110), stroke: LINE },
-              { name: 'Mandibula', d: 'M291 100 C312 102 346 100 379 95 C373 104 356 108 331 110 C311 112 295 110 291 100 Z', fill: C.cream },
+              { name: 'Mandibula', d: 'M291 100 C312 102 346 100 379 95 C373 104 356 108 331 110 C311 112 295 110 291 100 Z', fill: grad(330, 96, 330, 112, C.cream, C.creamDark) },
               // Sonrisa corta en la punta del hocico (la línea larga se veía como mueca).
               { name: 'Sonrisa', d: 'M352 95 C359 99 368 98 375 93', stroke: { color: C.line, width: 2.6 } },
               { name: 'Hoyuelo', d: 'M349 91 C349 94 351 96 354 96', stroke: { color: C.line, width: 2.2 } },
               { name: 'Mejilla', ellipse: [338, 89, 7, 4], fill: C.blush, fillAlpha: .35 },
               { name: 'Nariz', ellipse: [369, 79, 3, 2.4], fill: C.line },
               { name: 'Ceja', d: 'M304 57 C314 53 327 55 335 62', stroke: { color: C.stripe, width: 3.5 } },
-              stripe('RayaH1', 277, 62, 272, 78, 5, 'Cabeza'), stripe('RayaH2', 287, 51, 284, 65, 4.5, 'Cabeza')
+              stripe('RayaH1', 277, 62, 272, 78, 5, 'Cabeza'), stripe('RayaH2', 287, 51, 284, 65, 4.5, 'Cabeza'),
+              { name: 'CabezaBorde', d: 'M262 78 C262 55 280 42 302 42 C322 42 336 52 344 60 C358 64 376 70 384 78 C390 86 386 98 372 100 C352 104 320 108 298 108 C280 108 264 98 262 78 Z', stroke: LINE },
+              { name: 'MandibulaBorde', d: 'M298 108 C312 112 334 111 350 107 C362 104 372 102 379 95', stroke: LINE }
             ],
             slots: [{ name: 'RanuraCabeza', at: [302, 44] }, { name: 'RanuraCara', at: [318, 72] }],
             parts: [{
@@ -135,12 +139,12 @@ module.exports = {
     // Caminar en el lugar (la app desplaza a la mascota por la sala). Ciclo de 0,8 s; las piernas van en contrafase.
     { name: 'Caminar', frames: 48, tracks: {
       Raptor: { y: [[0, 0], [12, -3], [24, 0], [36, -3], [48, 0]] },
-      PiernaFrente: { rotation: [[0, -0.32], [24, 0.32], [48, -0.32]] },
-      PiernaFrenteCanilla: { rotation: [[0, 0], [24, 0], [34, 0.6], [48, 0]] },
-      PiernaFrentePie: { rotation: [[0, 0.32], [24, -0.32], [34, -0.5], [48, 0.32]] },
-      PiernaAtras: { rotation: [[0, 0.32], [24, -0.32], [48, 0.32]] },
-      PiernaAtrasCanilla: { rotation: [[0, 0], [10, 0.6], [24, 0], [48, 0]] },
-      PiernaAtrasPie: { rotation: [[0, -0.32], [10, -0.5], [24, 0.32], [48, -0.32]] },
+      PiernaFrente: { rotation: [[0, -0.38], [24, 0.38], [48, -0.38]] },
+      PiernaFrenteCanilla: { rotation: [[0, 0], [24, 0], [33, 0.95], [44, 0.2], [48, 0]] },
+      PiernaFrentePie: { rotation: [[0, 0.32], [24, -0.32], [33, -0.75], [48, 0.32]] },
+      PiernaAtras: { rotation: [[0, 0.38], [24, -0.38], [48, 0.38]] },
+      PiernaAtrasCanilla: { rotation: [[0, 0], [9, 0.95], [20, 0.2], [24, 0], [48, 0]] },
+      PiernaAtrasPie: { rotation: [[0, -0.32], [9, -0.75], [24, 0.32], [48, -0.32]] },
       Cuerpo: { rotation: [[0, 0.015], [12, -0.015], [24, 0.015], [36, -0.015], [48, 0.015]] },
       Cola: { rotation: [[0, 0.05], [24, -0.05], [48, 0.05]] },
       Cabeza: { rotation: [[0, -0.03], [12, 0.02], [24, -0.03], [36, 0.02], [48, -0.03]] },
