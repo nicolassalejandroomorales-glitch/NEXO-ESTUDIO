@@ -346,16 +346,7 @@
     if (!SCENES.some(scene => scene.id === next.mascot.scene && next.inventory.includes(scene.id))) next.mascot.scene = 'scene-ruins';
     next.mascot=window.NexoAvatar.normalize(next.mascot,next.inventory);
     if (!DATA.backgrounds.some(item => item.id === next.settings.background)) next.settings.background = base.settings.background;
-    const lessonSession = next.lessonSession;
-    next.lessonSession = lessonSession && LESSONS[lessonSession.id] ? {
-      id: lessonSession.id,
-      mode: ['understand', 'urgent', 'mastery'].includes(lessonSession.mode) ? lessonSession.mode : null,
-      step: Math.max(0, Number(lessonSession.step) || 0),
-      answers: lessonSession.answers && typeof lessonSession.answers === 'object' ? lessonSession.answers : {},
-      drafts: lessonSession.drafts && typeof lessonSession.drafts === 'object' ? lessonSession.drafts : {},
-      checked: lessonSession.checked && typeof lessonSession.checked === 'object' ? lessonSession.checked : {},
-      startedAt: lessonSession.startedAt || new Date().toISOString()
-    } : null;
+    next.lessonSession = null; // las clases se están rehaciendo: no hay avance de clase que conservar
     next.meta = { ...base.meta, ...next.meta };
     next.completedLessons.forEach(id => {
       if (LESSONS[id] && !next.mastery[id]) next.mastery[id] = { status: 'inestable', bestScore: 0, attempts: 0, understoodAt: todayKey(), dueAt: todayKey(addDays(new Date(), 2)) };
@@ -753,14 +744,9 @@
     startClockTicker();
   }
 
-  function resumeBanner() {
-    const session = state.lessonSession, lesson = LESSONS[session.id];
-    if (!lesson) return '';
-    return `<aside class="resume-banner"><div><p class="eyebrow">CLASE EN CURSO · AUTOGUARDADA</p><h2>${esc(lesson.title)}</h2><span>${modeName(session.mode)} · paso ${Number(session.step || 0) + 1}</span></div><div class="button-row"><button class="primary-btn" data-open-lesson="${session.id}">Continuar</button><button class="text-btn danger" data-action="discard-lesson">Descartar avance</button></div></aside>`;
-  }
   function lessonQuickRow(id) {
     const lesson = LESSONS[id], subject = lessonSubject(id);
-    return `<button class="compact-row" data-open-lesson="${id}"><span class="subject-dot" style="--course:${subject.color}">${subject.short}</span><div><b>${esc(lesson.title)}</b><small>${esc(lesson.central)}</small></div><i>Abrir →</i></button>`;
+    return `<button class="compact-row" data-open-lesson="${id}"><span class="subject-dot" style="--course:${subject.color}">${subject.short}</span><div><b>${esc(lesson.title)}</b><small>${esc(lesson.central)}</small></div><i>Próximamente</i></button>`;
   }
   function eventRow(event) {
     const subject = subjectFor(event.subject), diff = daysBetween(todayKey(), event.date);
@@ -832,7 +818,7 @@
       const label=status==='dominado'?'Autoverificación registrada':recorded?'Comprensión registrada':'Por preparar';
       return `<li class="preparation-stop" style="--map-x:${points[index].x}%"><button class="preparation-node ${recorded?'recorded':''}" data-grimoire-course="${subject.id}" data-grimoire-evaluation="${esc(evaluation.id)}" data-grimoire-node="${id}" ${selected===id?'aria-current="step"':''}><span class="map-node-seal" aria-hidden="true">${recorded?'✓':index+1}</span><span class="map-node-label"><b>${esc(lesson.title)}</b><small>${label}</small></span></button></li>`;
     }).join('');
-    const detail=selected?`<section class="preparation-detail" aria-labelledby="preparationDetailTitle"><p class="eyebrow">ETAPA ${ids.indexOf(selected)+1}</p><h2 id="preparationDetailTitle">${esc(LESSONS[selected].title)}</h2><p>${esc(LESSONS[selected].central||'Consulta el material disponible para este tema.')}</p><p class="legacy-note">Este mapa conserva tus registros anteriores. Las nuevas clases de este recorrido están próximamente.</p><button class="ink-link" data-open-lesson="${selected}" ${isUnlocked(subject.id,selected)?'':'disabled'}>Abrir material anterior${isUnlocked(subject.id,selected)?' →':' · requiere la etapa anterior'}</button></section>`:'<p class="grimoire-margin-note">Sigue el sendero.<br>Selecciona un tema para ver su material y registro.</p>';
+    const detail=selected?`<section class="preparation-detail" aria-labelledby="preparationDetailTitle"><p class="eyebrow">ETAPA ${ids.indexOf(selected)+1}</p><h2 id="preparationDetailTitle">${esc(LESSONS[selected].title)}</h2><p>${esc(LESSONS[selected].central||'Consulta el material disponible para este tema.')}</p><p class="legacy-note"><b>Disponible próximamente.</b> Estamos rehaciendo esta clase desde cero.</p></section>`:'<p class="grimoire-margin-note">Sigue el sendero.<br>Selecciona un tema para ver su material y registro.</p>';
     const map=ids.length?`<div class="preparation-map" style="--map-height:${height}px"><svg class="preparation-path" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" /></svg><span class="map-compass" aria-hidden="true">✥<small>N</small></span><ol class="preparation-stops">${nodes}</ol><span class="map-destination" aria-hidden="true">✦</span></div><p class="map-legend">✓ Con registro de comprensión · números: orden sugerido</p>`:`<section class="preparation-empty"><span aria-hidden="true">✥</span><h2>Temario por vincular</h2><p>Esta evaluación está en tu calendario, pero todavía no tiene un recorrido asociado. Consulta su temario en Bitácora.</p><button class="ink-link" data-route="planner" data-route-sub="calendar">Abrir Bitácora →</button></section>`;
     app.innerHTML=grimoireShell(subject,evaluation.name,ids.length?'Un sendero de temas para orientar tu preparación.':'El mapa estará disponible cuando se vincule su temario.',`<button class="ink-link" data-grimoire-route="learn/course/${subject.id}">← Cambiar evaluación</button>${evaluationDates(evaluation)}${map}`,`<div class="map-record"><strong>${registered} / ${ids.length}</strong><span>temas con registro de comprensión</span><p>Registro histórico; no certifica dominio de la evaluación.</p></div>${detail}`,'III · MAPA');
     if(selected) {
@@ -858,7 +844,7 @@
 
   function lessonNode(id, index, routeMode, pepLabel = '') {
     const lesson = LESSONS[id], unlocked = isUnlocked(lesson.subject, id), status = masteryStatus(id), confidence = confidenceFor(id);
-    return `<button class="lesson-node ${status} ${unlocked ? '' : 'locked'}" data-open-lesson="${id}" ${unlocked ? '' : 'disabled'}><span class="node-index">${status === 'dominado' ? '✓' : unlocked ? index + 1 : '⌁'}</span><span class="node-copy">${pepLabel?`<span class="home-lesson-pep">${esc(pepLabel)}</span>`:''}<b>${esc(lesson.title)}</b><small>${ORGANIC[id] && status === 'dominado' ? '<span class="status-chip dominado">Autoverificado</span>' : statusChip(status)} · ${lesson.duration || 35} min</small><em class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</em></span><i>${unlocked ? (routeMode === 'urgent' ? 'Elegir modo →' : 'Abrir →') : 'Completa la anterior'}</i></button>`;
+    return `<button class="lesson-node ${status} ${unlocked ? '' : 'locked'}" data-open-lesson="${id}" ${unlocked ? '' : 'disabled'}><span class="node-index">${status === 'dominado' ? '✓' : unlocked ? index + 1 : '⌁'}</span><span class="node-copy">${pepLabel?`<span class="home-lesson-pep">${esc(pepLabel)}</span>`:''}<b>${esc(lesson.title)}</b><small>${ORGANIC[id] && status === 'dominado' ? '<span class="status-chip dominado">Autoverificado</span>' : statusChip(status)} · ${lesson.duration || 35} min</small><em class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</em></span><i>Próximamente</i></button>`;
   }
 
   const COURSE_METHODS = {
@@ -1005,7 +991,6 @@
     }];
   }
 
-  function modeName(mode) { return ({ understand: 'Entender todo', urgent: 'Prueba encima', mastery: 'Dominio' })[mode] || 'Clase'; }
   function modeSteps(mode) { return mode === 'understand' ? 9 : mode === 'urgent' ? 5 : 4; }
   function modeStepNames(mode) {
     if (mode === 'understand') return ['Mapa', 'Bases', 'Mecanismo', 'Visual', 'Ejemplo', 'Conexión', 'Práctica', 'Cuaderno', 'Reconstrucción'];
@@ -1013,27 +998,11 @@
     return ['Recuerdo libre', 'Variante', 'Transferencia', 'Resultado'];
   }
 
-  function openLesson(id, requestedMode = null) {
-    const lesson = LESSONS[id];
-    if (!lesson) return;
-    if (ORGANIC[id]) return routeTo('lesson', id);
-    if (!isUnlocked(lesson.subject, id) && requestedMode !== 'urgent') return showToast('Primero demuestra comprensión de la clase anterior o cambia a “Prueba encima”.');
-    if (!state.lessonSession || state.lessonSession.id !== id) state.lessonSession = { id, mode: null, step: 0, answers: {}, drafts: {}, checked: {}, startedAt: new Date().toISOString() };
-    if (requestedMode) startLessonMode(id, requestedMode);
-    saveState({ backup: false });
+  function openLesson(id) {
+    if (!LESSONS[id]) return;
     routeTo('lesson', id);
   }
 
-  function startLessonMode(id, mode) {
-    const old = state.lessonSession;
-    const preserve = old?.id === id && old?.mode === mode;
-    state.lessonSession = preserve ? old : { id, mode, step: 0, answers: {}, drafts: {}, checked: {}, startedAt: new Date().toISOString() };
-    if (mode==='mastery' && !preserve) cloud.track('review_started',{lesson_id:id});
-    saveState({ backup: false });
-    if (location.hash.includes(`/lesson/${id}`)) renderRoute(); else routeTo('lesson', id);
-  }
-
-  const organicLoads = new Map();
   let academicFoundation=null;
   let mascotAcademicSubscribed=false;
   function loadAcademicFoundation() {
@@ -1095,205 +1064,23 @@
       .then(() => { if (parseRoute()[0] === view) renderRoute(false); })
       .catch(() => { if (parseRoute()[0] === view) app.innerHTML='<section class="page"><h1>Revisión no disponible</h1><button data-route="home">Volver al inicio</button></section>'; });
   }
-  function organicContentFile(id) {
-    const number = Number(id.slice(4));
-    if (number <= 5) return 'organic-pep1.js';
-    if (number <= 9) return 'organic-pep2.js';
-    if (number <= 13) return 'organic-pep3.js';
-    return 'organic-biomolecules.js';
-  }
-  function loadOrganic(id) {
-    if (organicLoads.has(id)) return organicLoads.get(id);
-    const promise = id === 'org-01'
-      ? Promise.all([window.NexoLoader.style('./amine-lesson.css?v=11-foundation'),
-          loadAcademicFoundation(),window.NexoLoader.script('./amine-lesson.js?v=14-foundation')])
-      : Promise.all([window.NexoLoader.style('./organic-studio.css'), window.NexoLoader.script(`./${organicContentFile(id)}`).then(() => window.NexoLoader.script('./organic-studio.js?v=11-foundation'))]);
-    organicLoads.set(id, promise);
-    return promise;
-  }
-
   function renderLesson(id) {
     const source = LESSONS[id];
     if (!source) return routeTo('subjects');
-    if (ORGANIC[id]) {
-      const api = { app, getState: () => state, saveState, renderRoute, showToast, openModal, closeModal,
-        track:(...args)=>cloud.track(...args) };
-      if (id === 'org-01' && window.NexoAmineLesson) return window.NexoAmineLesson.render(api);
-      if (id !== 'org-01' && ORGANIC[id].reading && window.NexoOrganicStudio) return window.NexoOrganicStudio.render(id, api);
-      app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Abriendo clase…</p></div></section>';
-      const onLessonRoute=()=>{const route=parseRoute();return route.join('/')===`lesson/${id}`||
-        (route[0]==='learn'&&route[1]==='course'&&route[3]==='lesson'&&route[4]===id);};
-      loadOrganic(id).then(() => { if (onLessonRoute()) renderRoute(false); }).catch(error => {
-        organicLoads.delete(id);
-        cloud.track('app_error');
-        if (onLessonRoute()) app.innerHTML = `<section class="page"><div class="panel error-boundary"><h1>No se pudo cargar esta clase</h1><p>Revisa tu conexión y vuelve a intentarlo. Tu progreso sigue guardado.</p><button class="primary-btn" data-open-lesson="${esc(id)}">Reintentar</button></div></section>`;
-      });
-      return;
-    }
-    if (!isUnlocked(source.subject, id)) { showToast('Esta clase sigue bloqueada en la ruta progresiva.'); return routeTo('subject', source.subject); }
-    const lesson = richLesson(id), subject = subjectFor(lesson.subject), confidence = confidenceFor(id);
-    if (!state.lessonSession || state.lessonSession.id !== id) state.lessonSession = { id, mode: null, step: 0, answers: {}, drafts: {}, checked: {}, startedAt: new Date().toISOString() };
-    const session = state.lessonSession;
-    if (!session.mode) return renderLessonLobby(lesson, subject, confidence);
-    const total = modeSteps(session.mode), step = clamp(Number(session.step) || 0, 0, total - 1);
-    session.step = step;
-    const names = modeStepNames(session.mode);
-    app.innerHTML = `<section class="page lesson-page" style="--course:${subject.color}">
-      <button class="back-btn" data-action="lesson-lobby">← Modos de ${subject.name}</button>
-      <header class="lesson-header"><div><div class="lesson-meta"><span>${subject.short}</span><span>${modeName(session.mode)}</span>${statusChip(masteryStatus(id))}<span class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</span></div><h1>${esc(lesson.title)}</h1><p>${esc(lesson.central)}</p></div><div class="lesson-progress"><b>${step + 1}/${total}</b><span>autoguardado</span></div></header>
-      <nav class="lesson-stepper" aria-label="Progreso de la clase">${names.map((name, index) => `<button data-lesson-step="${index}" ${index > step ? 'disabled' : ''} class="${index === step ? 'active' : index < step ? 'passed' : ''}" aria-current="${index === step ? 'step' : 'false'}"><span>${index < step ? '✓' : index + 1}</span><b>${name}</b></button>`).join('')}</nav>
-      <article class="lesson-stage panel" aria-labelledby="stageTitle">${renderLessonStage(lesson, session.mode, step)}</article>
-      <footer class="lesson-controls"><button class="secondary-btn" data-action="lesson-prev" ${step === 0 ? 'disabled' : ''}>← Anterior</button><span>Tu texto y elecciones quedan guardados en este dispositivo.</span>${step < total - 1 ? `<button class="primary-btn" data-action="lesson-next" ${stageCanAdvance(lesson, session.mode, step) ? '' : 'disabled'}>Continuar →</button>` : ''}</footer>
-    </section>`;
-  }
-
-  function renderLessonLobby(lesson, subject, confidence) {
-    const mastery = state.mastery[lesson.id] || {}, due = mastery.dueAt && mastery.dueAt <= todayKey();
-    app.innerHTML = `<section class="page lesson-lobby" style="--course:${subject.color}">
+    const subject = subjectFor(source.subject);
+    app.innerHTML = `<section class="page lesson-soon" style="--course:${subject.color}">
       <button class="back-btn" data-open-subject="${subject.id}">← Ruta de ${subject.name}</button>
-      <div class="lesson-lobby-hero"><div><div class="lesson-meta"><span>${subject.short}</span>${statusChip(masteryStatus(lesson.id))}<span class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</span></div><h1>${esc(lesson.title)}</h1><p>${esc(lesson.central)}</p><div class="concept-pills">${lesson.map.map(item => `<span>${esc(item)}</span>`).join('<i>→</i>')}</div></div>${avatarMarkup({ large: true, label: `${state.mascot.name}, compañero de clase` })}</div>
-      <div class="mode-grid">
-        <button class="mode-card recommended" data-start-mode="understand" data-lesson-id="${lesson.id}"><span class="mode-icon">◎</span><small>RECOMENDADO</small><h2>Entenderlo todo</h2><p>Construye bases, mecanismo, visual, ejemplo, comparación y cuaderno antes de una reconstrucción real.</p><footer><b>≈ ${lesson.duration || 40} min</b><i>Empezar →</i></footer></button>
-        <button class="mode-card urgent" data-start-mode="urgent" data-lesson-id="${lesson.id}"><span class="mode-icon">↯</span><small>SI HAY PRUEBA ENCIMA</small><h2>Modo apurado</h2><p>Modelo mínimo + ejercicio tipo prueba. Exige escribir por qué elegiste la respuesta o dónde te bloqueaste.</p><footer><b>≈ ${Math.max(15, Math.round((lesson.duration || 40) * .45))} min</b><i>Entrar →</i></footer></button>
-        <button class="mode-card mastery ${understood(lesson.id) ? '' : 'locked'}" data-start-mode="mastery" data-lesson-id="${lesson.id}" ${understood(lesson.id) ? '' : 'disabled'}><span class="mode-icon">◆</span><small>${due ? 'REPASO VENCIDO' : 'REVALIDACIÓN'}</small><h2>Probar dominio</h2><p>Recuerdo libre, variante y transferencia sin pistas. Aprobar hoy deja evidencia inicial; revalidar otro día confirma dominio.</p><footer><b>${understood(lesson.id) ? (due ? 'Listo para revalidar' : 'Disponible') : 'Primero comprende'}</b><i>Probar →</i></footer></button>
-      </div>
-      <aside class="notice"><b>Meta observable</b><span>${esc(lesson.worked.result)}</span></aside>
+      <div class="panel lesson-soon-card"><p class="eyebrow">${esc(subject.short)} · CLASE</p><h1>${esc(source.title)}</h1><p><b>Disponible próximamente</b></p><p>Estamos rehaciendo esta clase desde cero para que enseñe de verdad. Vuelve pronto.</p><div class="button-row"><button class="primary-btn" data-open-subject="${subject.id}">Volver a ${subject.name}</button><button class="secondary-btn" data-route="home">Ir al refugio</button></div></div>
     </section>`;
-  }
-
-  function stageCanAdvance(lesson, mode, step) {
-    const session = state.lessonSession;
-    if (mode === 'understand' && step === 6) return Boolean(session.checked['guided'] && session.answers.guidedCorrect && (session.drafts.reasoning || '').trim().length >= 30);
-    if (mode === 'understand' && step === 8) return false;
-    if (mode === 'urgent' && step === 3) return Boolean(session.checked.urgent && (session.drafts.urgentReason || '').trim().length >= 30);
-    if (mode === 'urgent' && step === 4) return false;
-    if (mode === 'mastery') return false;
-    return true;
-  }
-
-  function renderLessonStage(lesson, mode, step) {
-    if (mode === 'understand') return renderUnderstandStage(lesson, step);
-    if (mode === 'urgent') return renderUrgentStage(lesson, step);
-    return renderMasteryStage(lesson, step);
   }
 
   function stageIntro(kicker, title, text) { return `<div class="stage-intro"><p class="eyebrow">${kicker}</p><h2 id="stageTitle">${title}</h2><p>${text}</p></div>`; }
-  function mapVisual(lesson) { return `<div class="map-visual">${lesson.map.map((item, index) => `<div><span>${index + 1}</span><b>${esc(item)}</b></div>`).join('<i aria-hidden="true">→</i>')}</div>`; }
-
-  function renderUnderstandStage(lesson, step) {
-    const s = state.lessonSession;
-    if (step === 0) return `${stageIntro('01 · MAPA', 'La pregunta que organiza todo', esc(lesson.central))}${mapVisual(lesson)}<div class="observation"><b>Qué mirar</b><p>La cadena no es una lista: lee cada flecha como “esto provoca o permite lo siguiente”. Al final deberías reconstruirla desde el primer nodo.</p></div>`;
-    if (step === 1) return `${stageIntro('02 · BASES', 'Lo mínimo que debe estar firme', 'Estas bases evitan memorizar el resultado como una etiqueta aislada.')}<div class="foundation-grid">${lesson.foundations.map((item, index) => `<section><span>0${index + 1}</span><h3>${esc(item.title)}</h3><p>${esc(item.body)}</p></section>`).join('')}</div>`;
-    if (step === 2) return `${stageIntro('03 · MECANISMO', 'El puente causal central', esc(lesson.explanation))}<div class="mechanism-panel">${mapVisual(lesson)}<ol>${lesson.map.map((item, index) => `<li><b>${esc(item)}</b><span>${mechanismSentence(lesson, index)}</span></li>`).join('')}</ol></div>`;
-    if (step === 3) return `${stageIntro('04 · VISUAL', 'Mira la relación, no la decoración', 'Redibuja sólo las partes que permiten reconstruir la causa, el flujo o el cambio de enlace.')}<div class="central-visual">${lesson.visual}</div><div class="observation"><b>Qué debes observar</b><p>${visualInstruction(lesson.subject)} En tu cuaderno conserva las etiquetas de la cadena; no copies el estilo.</p></div>`;
-    if (step === 4) return `${stageIntro('05 · EJEMPLO', lesson.worked.prompt, 'Primero se decide el modelo; después se opera.')}<ol class="worked-steps">${lesson.worked.steps.map((item, index) => `<li><span>${index + 1}</span><p>${item}</p></li>`).join('')}</ol><div class="result-box"><b>Resultado que importa</b><p>${lesson.worked.result}</p></div>`;
-    if (step === 5) return `${stageIntro('06 · CONEXIÓN', 'Transferir y distinguir', 'Una idea se vuelve útil cuando puedes separarla de su vecino más parecido.')}<div class="compare-grid"><section><small>${esc(lesson.comparison.leftTitle)}</small><p>${esc(lesson.comparison.left)}</p></section><section><small>${esc(lesson.comparison.rightTitle)}</small><p>${esc(lesson.comparison.right)}</p></section></div><div class="application-box"><b>Aplicación</b><p>${esc(lesson.application)}</p></div><div class="trap-box"><b>Trampa de prueba</b><p>${esc(lesson.trap)}</p></div>`;
-    if (step === 6) return `${stageIntro('07 · PRÁCTICA GUIADA', 'Haz visible cómo estás pensando', 'Elige una respuesta y escribe tu razonamiento. Si no sabes, nombra el primer bloqueo concreto; eso también es información útil.')} ${questionBlock(lesson, lesson.questions[0], 'guided', true)}`;
-    if (step === 7) return `${stageIntro('08 · CUADERNO', 'Una página que reconstruye, no transcribe', 'Aquí separas lo que merece tinta de lo que sólo necesitas mirar.')}<div class="notes-grid"><section class="write"><h3>ANOTA</h3><ul><li>Pregunta central: ${esc(lesson.central)}</li><li>Cadena: ${lesson.map.map(esc).join(' → ')}</li><li>Regla: ${esc(lesson.note)}</li><li>Trampa personal: completa “me confundí cuando…”</li></ul></section><section class="dont"><h3>NO ANOTES</h3><ul><li>Párrafos completos de la diapositiva.</li><li>Una lista de nombres sin flechas ni relaciones.</li><li>El ejemplo entero si ya entiendes el patrón.</li><li>“Entendí” como única evidencia.</li></ul></section></div><label class="field"><span>Tu trampa personal (autoguardada)</span><textarea data-draft="notebook" placeholder="Me confundí cuando…">${esc(s.drafts.notebook || '')}</textarea></label>`;
-    return `${stageIntro('09 · RECONSTRUCCIÓN', 'Cierra la clase sin copiar', 'Explica la cadena con tus palabras. No se exige perfección literaria: sí deben aparecer relaciones causales.')}<label class="field"><span>Reconstrucción</span><textarea data-draft="reconstruction" placeholder="Parto por… esto provoca… por eso… compruebo…">${esc(s.drafts.reconstruction || '')}</textarea></label><label class="field"><span>Una predicción nueva</span><textarea data-draft="prediction" placeholder="Si cambiara…, esperaría… porque…">${esc(s.drafts.prediction || '')}</textarea></label><button class="primary-btn wide" data-action="complete-understanding" ${((s.drafts.reconstruction || '').trim().length >= 80 && (s.drafts.prediction || '').trim().length >= 40) ? '' : 'disabled'}>Guardar comprensión y programar repaso</button><p class="microcopy">Esto abre la siguiente clase, pero deja el tema “en práctica”. El dominio se gana al revalidarlo después.</p>`;
-  }
-
-  function mechanismSentence(lesson, index) {
-    const current = lesson.map[index], next = lesson.map[index + 1];
-    if (!next) return `Es la observación o decisión final; debe ser coherente con ${lesson.note}`;
-    const verbs = { organica: 'redistribuye electrones y prepara', analitica: 'conserva cantidad química y permite', fisico: 'cambia la variable que determina', fisio: 'altera la función y desencadena' };
-    return `${current} ${verbs[lesson.subject]} ${next}.`;
-  }
-  function visualInstruction(subject) {
-    return ({ organica: 'Sigue la flecha desde el par o enlace que se mueve hasta el átomo que lo recibe.', analitica: 'Sigue la muestra entre recipientes y pregunta qué volumen representa cada concentración.', fisico: 'Lee los ejes, la pendiente, la meseta y los límites antes de mirar números.', fisio: 'Sigue la cadena desde la alteración inicial hasta la compensación y la manifestación.' })[subject];
-  }
-
-  function questionBlock(lesson, question, key, requireReason) {
-    const s = state.lessonSession, selected = s.answers[key], checked = s.checked[key];
-    const correct = checked && Number(selected) === question.answer;
-    return `<form class="question-card" data-question-form="${key}" data-answer="${question.answer}" data-lesson-id="${lesson.id}"><fieldset><legend>${esc(question.prompt)}</legend>${question.choices.map((choice, index) => `<label class="choice ${checked ? (index === question.answer ? 'correct' : Number(selected) === index ? 'wrong' : '') : ''}"><input type="radio" name="answer" value="${index}" ${Number(selected) === index ? 'checked' : ''} ${checked ? 'disabled' : ''}><span>${String.fromCharCode(65 + index)}</span><b>${esc(choice)}</b></label>`).join('')}</fieldset>${requireReason ? `<label class="field"><span>Tu razonamiento o primer bloqueo</span><textarea data-draft="reasoning" placeholder="Elegí esto porque… / No puedo seguir porque no identifico…">${esc(s.drafts.reasoning || '')}</textarea></label><div class="blocker-row"><span>Si te trabaste:</span>${['No sé qué dato usar', 'No sé el primer paso', 'Me falta la fórmula/regla', 'No puedo justificar el resultado'].map(text => `<button type="button" class="chip-btn" data-insert-blocker="${esc(text)}">${text}</button>`).join('')}</div>` : ''}<div class="button-row"><button class="secondary-btn" type="button" data-action="toggle-hint" data-hint-key="${key}">Pista</button><button class="primary-btn" type="submit" ${selected === undefined || (requireReason && (s.drafts.reasoning || '').trim().length < 30) ? 'disabled' : ''}>Comprobar</button></div>${s.answers[`hint-${key}`] ? `<div class="hint-box"><b>Pista</b><p>${esc(question.lookFor)}</p></div>` : ''}${checked ? `<div class="feedback ${correct ? 'correct' : 'wrong'}"><b>${correct ? 'Cadena consistente' : 'Primer eslabón a corregir'}</b><p>${esc(correct ? question.why : question.lookFor)}</p>${correct ? '' : '<button type="button" class="text-btn" data-action="retry-question" data-question-key="' + key + '">Intentar otra vez</button>'}</div>` : ''}</form>`;
-  }
-
-  function renderUrgentStage(lesson, step) {
-    const s = state.lessonSession, q = lesson.questions[1];
-    if (step === 0) return `${stageIntro('01 · OBJETIVO DE PRUEBA', esc(lesson.title), esc(lesson.central))}<div class="exam-target"><b>Debes poder hacer tres cosas</b><ol><li>Identificar ${esc(lesson.map[0])} sin pista.</li><li>Reconstruir ${lesson.map.map(esc).join(' → ')}.</li><li>Justificar por qué no cae en la trampa: ${esc(lesson.trap)}</li></ol></div>`;
-    if (step === 1) return `${stageIntro('02 · MODELO MÍNIMO', 'La teoría que sostiene el ejercicio', esc(lesson.explanation))}${mapVisual(lesson)}<div class="formula-strip"><b>Regla operativa</b><span>${esc(lesson.note)}</span></div>`;
-    if (step === 2) return `${stageIntro('03 · EJEMPLO RÁPIDO', lesson.worked.prompt, 'No copies el resultado; copia las decisiones.')}<ol class="worked-steps">${lesson.worked.steps.map((item, index) => `<li><span>${index + 1}</span><p>${item}</p></li>`).join('')}</ol>`;
-    if (step === 3) {
-      const selected = s.answers.urgent, checked = s.checked.urgent, correct = checked && Number(selected) === q.answer;
-      return `${stageIntro('04 · EJERCICIO TIPO PRUEBA', 'Resuelve y muestra dónde se corta tu razonamiento', 'La respuesta sin explicación no habilita la salida.')}<form class="question-card" data-question-form="urgent" data-answer="${q.answer}" data-lesson-id="${lesson.id}"><fieldset><legend>${esc(q.prompt)}</legend>${q.choices.map((choice, index) => `<label class="choice ${checked ? (index === q.answer ? 'correct' : Number(selected) === index ? 'wrong' : '') : ''}"><input type="radio" name="answer" value="${index}" ${Number(selected) === index ? 'checked' : ''} ${checked ? 'disabled' : ''}><span>${String.fromCharCode(65 + index)}</span><b>${esc(choice)}</b></label>`).join('')}</fieldset><label class="field"><span>Tu razonamiento</span><textarea data-draft="urgentReason" placeholder="Primero identifiqué… luego usé… comprobé…">${esc(s.drafts.urgentReason || '')}</textarea></label><div class="blocker-row">${['No encuentro la regla', 'No entiendo el dato', 'Sé calcular, no interpretar', 'Dudo entre dos opciones'].map(text => `<button type="button" class="chip-btn" data-insert-blocker="${esc(text)}" data-target="urgentReason">${text}</button>`).join('')}</div><div class="button-row"><button type="button" class="secondary-btn" data-action="toggle-hint" data-hint-key="urgent">Ver pista</button><button class="primary-btn" type="submit" ${selected === undefined || (s.drafts.urgentReason || '').trim().length < 30 ? 'disabled' : ''}>Comprobar razonamiento</button></div>${s.answers['hint-urgent'] ? `<div class="hint-box"><b>Pista</b><p>${esc(q.lookFor)}</p></div>` : ''}${checked ? `<div class="feedback ${correct ? 'correct' : 'wrong'}"><b>${correct ? 'Respuesta consistente' : 'Primer error localizado'}</b><p>${esc(correct ? q.why : q.lookFor)}</p>${correct ? '' : '<button type="button" class="text-btn" data-action="retry-question" data-question-key="urgent">Intentar otra vez</button>'}</div>` : ''}</form>`;
-    }
-    return `${stageIntro('05 · SALIDA', 'Conserva lo útil y registra lo débil', 'El modo apurado no finge dominio: deja una evidencia inicial y programa una revisión.')}<div class="notes-grid"><section class="write"><h3>ANOTA</h3><p>${esc(lesson.note)}</p><p>${lesson.map.map(esc).join(' → ')}</p></section><section class="dont"><h3>NO ANOTES</h3><p>La alternativa correcta sola. Sin el razonamiento, no podrás adaptar el método a una variante.</p></section></div><button class="primary-btn wide" data-action="complete-urgent" ${s.checked.urgent && s.answers.urgentCorrect ? '' : 'disabled'}>Guardar evidencia y programar repaso</button>`;
-  }
-
-  function renderMasteryStage(lesson, step) {
-    const s = state.lessonSession, q = lesson.questions[2];
-    if (step === 0) return `${stageIntro('01 · RECUERDO LIBRE', 'Reconstruye sin mirar la clase', 'Escribe desde el primer eslabón hasta la consecuencia y añade una comprobación.')}<label class="field"><span>Tu reconstrucción</span><textarea data-draft="masteryRecall" placeholder="El punto de partida es… provoca… por eso… lo compruebo con…">${esc(s.drafts.masteryRecall || '')}</textarea></label><button class="primary-btn" data-action="mastery-next" ${(s.drafts.masteryRecall || '').trim().length >= 80 ? '' : 'disabled'}>Cerrar respuesta y seguir</button>`;
-    if (step === 1) return `${stageIntro('02 · VARIANTE', 'No es la misma pregunta de la clase', 'El orden de las opciones cambia por tema; decide desde el mecanismo.')} ${questionBlock(lesson, q, 'masteryQ', false)}${s.checked.masteryQ ? `<button class="primary-btn" data-action="mastery-next">Continuar a transferencia</button>` : ''}`;
-    if (step === 2) return `${stageIntro('03 · TRANSFERENCIA', 'Cambia una condición y predice', esc(lesson.application))}<label class="field"><span>Si cambia una condición relevante, ¿qué cambiaría y por qué?</span><textarea data-draft="masteryTransfer" placeholder="Si…, entonces…, porque el eslabón…">${esc(s.drafts.masteryTransfer || '')}</textarea></label><label class="field"><span>Distingue este tema de su vecino más parecido</span><textarea data-draft="masteryCompare" placeholder="Se parecen en…, pero se distinguen porque…">${esc(s.drafts.masteryCompare || '')}</textarea></label><button class="primary-btn" data-action="grade-mastery" ${((s.drafts.masteryTransfer || '').trim().length >= 70 && (s.drafts.masteryCompare || '').trim().length >= 60) ? '' : 'disabled'}>Evaluar evidencia</button>`;
-    const result = s.masteryResult;
-    return `${stageIntro('04 · RESULTADO', result?.passed ? (result.confirmed ? 'Dominio confirmado' : 'Evidencia inicial lograda') : 'Todavía está inestable', result?.message || 'Completa las tres evidencias para recibir un diagnóstico.')}<div class="score-ring" role="img" aria-label="Puntaje ${result?.score || 0} de 100"><strong>${result?.score || 0}</strong><span>/100</span></div><div class="rubric-table"><div><b>Reconstrucción causal</b><span>${result?.recall || 0}/40</span></div><div><b>Variante</b><span>${result?.variant || 0}/30</span></div><div><b>Transferencia y comparación</b><span>${result?.transfer || 0}/30</span></div></div>${result?.gaps?.length ? `<div class="feedback wrong"><b>Primeros conceptos que faltaron</b><p>${result.gaps.map(esc).join(' · ')}</p></div>` : ''}<div class="button-row"><button class="primary-btn" data-open-subject="${lesson.subject}">Volver a la ruta</button><button class="secondary-btn" data-action="retry-mastery">Probar otra variante</button></div>`;
-  }
-
   function textEvidenceScore(text, keys, max) {
     const normalized = String(text).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
     const hits = [...new Set(keys)].filter(key => normalized.includes(key)).length;
     const relation = /porque|provoca|por eso|entonces|debido|aument|dismin|forma|rompe|favore|permite/.test(normalized) ? 1 : 0;
     const completeness = clamp((hits / Math.max(2, Math.min(keys.length, 4))) * .75 + relation * .25, 0, 1);
     return Math.round(max * completeness);
-  }
-
-  function completeComprehension(lesson, urgent = false) {
-    if (!state.completedLessons.includes(lesson.id)) {
-      state.completedLessons.push(lesson.id);
-      if (!cloud.authenticated) state.coins += urgent ? 18 : Number(lesson.reward || 35);
-      state.xp += urgent ? 35 : 60;
-    }
-    const previous = state.mastery[lesson.id] || {};
-    state.mastery[lesson.id] = { ...previous, status: previous.status === 'dominado' ? 'dominado' : 'inestable', understoodAt: todayKey(), dueAt: todayKey(addDays(new Date(), 2)), bestScore: previous.bestScore || 0, attempts: previous.attempts || 0 };
-    state.sessions.unshift({ id: uid('class'), date: todayKey(), subject: lesson.subject, mode: urgent ? 'Clase apurada' : 'Clase completa', seconds: Math.max(300, Math.round((Date.now() - new Date(state.lessonSession.startedAt).getTime()) / 1000)), lessonId: lesson.id });
-    state.lessonSession = null;
-    cloud.track('lesson_completed',{lesson_id:lesson.id,subject_id:lesson.subject});
-    saveState();
-    playSuccess();
-    showToast(`Comprensión guardada · repaso programado para ${formatDate(state.mastery[lesson.id].dueAt)}.`);
-    routeTo('subject', lesson.subject);
-  }
-
-  function gradeMastery(lesson) {
-    const s = state.lessonSession;
-    const keys = [...lesson.recallKeys, keyTerm(lesson.note), keyTerm(lesson.explanation)].filter(Boolean);
-    const recall = textEvidenceScore(s.drafts.masteryRecall, keys, 40);
-    const variant = s.answers.masteryQCorrect ? 30 : 0;
-    const transferKeys = [keyTerm(lesson.application), keyTerm(lesson.comparison.left), keyTerm(lesson.comparison.right), ...lesson.recallKeys].filter(Boolean);
-    const transfer = textEvidenceScore(`${s.drafts.masteryTransfer} ${s.drafts.masteryCompare}`, transferKeys, 30);
-    const score = recall + variant + transfer;
-    const previous = state.mastery[lesson.id] || {};
-    const eligibleDelayed = Boolean(previous.understoodAt && previous.understoodAt < todayKey() && (!previous.dueAt || previous.dueAt <= todayKey()));
-    const passed = score >= 75 && recall >= 24 && variant === 30 && transfer >= 18;
-    const confirmed = passed && eligibleDelayed;
-    const gaps = [];
-    if (recall < 24) gaps.push(`reconstruir ${lesson.map.slice(0, 2).join(' → ')}`);
-    if (!variant) gaps.push('resolver la variante sin pista');
-    if (transfer < 18) gaps.push('predecir el cambio y compararlo');
-    s.masteryResult = {
-      score, recall, variant, transfer, passed, confirmed, gaps,
-      message: confirmed ? 'Aprobaste una variante en un día posterior y sin pistas: el estado cambia a dominado.' : passed ? 'La evidencia es buena, pero fue inmediata. Queda en práctica y se revalida en dos días.' : 'No borra tu avance: localizamos qué eslabón practicar antes de repetir.'
-    };
-    s.step = 3;
-    state.mastery[lesson.id] = {
-      ...previous,
-      status: confirmed ? 'dominado' : 'inestable',
-      understoodAt: previous.understoodAt || todayKey(),
-      dueAt: confirmed ? null : todayKey(addDays(new Date(), 2)),
-      lastAttempt: todayKey(),
-      bestScore: Math.max(Number(previous.bestScore) || 0, score),
-      attempts: Number(previous.attempts || 0) + 1
-    };
-    if (!passed) addErrorFromLesson(lesson, 'transferencia', `Dominio ${score}/100`, gaps.join('; '));
-    if (passed) {
-      const firstReward = !previous.masteryRewarded;
-      if (firstReward) { if (!cloud.authenticated) state.coins += confirmed ? 45 : 20; state.xp += confirmed ? 80 : 35; state.mastery[lesson.id].masteryRewarded = true; }
-      playSuccess();
-    }
-    cloud.track('review_completed',{lesson_id:lesson.id,correct:confirmed,attempt:state.mastery[lesson.id].attempts});
-    if (confirmed && previous.status!=='dominado') cloud.track('mastery_achieved',{lesson_id:lesson.id});
-    saveState(); renderRoute(false);
   }
 
   function addErrorFromLesson(lesson, blocker, observable, rule) {
@@ -1311,20 +1098,8 @@
     { id: 'lab-fis-2', subject: 'fisio', title: 'Registro de señales y discusión', status: 'provisional', objective: 'Separar dato observado, mecanismo inferido y conclusión.', calculation: 'Promedio, cambio relativo y rango de referencia sólo si la guía lo entrega.', safety: 'Privacidad de datos y límites de interpretación.', evidence: ['Tabla original', 'Gráfico legible', 'Mecanismo esperado', 'Alternativas y limitaciones'] }
   ];
 
-  function generatedExercises() {
-    return Object.keys(LESSONS).filter(id => !ORGANIC[id]).flatMap(id => {
-      const lesson = richLesson(id), q0 = lesson.questions[0], q2 = lesson.questions[2];
-      return [
-        { id: `${id}-basic`, lessonId: id, subject: lesson.subject, level: 'basic', format: 'choice', title: `Base · ${lesson.title}`, prompt: q0.prompt, choices: q0.choices, answer: q0.answer, why: q0.why, lookFor: q0.lookFor, hint: lesson.note },
-        { id: `${id}-intermediate`, lessonId: id, subject: lesson.subject, level: 'intermediate', format: 'text', title: `Razonamiento · ${lesson.title}`, prompt: `Reconstruye ${lesson.map.join(' → ')} y explica por qué el primer eslabón conduce al último.`, why: lesson.explanation, lookFor: lesson.map.join(' · '), hint: `Empieza con “${lesson.map[0]}” y usa al menos dos conectores causales.`, keys: lesson.recallKeys },
-        { id: `${id}-pep`, lessonId: id, subject: lesson.subject, level: 'pep', format: 'choice', title: `Nivel PEP · ${lesson.title}`, prompt: q2.prompt, choices: q2.choices, answer: q2.answer, why: q2.why, lookFor: q2.lookFor, hint: lesson.trap }
-      ];
-    });
-  }
-  const EXERCISES = [
-    ...DATA.exercises.map((item, index) => ({ ...item, format: 'choice', lessonId: allLessons(item.subject)[index % allLessons(item.subject).length] })),
-    ...generatedExercises()
-  ];
+  // Los ejercicios se están rehaciendo junto con las clases: la biblioteca queda vacía a propósito.
+  const EXERCISES = [];
 
   function renderPractice(tab = 'exercises', detailId = '') {
     const tabs = [
@@ -1341,18 +1116,8 @@
     return `<div class="filter-bar"><label><span>Ramo</span><select data-ui-filter="practiceSubject"><option value="all">Todos</option>${SUBJECTS.map(s => `<option value="${s.id}" ${ui.practiceSubject === s.id ? 'selected' : ''}>${s.name}</option>`).join('')}</select></label>${level ? `<label><span>Nivel</span><select data-ui-filter="practiceLevel"><option value="all">Todos</option>${[['basic', 'Básico'], ['intermediate', 'Intermedio'], ['pep', 'Nivel PEP']].map(([id, name]) => `<option value="${id}" ${ui.practiceLevel === id ? 'selected' : ''}>${name}</option>`).join('')}</select></label>` : ''}</div>`;
   }
 
-  function renderExercises(detailId) {
-    if (detailId) {
-      const exercise = EXERCISES.find(item => item.id === detailId);
-      if (exercise) return exerciseRunner(exercise);
-    }
-    const filtered = EXERCISES.filter(item => (ui.practiceSubject === 'all' || item.subject === ui.practiceSubject) && (ui.practiceLevel === 'all' || item.level === ui.practiceLevel));
-    const groups = SUBJECTS.filter(s => ui.practiceSubject === 'all' || s.id === ui.practiceSubject);
-    return `<section>${practiceFilters()}<div class="library-summary"><b>${filtered.length} ejercicios disponibles</b><span>Elección, cálculo guiado y respuesta abierta por cada clase. Las pistas están ocultas y se registra si las usaste.</span></div>${groups.map(subject => {
-      const items = filtered.filter(item => item.subject === subject.id);
-      if (!items.length) return '';
-      return `<section class="library-group"><header><span style="--course:${subject.color}">${subject.icon}</span><div><h2>${subject.name}</h2><p>${items.length} ejercicios filtrados</p></div></header><div class="exercise-grid">${items.map(exerciseCard).join('')}</div></section>`;
-    }).join('')}</section>`;
+  function renderExercises() {
+    return `<section class="empty-state" aria-labelledby="exercisesSoon"><span class="empty-state-mark" aria-hidden="true">✧</span><p class="eyebrow">EJERCICIOS</p><h2 id="exercisesSoon">Disponible próximamente</h2><p>Estamos escribiendo ejercicios nuevos junto con cada clase, para que midan si aprendiste de verdad. Mientras tanto puedes revisar tus guías, errores y pruebas antiguas.</p><div class="button-row"><button class="primary-btn" data-practice-tab="guides">Ver guías</button><button class="secondary-btn" data-practice-tab="exams">Pruebas antiguas</button></div></section>`;
   }
 
   function exerciseCard(item) {
@@ -1968,12 +1733,6 @@
       submit.disabled = !form.querySelector('input[name="answer"]:checked') || (form.querySelector('textarea')?.value.trim().length || 0) < 25;
     }
     if (form.dataset.exerciseText && submit) submit.disabled = (form.querySelector('textarea')?.value.trim().length || 0) < 60;
-    const complete = document.querySelector('[data-action="complete-understanding"]');
-    if (complete && state.lessonSession) complete.disabled = (state.lessonSession.drafts.reconstruction || '').trim().length < 80 || (state.lessonSession.drafts.prediction || '').trim().length < 40;
-    const masteryNext = document.querySelector('[data-action="mastery-next"]');
-    if (masteryNext && parseRoute()[0] === 'lesson' && state.lessonSession?.mode === 'mastery' && state.lessonSession.step === 0) masteryNext.disabled = (state.lessonSession.drafts.masteryRecall || '').trim().length < 80;
-    const grade = document.querySelector('[data-action="grade-mastery"]');
-    if (grade) grade.disabled = (state.lessonSession.drafts.masteryTransfer || '').trim().length < 70 || (state.lessonSession.drafts.masteryCompare || '').trim().length < 60;
   }
 
   document.addEventListener('click', event => {
@@ -1996,9 +1755,7 @@
     if (button.dataset.action === 'toggle-more') return toggleMore(button);
     if (button.dataset.openSubject) return routeTo('subject', button.dataset.openSubject);
     if (button.dataset.openLesson) return openLesson(button.dataset.openLesson, button.dataset.mode || null);
-    if (button.dataset.startMode) return startLessonMode(button.dataset.lessonId, button.dataset.startMode);
     if (button.dataset.routeMode) { state.routeMode[button.dataset.subject] = button.dataset.routeMode; saveState(); return renderRoute(false); }
-    if (button.dataset.lessonStep !== undefined) { state.lessonSession.step = Number(button.dataset.lessonStep); saveState({ backup: false }); return renderRoute(false); }
     if (button.dataset.practiceTab) return routeTo('practice', button.dataset.practiceTab);
     if (button.dataset.openExercise) return routeTo('practice', 'exercises', button.dataset.openExercise);
     if (button.dataset.openGuide) return routeTo('practice', 'guides', button.dataset.openGuide);
@@ -2028,18 +1785,6 @@
     if (button.dataset.action === 'timer-pause') return timerPause();
     if (button.dataset.action === 'timer-finish') return timerFinish();
     if (button.dataset.action === 'timer-reset') return timerReset();
-    if (button.dataset.action === 'discard-lesson') return confirmAction('Descartar avance de clase', 'Se borrarán los textos y respuestas de esta clase en curso. El dominio anterior no cambia.', 'Descartar', () => { state.lessonSession = null; saveState(); closeModal(); renderRoute(false); });
-    if (button.dataset.action === 'lesson-lobby') { state.lessonSession.mode = null; state.lessonSession.step = 0; saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'lesson-prev') { state.lessonSession.step = Math.max(0, state.lessonSession.step - 1); saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'lesson-next') { state.lessonSession.step += 1; saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'toggle-hint') { state.lessonSession.answers[`hint-${button.dataset.hintKey}`] = !state.lessonSession.answers[`hint-${button.dataset.hintKey}`]; cloud.track('hint_requested',{lesson_id:state.lessonSession.id}); saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'retry-question') { delete state.lessonSession.checked[button.dataset.questionKey]; delete state.lessonSession.answers[button.dataset.questionKey]; delete state.lessonSession.answers[`${button.dataset.questionKey}Correct`]; saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.insertBlocker) { const target = button.dataset.target || 'reasoning'; state.lessonSession.drafts[target] = `${state.lessonSession.drafts[target] || ''}${state.lessonSession.drafts[target] ? ' ' : ''}${button.dataset.insertBlocker}. `; saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'complete-understanding') return completeComprehension(richLesson(state.lessonSession.id), false);
-    if (button.dataset.action === 'complete-urgent') return completeComprehension(richLesson(state.lessonSession.id), true);
-    if (button.dataset.action === 'mastery-next') { state.lessonSession.step += 1; saveState({ backup: false }); return renderRoute(false); }
-    if (button.dataset.action === 'grade-mastery') return gradeMastery(richLesson(state.lessonSession.id));
-    if (button.dataset.action === 'retry-mastery') { const id = state.lessonSession.id; state.lessonSession = { id, mode: 'mastery', step: 0, answers: {}, drafts: {}, checked: {}, startedAt: new Date().toISOString() }; saveState(); return renderRoute(false); }
     if (button.dataset.action === 'exercise-hint') { const p = state.practice[button.dataset.exerciseId] || { attempts: 0 }; p.hintOpen = !p.hintOpen; if (p.hintOpen) p.hintUsed = true; state.practice[button.dataset.exerciseId] = p; saveState({ backup: false }); return renderRoute(false); }
     if (button.dataset.action === 'exercise-retry') { const p = state.practice[button.dataset.exerciseId] || {}; p.checked = false; delete p.selected; state.practice[button.dataset.exerciseId] = p; saveState({ backup: false }); return renderRoute(false); }
     if (button.dataset.action === 'guide-complete') { const id = button.dataset.guideId; state.guides[id] = { ...(state.guides[id] || {}), completed: true, completedAt: todayKey() }; if (!cloud.authenticated) state.coins += state.guides[id].rewarded ? 0 : 8; state.guides[id].rewarded = true; saveState(); playSuccess(); return renderRoute(false); }
@@ -2151,9 +1896,6 @@
     }
     if (target.dataset.settingVolume !== undefined) { const key=target.dataset.settingVolume; if(['sfxVolume','ambientVolume','musicVolume'].includes(key)) { state.settings[key]=clamp(Number(target.value)/100,0,1); if(key==='sfxVolume')state.settings.volume=state.settings.sfxVolume; saveState(); window.NexoAudio.configure(state.settings); window.NexoAudio.activate(); updateChrome(); } }
     if (target.dataset.uiFilter) { ui[target.dataset.uiFilter] = target.value; renderRoute(false); }
-    if (target.matches('[data-question-form] input[name="answer"]')) { /* selector handled through closest below */ }
-    const question = target.closest('[data-question-form]');
-    if (question && target.name === 'answer') { state.lessonSession.answers[question.dataset.questionForm] = Number(target.value); saveState({ backup: false }); updateInteractiveButtons(target); }
     const exerciseForm = target.closest('[data-exercise-choice]');
     if (exerciseForm && target.name === 'answer') { const id = exerciseForm.dataset.exerciseChoice, p = state.practice[id] || { attempts: 0 }; p.selected = Number(target.value); state.practice[id] = p; saveState({ backup: false }); updateInteractiveButtons(target); }
     if (target.dataset.labCheck) { const id = target.dataset.labCheck, p = state.labs[id] || { checks: [] }; const value = Number(target.value); p.checks = target.checked ? [...new Set([...(p.checks || []), value])] : (p.checks || []).filter(item => item !== value); state.labs[id] = p; saveState({ backup: false }); }
@@ -2185,7 +1927,6 @@
 
   document.addEventListener('input', event => {
     const target = event.target;
-    if (target.dataset.draft && state.lessonSession) { state.lessonSession.drafts[target.dataset.draft] = target.value; saveState({ backup: false }); updateInteractiveButtons(target); }
     if (target.dataset.exerciseDraft) { const p = state.practice[target.dataset.exerciseDraft] || { attempts: 0 }; p.draft = target.value; state.practice[target.dataset.exerciseDraft] = p; saveState({ backup: false }); updateInteractiveButtons(target); }
     if (target.dataset.guideDraft) { const p = state.guides[target.dataset.guideDraft] || {}; p.draft = target.value; state.guides[target.dataset.guideDraft] = p; saveState({ backup: false }); const button = target.closest('.guide-view')?.querySelector('[data-action="guide-complete"]'); if (button) button.disabled = target.value.trim().length < 100; }
     if (target.dataset.errorSearch !== undefined) { ui.errorSearch = target.value; clearTimeout(window.__errorSearchTimer); window.__errorSearchTimer = setTimeout(() => renderRoute(false), 250); }
@@ -2229,12 +1970,6 @@
         .then(()=>{saveState();renderRoute(false);document.querySelector(`[data-structured-case="${id}"]`)?.scrollIntoView({block:'center'});})
         .catch(()=>showToast('No se pudo guardar la corrección. Inténtalo de nuevo.'));
       return;
-    }
-    if (form.dataset.questionForm) {
-      const key = form.dataset.questionForm, answer = Number(new FormData(form).get('answer')), expected = Number(form.dataset.answer);
-      state.lessonSession.answers[key] = answer; state.lessonSession.answers[`${key}Correct`] = answer === expected; state.lessonSession.checked[key] = true;
-      if (answer !== expected) addErrorFromLesson(richLesson(form.dataset.lessonId), 'concept', `Alternativa ${String.fromCharCode(65 + answer)}`, richLesson(form.dataset.lessonId).questions.find((_, i) => (key === 'guided' ? i === 0 : key === 'urgent' ? i === 1 : i === 2))?.lookFor);
-      saveState(); if (answer === expected) playSuccess(); return renderRoute(false);
     }
     if (form.dataset.exerciseChoice) return recordChoiceExercise(EXERCISES.find(item => item.id === form.dataset.exerciseChoice), form);
     if (form.dataset.exerciseText) return recordTextExercise(EXERCISES.find(item => item.id === form.dataset.exerciseText));
