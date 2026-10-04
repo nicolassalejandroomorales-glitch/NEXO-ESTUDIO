@@ -212,6 +212,8 @@ Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, 
 
 - **Torre interactiva y explicaciones desde cero (4 oct)**: objetos tocables en la pintura como en el refugio (sabio → explica desde cero, libro → glosario, pizarra → diapositivas, ventana → cambia la hora, frascos → datos curiosos de las diapositivas; mascota → pista). En móvil también hay una fila compacta de objetos, porque la pintura no cabe entera. Cada misión parte con 5 bases "desde cero" con dibujos de Lewis, cada bloque tiene "Explícame más simple" y cada pregunta acertada muestra por qué cada alternativa es correcta o no.
 
+- **Clase completa de Aminas para la PEP 1 (4 oct)**: 8 misiones (el par libre, nombrar, propiedades y sales, basicidad I y II, síntesis, reacciones, espectroscopía) con 63 actividades. Tipos nuevos: ordenar, clasificar en calderos, unir pares y tocar en la molécula. Pinturas HD entregadas por Niquito; el mediodía se crea por script (`tools/classroom-art/build_tower.py`), que también recorta el brillo de cada objeto tocable.
+
 ## Pendiente
 
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
