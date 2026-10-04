@@ -198,20 +198,23 @@ Los juegos usan los mismos generadores; las recompensas premian retener, no hace
 
 Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas automáticas, ANTES/AHORA y aprobación.
 
-| Etapa | Qué | Modelo sugerido |
-|---|---|---|
-| 1 | Motor de evidencia: escalones, confianza, estados del árbol; conectar con `dist/academic` y FSRS | Opus 5.5 |
-| 2 | Torre por capas y árbol vivo (escritorio y celular), grimorio que habla en tinta | Sonnet 5.5 |
-| 3 | Editor de estructuras, flechas y revisor RDKit en las pruebas | Opus 5.5 |
-| 4 | **Piloto:** misión Reacciones completa con todos sus momentos | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
-| 5 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | Opus 5.5 |
-| 6 | Formulario con investigación y recetario; glosario al nuevo formato | Opus 5.5 |
-| 7 | Las otras misiones de Aminas al modelo nuevo | Opus 5.5 |
-| 8 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Sonnet 5.5 |
-| 9 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | Sonnet 5.5 |
-| 10 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | Sonnet 5.5 |
+| Etapa | Qué | Estado | Modelo sugerido |
+|---|---|---|---|
+| 1 | Motor de evidencia: escalones, confianza, hojas del árbol; conectado con FSRS | **Hecha** | Opus 5.5 |
+| 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Siguiente** | Opus 5.5 |
+| 3 | **Piloto:** misión Reacciones completa con todos sus momentos | Pendiente | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
+| 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | Pendiente | Opus 5.5 |
+| 5 | Formulario con investigación y recetario de pociones | Pendiente | Opus 5.5 |
+| 6 | Las otras misiones de Aminas al modelo nuevo | Pendiente | Opus 5.5 |
+| 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Pendiente | Sonnet 5.5 |
+| 8 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | Pendiente | Sonnet 5.5 |
+| 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | Pendiente | Sonnet 5.5 |
+| 10 | **Arte al final:** torre por capas, árbol vivo y personajes cartoon, diseñados con calma | En diseño (bocetos) | Opus 5.5 |
 
-La etapa 4 es la prueba de fuego: si la misión Reacciones te sirve a ti para entender, el modelo se replica.
+Orden cambiado el 4 oct a pedido de Niquito: el arte se diseña al final, cuando todo lo funcional esté listo.
+Mientras tanto, las etapas 2 a 9 usan el aula actual.
+
+La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para entender, el modelo se replica.
 
 ### Avance
 
@@ -222,6 +225,17 @@ La etapa 4 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   Pruebas: `tools/class-evidence-test.cjs` y `tools/classroom-test.cjs`.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
+
+### Arte: lo aprendido con los bocetos (para la etapa 10)
+
+Boceto vivo: https://claude.ai/artifact/WPt53fynN5jZ4BbETXyudh (4 versiones). Lo que dijo Niquito:
+- **Le gusta** que la escena cambie con la hora (amanecer, día, atardecer, noche) y que esté viva.
+- **No le gusta:** el árbol como dibujo de líneas ni el de cuento; los objetos (ventanas, libros) se ven planos y básicos;
+  la pintura con IA (Canva) se ve "muy IA".
+- **Quiere:** más detalle y algo de realismo, sin que parezca IA. Árbol elegido: **sauce de luz** con farolitos (conceptos).
+  Detalles elegidos: libros y velas que flotan, caldero con vapor, astrolabio y techo de estrellas, pluma que escribe sola.
+- Caminos a explorar en la etapa 10: texturas y luz más ricas por código; objetos pintados uno por uno (no la escena entera) y animados por código;
+  un estilo propio muy cuidado (por ejemplo pixel art detallado); referencias que traiga Niquito.
 
 ## 12. Pendiente y decisiones abiertas
 
