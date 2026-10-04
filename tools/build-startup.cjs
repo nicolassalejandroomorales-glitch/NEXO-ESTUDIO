@@ -12,7 +12,7 @@ const startupModules = [
   'academic/history.js', 'platform/loader.js', 'platform/performance.js',
   'platform/animation.js', 'platform/audio.js', 'game/manager.js',
   'mascot/controller.js',
-  'organic-manifest.js'
+  'organic-manifest.js', 'classes/catalog.js'
 ];
 const startupBundle = startupModules.map(name => {
   const code = fs.readFileSync(path.join(root, 'dist', name), 'utf8');

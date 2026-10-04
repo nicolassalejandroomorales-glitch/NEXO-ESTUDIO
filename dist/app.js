@@ -510,6 +510,8 @@
     const previousRoute=app.dataset.renderedRoute;
     window.NexoAnimation?.prepare(app);
     window.NexoHomeScene?.cleanup();
+    if (document.body.classList.contains('in-classroom')) window.NexoAmbientTime?.stopPreview?.(); // la ventana de la torre puede haber cambiado la hora
+    document.body.classList.remove('in-classroom');
     clearInterval(timerTicker);
     window.NexoWorkbench?.cleanup();
     window.NexoAcademicTraining?.cleanup();
@@ -679,7 +681,7 @@
 
   function lessonQuickRow(id) {
     const lesson = LESSONS[id], subject = lessonSubject(id);
-    return `<button class="compact-row" data-open-lesson="${id}"><span class="subject-dot" style="--course:${subject.color}">${subject.short}</span><div><b>${esc(lesson.title)}</b><small>${esc(lesson.central)}</small></div><i>Próximamente</i></button>`;
+    return `<button class="compact-row" data-open-lesson="${id}"><span class="subject-dot" style="--course:${subject.color}">${subject.short}</span><div><b>${esc(lesson.title)}</b><small>${esc(lesson.central)}</small></div><i>${window.NexoClassCatalog?.[id] ? 'Entrar al aula →' : 'Próximamente'}</i></button>`;
   }
   function eventRow(event) {
     const subject = subjectFor(event.subject), diff = daysBetween(todayKey(), event.date);
@@ -694,27 +696,20 @@
     }, 1000);
   }
 
-  function coursePlate(subject) {
-    const lesson=LESSONS[subject.peps[0]?.lessons[0]];
-    if(!lesson?.visual)return '';
-    const visual=subject.id==='organica'?'<img class="course-molecular-plate" src="./assets/lessons/anilina_bencilamina.svg" alt="Anilina y bencilamina: comparación molecular del material existente">':lesson.visual;
-    const caption=subject.id==='organica'?'Anilina y bencilamina':lesson.title;
-    return `<figure class="course-plate"><figcaption><span>LÁMINA DEL CATÁLOGO</span><b>${esc(caption)}</b></figcaption><div class="course-plate-diagram">${visual}</div></figure>`;
-  }
+
 
   function grimoireShell(subject, title, subtitle, content, aside, pageLabel) {
     const courses = SUBJECTS.map(item => `<button class="grimoire-tab ${subject?.id===item.id?'active':''}" data-grimoire-route="learn/course/${item.id}" ${subject?.id===item.id?'aria-current="page"':''} title="${esc(item.name)}"><span aria-hidden="true">${window.NexoRooms.courses[item.id]?.symbol||item.icon}</span><span>${esc(item.short)}</span></button>`).join('');
     const position=subject?SUBJECTS.findIndex(item=>item.id===subject.id):0;
     const previous=SUBJECTS[position-1],next=SUBJECTS[position+1];
     const overview=subject&&!pageLabel.startsWith('III')?`<ol class="course-outline">${subject.peps.map((pep,index)=>`<li><span>${String(index+1).padStart(2,'0')}</span><b>${esc(pep.name.split(' · ').slice(1).join(' · ')||pep.name)}</b></li>`).join('')}</ol>`:'';
-    const plate=subject?coursePlate(subject):'';
     const pagination=`<nav class="folio-navigation" aria-label="Pasar páginas de ramo"><button class="ink-link" ${previous?`data-grimoire-route="learn/course/${previous.id}"`:'disabled'}>Ramo anterior${previous?`<small>${esc(previous.name)}</small>`:''}</button><span>${position+1} / ${SUBJECTS.length}</span><button class="ink-link" ${next?`data-grimoire-route="learn/course/${next.id}"`:'disabled'}>Ramo siguiente${next?`<small>${esc(next.name)}</small>`:''}</button></nav>`;
-    return `<section class="page grimoire-scene"><nav class="grimoire-wayfinding" aria-label="Ubicación en el grimorio"><button class="wood-link" data-route="home">Volver al refugio</button><button class="wood-link" data-route="learn">Índice de ramos</button><button class="wood-link" data-route="learn" data-route-sub="library">Biblioteca</button></nav><div class="grimoire" data-book-course="${subject?.id||'index'}" style="--book-accent:${subject?window.NexoRooms.courses[subject.id]?.accent:'#5e7047'}"><nav class="grimoire-tabs" aria-label="Marcadores de ramo">${courses}</nav><span class="book-spine" aria-hidden="true"></span><div class="grimoire-spread"><header class="grimoire-frontispiece"><p class="eyebrow">NEXO · CUADERNO DE ESTUDIO</p><div class="grimoire-crest" aria-hidden="true">${subject?window.NexoRooms.courses[subject.id]?.symbol||subject.icon:'✧'}</div><h2>${subject?esc(subject.name):'El grimorio del conocimiento'}</h2><p>${subject?esc(subject.description):'Cuatro ramos, un lugar para volver a tus preguntas.'}</p>${plate}${overview}${aside}<span class="folio-mark" aria-hidden="true">✦</span></header><div class="grimoire-folio"><p class="eyebrow">${esc(pageLabel)}</p><h1>${esc(title)}</h1><p class="folio-intro">${esc(subtitle)}</p>${content}<footer class="folio-footer">${subject?esc(subject.short):'NEXO'} · ${esc(pageLabel)}</footer></div></div>${pagination}</div></section>`;
+    return `<section class="page grimoire-scene"><nav class="grimoire-wayfinding" aria-label="Ubicación en el grimorio"><button class="wood-link" data-route="home">Volver al refugio</button><button class="wood-link" data-route="learn">Índice de ramos</button><button class="wood-link" data-route="learn" data-route-sub="library">Biblioteca</button></nav><div class="grimoire" data-book-course="${subject?.id||'index'}" style="--book-accent:${subject?window.NexoRooms.courses[subject.id]?.accent:'#5e7047'}"><nav class="grimoire-tabs" aria-label="Marcadores de ramo">${courses}</nav><span class="book-spine" aria-hidden="true"></span><div class="grimoire-spread"><header class="grimoire-frontispiece"><p class="eyebrow">NEXO · CUADERNO DE ESTUDIO</p><div class="grimoire-crest" aria-hidden="true">${subject?window.NexoRooms.courses[subject.id]?.symbol||subject.icon:'✧'}</div><h2>${subject?esc(subject.name):'El grimorio del conocimiento'}</h2><p>${subject?esc(subject.description):'Cuatro ramos, un lugar para volver a tus preguntas.'}</p>${overview}${aside}<span class="folio-mark" aria-hidden="true">✦</span></header><div class="grimoire-folio"><p class="eyebrow">${esc(pageLabel)}</p><h1>${esc(title)}</h1><p class="folio-intro">${esc(subtitle)}</p>${content}<footer class="folio-footer">${subject?esc(subject.short):'NEXO'} · ${esc(pageLabel)}</footer></div></div>${pagination}</div></section>`;
   }
 
   function renderSubjects() {
     const subject=SUBJECTS[0],progress=subjectProgress(subject.id);
-    const content=`<div class="grimoire-index"><p class="course-opening-number">PRIMERA APERTURA · 01</p><h2 class="course-opening-title">${esc(subject.name)}</h2><p class="course-opening-description">${esc(subject.description)}</p>${coursePlate(subject)}<button class="grimoire-index-entry ink-link" data-grimoire-route="learn/course/${subject.id}">Abrir evaluaciones de ${esc(subject.name)}</button><p class="course-registration">${progress.understood} / ${progress.total} temas con registro de comprensión</p><p class="book-reading-note">Recorre los otros ramos con los marcadores o pasando página.</p></div>`;
+    const content=`<div class="grimoire-index"><p class="course-opening-number">PRIMERA APERTURA · 01</p><h2 class="course-opening-title">${esc(subject.name)}</h2><p class="course-opening-description">${esc(subject.description)}</p><button class="grimoire-index-entry ink-link" data-grimoire-route="learn/course/${subject.id}">Abrir evaluaciones de ${esc(subject.name)}</button><p class="course-registration">${progress.understood} / ${progress.total} temas con registro de comprensión</p><p class="book-reading-note">Recorre los otros ramos con los marcadores o pasando página.</p></div>`;
     const chapters=SUBJECTS.reduce((sum,item)=>sum+item.peps.length,0),themes=SUBJECTS.reduce((sum,item)=>sum+allLessons(item.id).length,0);
     const aside=`<dl class="book-colophon"><div><dt>Ramos</dt><dd>${SUBJECTS.length}</dd></div><div><dt>Capítulos del catálogo</dt><dd>${chapters}</dd></div><div><dt>Temas disponibles</dt><dd>${themes}</dd></div></dl><p class="grimoire-margin-note">Ramo · evaluación · mapa<br>Una apertura a la vez.</p>`;
     app.innerHTML=grimoireShell(null,'Índice del grimorio','Abre un ramo y elige la evaluación que quieres preparar.',content,aside,'I · ÍNDICE');
@@ -741,6 +736,7 @@
     const evaluation=window.NexoPreparation.evaluations(subject,state.events).find(item=>item.id===evaluationId);
     if(!evaluation) return renderEvaluations(subjectId);
     const ids=evaluation.lessons.filter(id=>LESSONS[id]);
+    ids.filter(id=>window.NexoClassCatalog?.[id]).forEach(id=>loadClassroom(id).catch(()=>{})); // precarga: entrar al aula es instantáneo
     const selected=ids.includes(selectedId)?selectedId:null;
     const registered=ids.filter(understood).length;
     const points=window.NexoPreparation.layout(ids.length);
@@ -751,7 +747,7 @@
       const label=status==='dominado'?'Autoverificación registrada':recorded?'Comprensión registrada':'Por preparar';
       return `<li class="preparation-stop" style="--map-x:${points[index].x}%"><button class="preparation-node ${recorded?'recorded':''}" data-grimoire-course="${subject.id}" data-grimoire-evaluation="${esc(evaluation.id)}" data-grimoire-node="${id}" ${selected===id?'aria-current="step"':''}><span class="map-node-seal" aria-hidden="true">${recorded?'✓':index+1}</span><span class="map-node-label"><b>${esc(lesson.title)}</b><small>${label}</small></span></button></li>`;
     }).join('');
-    const detail=selected?`<section class="preparation-detail" aria-labelledby="preparationDetailTitle"><p class="eyebrow">ETAPA ${ids.indexOf(selected)+1}</p><h2 id="preparationDetailTitle">${esc(LESSONS[selected].title)}</h2><p>${esc(LESSONS[selected].central||'Consulta el material disponible para este tema.')}</p><p class="legacy-note"><b>Disponible próximamente.</b> Estamos rehaciendo esta clase desde cero.</p></section>`:'<p class="grimoire-margin-note">Sigue el sendero.<br>Selecciona un tema para ver su material y registro.</p>';
+    const detail=selected?`<section class="preparation-detail" aria-labelledby="preparationDetailTitle"><p class="eyebrow">ETAPA ${ids.indexOf(selected)+1}</p><h2 id="preparationDetailTitle">${esc(LESSONS[selected].title)}</h2><p>${esc(LESSONS[selected].central||'Consulta el material disponible para este tema.')}</p>${window.NexoClassCatalog?.[selected]?`<button class="primary-btn" data-open-lesson="${selected}">Entrar al aula →</button>`:'<p class="legacy-note"><b>Disponible próximamente.</b> Estamos rehaciendo esta clase desde cero.</p>'}</section>`:'<p class="grimoire-margin-note">Sigue el sendero.<br>Selecciona un tema para ver su material y registro.</p>';
     const map=ids.length?`<div class="preparation-map" style="--map-height:${height}px"><svg class="preparation-path" viewBox="0 0 100 ${height}" preserveAspectRatio="none" aria-hidden="true"><path d="${path}" /></svg><span class="map-compass" aria-hidden="true">✥<small>N</small></span><ol class="preparation-stops">${nodes}</ol><span class="map-destination" aria-hidden="true">✦</span></div><p class="map-legend">✓ Con registro de comprensión · números: orden sugerido</p>`:`<section class="preparation-empty"><span aria-hidden="true">✥</span><h2>Temario por vincular</h2><p>Esta evaluación está en tu calendario, pero todavía no tiene un recorrido asociado. Consulta su temario en Bitácora.</p><button class="ink-link" data-route="planner" data-route-sub="calendar">Abrir Bitácora →</button></section>`;
     app.innerHTML=grimoireShell(subject,evaluation.name,ids.length?'Un sendero de temas para orientar tu preparación.':'El mapa estará disponible cuando se vincule su temario.',`<button class="ink-link" data-grimoire-route="learn/course/${subject.id}">← Cambiar evaluación</button>${evaluationDates(evaluation)}${map}`,`<div class="map-record"><strong>${registered} / ${ids.length}</strong><span>temas con registro de comprensión</span><p>Registro histórico; no certifica dominio de la evaluación.</p></div>${detail}`,'III · MAPA');
     if(selected) {
@@ -777,162 +773,13 @@
 
   function lessonNode(id, index, routeMode, pepLabel = '') {
     const lesson = LESSONS[id], unlocked = isUnlocked(lesson.subject, id), status = masteryStatus(id), confidence = confidenceFor(id);
-    return `<button class="lesson-node ${status} ${unlocked ? '' : 'locked'}" data-open-lesson="${id}" ${unlocked ? '' : 'disabled'}><span class="node-index">${status === 'dominado' ? '✓' : unlocked ? index + 1 : '⌁'}</span><span class="node-copy">${pepLabel?`<span class="home-lesson-pep">${esc(pepLabel)}</span>`:''}<b>${esc(lesson.title)}</b><small>${ORGANIC[id] && status === 'dominado' ? '<span class="status-chip dominado">Autoverificado</span>' : statusChip(status)} · ${lesson.duration || 35} min</small><em class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</em></span><i>Próximamente</i></button>`;
+    return `<button class="lesson-node ${status} ${unlocked ? '' : 'locked'}" data-open-lesson="${id}" ${unlocked ? '' : 'disabled'}><span class="node-index">${status === 'dominado' ? '✓' : unlocked ? index + 1 : '⌁'}</span><span class="node-copy">${pepLabel?`<span class="home-lesson-pep">${esc(pepLabel)}</span>`:''}<b>${esc(lesson.title)}</b><small>${ORGANIC[id] && status === 'dominado' ? '<span class="status-chip dominado">Autoverificado</span>' : statusChip(status)} · ${lesson.duration || 35} min</small><em class="source-badge ${confidence.level}" title="${esc(confidence.detail)}">${confidence.label}</em></span><i>${window.NexoClassCatalog?.[id] ? 'Entrar al aula →' : 'Próximamente'}</i></button>`;
   }
 
-  const COURSE_METHODS = {
-    organica: [
-      ['Inventario electrónico', 'Marca pares, enlaces π, cargas, electrófilo y grupo saliente antes de mover una flecha.'],
-      ['Mecanismo con flechas', 'Justifica cada enlace formado o roto y revisa carga, octeto y estereoquímica.'],
-      ['Retrosíntesis', 'Marca el enlace nuevo del producto y vuelve al nucleófilo/electrófilo que podría crearlo.']
-    ],
-    analitica: [
-      ['Mapa de recipientes', 'Dibuja muestra, matraz, pipeta y Erlenmeyer con volumen y concentración sobre cada transferencia.'],
-      ['Balance químico', 'Escribe la reacción cuantitativa y conserva moles antes de aplicar factores de dilución.'],
-      ['Decisión final', 'Cierra con unidad, cifras significativas, incertidumbre y qué implica el resultado para la muestra.']
-    ],
-    fisico: [
-      ['Elegir modelo', 'Nombra sistema, variables, supuestos y qué ecuación conecta físicamente los datos.'],
-      ['Resolver con unidades', 'Sustituye símbolos antes que números y usa las unidades como detector de errores.'],
-      ['Interpretar', 'Predice signo, tendencia y límite antes de aceptar un resultado numérico.']
-    ],
-    fisio: [
-      ['Cadena causal', 'Une lesión o alteración → variable fisiológica → compensación → signo o síntoma.'],
-      ['Compartimento', 'Ubica órgano, barrera, célula o eje antes de nombrar una patología.'],
-      ['Fármaco después', 'Sitúa el blanco farmacológico en un eslabón y predice qué variable corrige y qué riesgo abre.']
-    ]
-  };
-
-  const SUBJECT_FALLBACKS = {
-    organica: {
-      foundations: [
-        ['Roles, no etiquetas', 'Nucleófilo, electrófilo, ácido y base describen lo que una especie hace en ese paso; primero localiza los electrones disponibles.'],
-        ['Conservación', 'Cada flecha debe conservar átomos y carga. Si un carbono completa el octeto, otro enlace debe ceder o romperse.'],
-        ['Energía y selectividad', 'La especie más estable no siempre se forma más rápido: separa control cinético, termodinámico y condiciones.']
-      ],
-      comparison: ['Producto dibujado', 'Una estructura final puede coincidir por memoria.', 'Mecanismo reconstruido', 'Explica por qué se forma, qué alternativas compiten y qué cambia si varía el reactivo.'],
-      trap: 'Reconocer el nombre de la reacción y saltar directamente al producto sin justificar la fuente electrónica, el destino y el enlace que cambia.',
-      application: 'En una pregunta nueva, marca el enlace que apareció y reconstruye qué par electrónico pudo formarlo antes de elegir reactivos.'
-    },
-    analitica: {
-      foundations: [
-        ['Analito y matriz', 'Define qué especie se informa y qué componentes pueden interferir antes de calcular.'],
-        ['Moles como puente', 'Concentración y volumen entregan cantidad química; la estequiometría convierte esa cantidad en analito.'],
-        ['Trazabilidad', 'Cada dilución, alícuota y factor debe pertenecer a un recipiente real del procedimiento.']
-      ],
-      comparison: ['Cálculo suelto', 'Combina números correctos sin saber a qué recipiente pertenecen.', 'Balance trazable', 'Sigue muestra → reacción → medición → resultado con unidades y decisión.'],
-      trap: 'Aplicar M·V de forma automática y perder la estequiometría o el factor que devuelve la alícuota a la muestra original.',
-      application: 'Dibuja el recorrido de la muestra y escribe sobre cada flecha qué se conserva y qué cambia.'
-    },
-    fisico: {
-      foundations: [
-        ['Sistema y variables', 'Aclara qué estado o proceso se modela y cuál es la variable dependiente.'],
-        ['Supuestos del modelo', 'Una ecuación sólo responde si se cumplen las condiciones que la hacen válida.'],
-        ['Unidades y límites', 'Las dimensiones, el signo y los casos extremos son controles físicos del resultado.']
-      ],
-      comparison: ['Sustitución mecánica', 'Introduce datos en una fórmula sin decidir modelo ni convención.', 'Modelo físico', 'Predice dirección y unidades, calcula y luego interpreta si el valor tiene sentido.'],
-      trap: 'Elegir la fórmula por las letras disponibles sin declarar el sistema, los supuestos o la convención de signo.',
-      application: 'Antes de calcular, escribe una predicción cualitativa: qué aumenta, qué disminuye y qué signo esperas.'
-    },
-    fisio: {
-      foundations: [
-        ['Variable normal', 'Primero identifica qué función mantiene el sistema sano y cómo se regula.'],
-        ['Alteración primaria', 'Ubica el primer cambio comprobable; no empieces por el síntoma final.'],
-        ['Compensación', 'Distingue la respuesta que ayuda a corto plazo del daño que puede producir si persiste.']
-      ],
-      comparison: ['Lista de síntomas', 'Permite reconocer palabras, pero no predice qué pasará si cambia una variable.', 'Cadena causal', 'Une alteración, compensación, manifestación y blanco farmacológico.'],
-      trap: 'Saltar del nombre de una enfermedad a un síntoma sin explicar la variable intermedia que los conecta.',
-      application: 'Toma un fármaco conocido y ubica su blanco sólo después de reconstruir el mecanismo alterado.'
-    }
-  };
-
-  function richLesson(id) {
-    const source = LESSONS[id], fallback = SUBJECT_FALLBACKS[source.subject];
-    const foundations = Array.isArray(source.foundations) && source.foundations.length >= 3
-      ? source.foundations
-      : fallback.foundations.map(([title, body]) => ({ title: `${title} · ${source.title}`, body: `${body} En este bloque se aplica a ${source.map.join(' → ').toLowerCase()}.` }));
-    const comparison = source.comparison || { leftTitle: fallback.comparison[0], left: fallback.comparison[1], rightTitle: fallback.comparison[2], right: `${fallback.comparison[3]} En ${source.title}, la diferencia clave es: ${source.note}` };
-    return {
-      ...source,
-      id,
-      foundations,
-      comparison,
-      trap: source.trap || `${fallback.trap} En esta clase, el control concreto es: ${source.note}`,
-      application: source.application || `${fallback.application} Caso objetivo: ${source.central}`,
-      worked: source.worked || workedExample(source),
-      visual: source.visual || visualFor(source),
-      questions: questionsFor(source, id),
-      recallKeys: source.map.map(item => keyTerm(item)).filter(Boolean)
-    };
-  }
-
-  function keyTerm(value) {
-    const cleaned = String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9α-ω+]+/g, ' ').trim();
-    return cleaned.split(/\s+/).filter(word => word.length >= 3 && !['para', 'como', 'solo', 'hacia', 'desde', 'entre'].includes(word))[0] || cleaned;
-  }
-
-  function visualFor(lesson) {
-    const nodes = lesson.map.map((item, index) => `<span><small>${index + 1}</small>${esc(item)}</span>`).join('<i aria-hidden="true">→</i>');
-    if (lesson.subject === 'fisico') return `<div class="model-visual"><div class="axis-y">respuesta</div><div class="curve"></div><div class="axis-x">variable</div><footer>${nodes}</footer></div>`;
-    if (lesson.subject === 'analitica') return `<div class="vessel-visual"><span>muestra</span><i>→</i><span>matraz</span><i>→</i><span>alícuota</span><i>→</i><span>medición</span><footer>${nodes}</footer></div>`;
-    if (lesson.subject === 'fisio') return `<div class="causal-chain">${nodes}</div>`;
-    return `<div class="reaction-visual"><div class="electron-source">:Nu⁻</div><div class="curved-arrow">↷</div><div class="electron-target">E—LG</div><footer>${nodes}</footer></div>`;
-  }
-
-  function workedExample(lesson) {
-    const subject = subjectFor(lesson.subject);
-    const methods = COURSE_METHODS[lesson.subject];
-    return {
-      prompt: `Problema modelo: ${lesson.central}`,
-      steps: [
-        `<b>${methods[0][0]}:</b> ${methods[0][1]}`,
-        `<b>${methods[1][0]}:</b> aplica la secuencia ${lesson.map.join(' → ')}.`,
-        `<b>${methods[2][0]}:</b> ${lesson.explanation} Comprueba al final: ${lesson.note}`
-      ],
-      result: `Criterio de salida de ${subject.short}: puedes explicar por qué ${lesson.map.at(-1)} nace de ${lesson.map[0]}, sin mirar la cadena.`
-    };
-  }
-
-  function deterministicIndex(id, count) {
-    return [...id].reduce((sum, char) => sum + char.charCodeAt(0), 0) % count;
-  }
-  function rotateCorrect(correct, distractors, target) {
-    const choices = distractors.slice(0, 3); choices.splice(target, 0, correct); return choices;
-  }
-  function questionsFor(lesson, id) {
-    const existing = { prompt: lesson.central, choices: lesson.choices, answer: lesson.answer, why: lesson.feedback, lookFor: lesson.errorRule };
-    const mapCorrect = lesson.map.join(' → '), targetA = deterministicIndex(`${id}a`, 4);
-    const mapChoices = rotateCorrect(mapCorrect, [
-      [...lesson.map].reverse().join(' → '),
-      `${lesson.map[1]} → ${lesson.map[0]} → ${lesson.map.at(-1)} → ${lesson.map[2]}`,
-      `${lesson.map[0]} → memorizar resultado → ${lesson.map.at(-1)} → omitir comprobación`
-    ], targetA);
-    const targetB = deterministicIndex(`${id}b`, 4);
-    const reasoningCorrect = `Usaría “${lesson.note}” y comprobaría la cadena ${lesson.map[0]} → ${lesson.map[1]} antes de concluir.`;
-    const reasoningChoices = rotateCorrect(reasoningCorrect, [
-      `Elegiría por el nombre de ${lesson.title}, sin reconstruir pasos.`,
-      `Usaría sólo el último resultado y asumiría que siempre se repite.`,
-      `Ignoraría ${lesson.map[0]} y empezaría directamente en ${lesson.map.at(-1)}.`
-    ], targetB);
-    return [existing, {
-      prompt: `¿Qué orden conserva la lógica causal de “${lesson.title}”?`, choices: mapChoices, answer: targetA,
-      why: `El orden correcto conserva el puente entre el punto de partida y la observación: ${mapCorrect}.`,
-      lookFor: `No basta reconocer palabras; el orden debe explicar por qué cada paso causa el siguiente.`
-    }, {
-      prompt: `En un caso nuevo de ${lesson.title}, ¿qué razonamiento es transferible?`, choices: reasoningChoices, answer: targetB,
-      why: reasoningCorrect, lookFor: lesson.trap
-    }];
-  }
-
-  function modeSteps(mode) { return mode === 'understand' ? 9 : mode === 'urgent' ? 5 : 4; }
-  function modeStepNames(mode) {
-    if (mode === 'understand') return ['Mapa', 'Bases', 'Mecanismo', 'Visual', 'Ejemplo', 'Conexión', 'Práctica', 'Cuaderno', 'Reconstrucción'];
-    if (mode === 'urgent') return ['Objetivo', 'Modelo mínimo', 'Ejemplo', 'Ejercicio', 'Salida'];
-    return ['Recuerdo libre', 'Variante', 'Transferencia', 'Resultado'];
-  }
-
+  let lessonReturnHash = '';
   function openLesson(id) {
     if (!LESSONS[id]) return;
+    if (!location.hash.includes('/lesson/')) lessonReturnHash = location.hash; // al salir del aula se vuelve al mismo mapa
     routeTo('lesson', id);
   }
 
@@ -997,10 +844,40 @@
       .then(() => { if (parseRoute()[0] === view) renderRoute(false); })
       .catch(() => { if (parseRoute()[0] === view) app.innerHTML='<section class="page"><h1>Revisión no disponible</h1><button data-route="home">Volver al inicio</button></section>'; });
   }
+  // Aula nueva: classes/catalog.js dice qué clases ya tienen contenido; las demás muestran "Disponible próximamente".
+  const classroomLoads = new Map();
+  function loadClassroom(id) {
+    if (classroomLoads.has(id)) return classroomLoads.get(id);
+    const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
+      const file = window.NexoClassCatalog?.[id];
+      if (!file) return false;
+      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=8'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=8')),
+        window.NexoLoader.script(`./classes/${file}?v=6`)])
+        .then(() => window.NexoLoader.script(`./classes/slides/${id}.js?v=1`).catch(() => null)) // diapositivas reales, si ya se convirtieron
+        .then(() => true);
+    });
+    promise.catch(() => classroomLoads.delete(id));
+    classroomLoads.set(id, promise);
+    return promise;
+  }
+
   function renderLesson(id) {
     const source = LESSONS[id];
     if (!source) return routeTo('subjects');
     const subject = subjectFor(source.subject);
+    if (window.NexoClassroom && window.NexoClasses?.[id]) {
+      return window.NexoClassroom.render(id, { app, getState: () => state, saveState: () => saveState({ backup: false }),
+        avatarMarkup, hydrate: () => requestAnimationFrame(() => hydrateAvatars(app)), track: (...args) => cloud.track(...args),
+        subject: { id: subject.id, name: subject.name, color: subject.color }, exit: () => { if (lessonReturnHash) location.hash = lessonReturnHash; else routeTo('learn', 'course', subject.id); } });
+    }
+    if (!classroomLoads.has(id)) {
+      app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Abriendo el aula…</p></div></section>';
+      const onLessonRoute = () => { const route = parseRoute(); return route.join('/') === `lesson/${id}` ||
+        (route[0] === 'learn' && route[1] === 'course' && route[3] === 'lesson' && route[4] === id); };
+      loadClassroom(id).then(() => { if (onLessonRoute()) renderRoute(false); })
+        .catch(() => { if (onLessonRoute()) app.innerHTML = '<section class="page"><div class="panel error-boundary"><h1>No se pudo abrir el aula</h1><p>Revisa tu conexión y vuelve a intentarlo.</p><button class="primary-btn" data-route="home">Volver al refugio</button></div></section>'; });
+      return;
+    }
     app.innerHTML = `<section class="page lesson-soon" style="--course:${subject.color}">
       <button class="back-btn" data-open-subject="${subject.id}">← Ruta de ${subject.name}</button>
       <div class="panel lesson-soon-card"><p class="eyebrow">${esc(subject.short)} · CLASE</p><h1>${esc(source.title)}</h1><p><b>Disponible próximamente</b></p><p>Estamos rehaciendo esta clase desde cero para que enseñe de verdad. Vuelve pronto.</p><div class="button-row"><button class="primary-btn" data-open-subject="${subject.id}">Volver a ${subject.name}</button><button class="secondary-btn" data-route="home">Ir al refugio</button></div></div>
@@ -1016,9 +893,7 @@
     return Math.round(max * completeness);
   }
 
-  function addErrorFromLesson(lesson, blocker, observable, rule) {
-    state.errors.unshift({ id: uid('error'), date: todayKey(), subject: lesson.subject, lessonId: lesson.id, blocker, observable, reasoning: '', diagnosis: rule || lesson.errorRule, status: 'open', dueAt: todayKey(addDays(new Date(), 1)), source: 'class' });
-  }
+
 
   const LABS = [
     { id: 'lab-org-1', subject: 'organica', title: 'Prelab de síntesis y transformación', status: 'provisional', objective: 'Traducir el procedimiento en función de cada reactivo y anticipar cambios observables.', calculation: 'Reactivo limitante, equivalentes, mmol, rendimiento teórico y porcentaje de rendimiento.', safety: 'Completa peligros, incompatibilidades, campana y residuos con la SDS y el manual vigente.', evidence: ['Esquema de reacción y mecanismo esperado', 'Tabla mmol/equivalentes', 'Observaciones separadas de interpretación', 'Cálculo de rendimiento y fuentes de pérdida'] },
@@ -1642,6 +1517,7 @@
     if(button.dataset.sceneHotspot&&!button.dataset.route)return window.NexoHomeScene.activate(button.dataset.sceneHotspot,app);
     if (button.closest('.modal-backdrop') && button.classList.contains('modal-backdrop') && event.target !== button) return;
     if (button.dataset.devRoute && new URLSearchParams(location.search).get('nexoDev') === '1') return routeTo(...button.dataset.devRoute.split('/'));
+    if (button.dataset.grimoireNode && window.NexoClassCatalog?.[button.dataset.grimoireNode]) return openLesson(button.dataset.grimoireNode); // tema con aula: directo, sin paso extra
     if (button.dataset.grimoireEvaluation) return routeTo('learn','course',button.dataset.grimoireCourse,'evaluation',button.dataset.grimoireEvaluation,...(button.dataset.grimoireNode?[button.dataset.grimoireNode]:[]));
     if (button.dataset.grimoireRoute) return routeTo(...button.dataset.grimoireRoute.split('/'));
     if (button.dataset.route) return routeTo(button.dataset.route, ...(button.dataset.routeSub ? [button.dataset.routeSub] : []));
