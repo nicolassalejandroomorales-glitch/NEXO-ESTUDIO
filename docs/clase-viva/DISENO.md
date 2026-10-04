@@ -213,6 +213,16 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 
 La etapa 4 es la prueba de fuego: si la misión Reacciones te sirve a ti para entender, el modelo se replica.
 
+### Avance
+
+- **Etapa 1 hecha (4 oct):** motor de evidencia `dist/classes/evidence.js` (escalones, confianza × resultado, hojas brote → flor,
+  amarilla y seca, calibración, repaso FSRS con `academic/reviews.js`). Barra de confianza antes de cada pregunta, con porqué opcional y
+  ruta según el porqué. Nueva actividad **escrita** con autocorrección por ideas (escalón 5): 3 preguntas (basicidad, equilibrio, acilación).
+  22 conceptos de Aminas (4 raíces de base) y cada actividad con su concepto. Vista previa del árbol en el cierre y en "Camino al 7".
+  Pruebas: `tools/class-evidence-test.cjs` y `tools/classroom-test.cjs`.
+- Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
+  (etapas 4 y 7) se exigirá escalón 5 también ahí.
+
 ## 12. Pendiente y decisiones abiertas
 
 - Rediseño de personajes en estilo cartoon (proyecto propio).

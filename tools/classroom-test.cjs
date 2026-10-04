@@ -20,10 +20,13 @@ for (const [id, file] of Object.entries(catalog)) {
       if (type === 'order') { assert.equal(item.answer.length, item.cards.length, `${item.id}: el orden debe usar todas las tarjetas`); for (const cid of item.answer) assert.ok(item.cards.some(c => c.id === cid), `${item.id}: tarjeta ${cid} no existe`); }
       if (type === 'classify') for (const c of item.cards) assert.ok(item.buckets.some(bk => bk.id === c.bucket), `${item.id}: ${c.id} sin caldero válido`);
       if (type === 'match') assert.ok(item.pairs.length >= 2 && item.pairs.every(p => p.left && p.right), `${item.id}: pares incompletos`);
+      if (type === 'write') assert.ok(item.model && item.model.length >= 40 && item.rubric?.length >= 2 && item.rubric.every(Boolean), `${item.id}: la escrita necesita respuesta modelo y al menos 2 ideas en la pauta`);
+      if (cls.concepts) assert.ok(cls.concepts.some(c => c.id === item.concept), `${item.id}: sin concepto (hoja del árbol) válido`);
       if (type === 'pick') { assert.ok(item.targets[item.answer], `${item.id}: respuesta sin objetivo`); assert.ok(item.molecules.flat().some(p => p.target === item.answer), `${item.id}: la respuesta no se puede tocar`); }
       const NX = context.window.NexoClassroom;
-      const solution = type === 'order' ? item.answer : type === 'classify' ? Object.fromEntries(item.cards.map(c => [c.id, c.bucket])) : type === 'match' ? Object.fromEntries(item.pairs.map((_, i) => [i, i])) : type === 'pick' ? item.answer : item.options.findIndex(o => o.correct);
+      const solution = type === 'order' ? item.answer : type === 'classify' ? Object.fromEntries(item.cards.map(c => [c.id, c.bucket])) : type === 'match' ? Object.fromEntries(item.pairs.map((_, i) => [i, i])) : type === 'pick' ? item.answer : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : item.options.findIndex(o => o.correct);
       assert.ok(NX.isCorrect(item, solution), `${item.id}: la solución propia no se corrige como correcta`);
+      if (type === 'write') assert.ok(!NX.isCorrect(item, { text: item.model, checks: item.rubric.map((_, i) => i > 0) }) && !NX.isCorrect(item, { text: 'no sé', checks: item.rubric.map(() => true) }), `${item.id}: la escrita no debe contar sin todas las ideas o sin texto`);
       assert.ok(item.explain && item.slide, `${item.id}: falta explicación o diapositiva`);
       assert.ok(cls.sources[item.source], `${item.id}: fuente inexistente`);
       if (stage === 'practice' || stage === 'challenge') assert.ok(item.hint, `${item.id}: la práctica necesita pista`);
@@ -34,6 +37,7 @@ for (const [id, file] of Object.entries(catalog)) {
       }
     }
     assert.ok(blocks.size, `${m.id}: sin explicación`);
+    if (cls.concepts) assert.ok(cls.concepts.some(c => c.mission === m.id), `${m.id}: la misión no tiene conceptos (rama del árbol)`);
   }
   const kinds = st => context.window.NexoClassroom.beats(cls, { answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, ...st }).map(b => b.kind);
   const m1 = cls.missions[0];
@@ -66,3 +70,11 @@ for (const [id, file] of Object.entries(catalog)) {
   for (const b of m1.stages.explain) if (b.slide) assert.ok(cls.slides?.[b.slide] || cls.slideImages?.[b.slide], `${b.id}: la diapositiva ${b.slide} no tiene texto ni imagen`);
 }
 console.log(`Aula: ${Object.keys(catalog).length} clase(s), ${items} actividades con solución verificada, errores con explicación y repaso; momentos y caminos OK.`);
+// Conceptos: ids únicos y prerrequisitos que existen.
+for (const id of Object.keys(catalog)) {
+  const cls = context.window.NexoClasses[id];
+  if (!cls.concepts) continue;
+  const cids = new Set(cls.concepts.map(c => c.id));
+  assert.equal(cids.size, cls.concepts.length, `${id}: conceptos repetidos`);
+  for (const c of cls.concepts) for (const need of c.needs || []) assert.ok(cids.has(need), `${c.id}: prerrequisito ${need} no existe`);
+}

@@ -265,6 +265,8 @@
   const classify = (id, prompt, buckets, cards, extra = {}) => ({ id, type: 'classify', prompt, buckets: buckets.map(([bid, label]) => ({ id: bid, label })), cards: cards.map(([cid, text, bucket]) => ({ id: cid, text, bucket })), source: SRC, ...extra });
   const match = (id, prompt, pairs, extra = {}) => ({ id, type: 'match', prompt, pairs: pairs.map(([left, right]) => ({ left, right })), source: SRC, ...extra });
   const pick = (id, prompt, molecules, targets, answer, extra = {}) => ({ id, type: 'pick', prompt, molecules, targets, answer, source: SRC, ...extra });
+  // Respuesta escrita (escalón 5): escribes, ves la respuesta modelo y marcas qué ideas tenías.
+  const write = (id, prompt, model, rubric, extra = {}) => ({ id, type: 'write', prompt, model, rubric, source: SRC, ...extra });
 
   Object.assign(cls.misconceptions, {
     'forgot-di': { label: 'Olvidaste contar los grupos repetidos', why: 'Si el mismo grupo aparece dos veces se usa "di" (dietil), tres veces "tri". Cuenta cada grupo unido al N.', prereq: { title: 'Nombrar secundarias y terciarias', mission: 'm2', block: 'b24' } },
@@ -515,7 +517,11 @@
       ],
       transfer: [
         q('m4-t1', 'Trietilamina en presencia de ácido acético. ¿En qué forma está mayoritariamente?', [{ text: 'Protonada, como ion trietilamonio', correct: true }, { text: 'Mitad y mitad', note: 'Con 6 unidades de diferencia de pKa no hay empate.' }, { text: 'Casi toda neutra', misconception: 'strong-side' }], { explain: 'El ion amonio (pKa 10,76) es un ácido mucho más débil que el acético (4,76): el equilibrio está desplazado a la sal. Solo 1 de cada millón queda neutra.', slide: 17 }),
-        q('m4-t2', 'Un ácido HA (pKa 5) reacciona con una amina cuyo ion amonio tiene pKa 9. El equilibrio está…', [{ text: 'Desplazado hacia la sal (productos)', correct: true }, { text: 'Desplazado hacia los reactivos', misconception: 'strong-side' }, { text: 'Exactamente en el medio', note: 'Hay 4 unidades de diferencia: K = 10⁴.' }], { explain: 'El ion amonio (pKa 9) es el ácido más débil: se favorece su formación, con K = 10^(9−5) = 10⁴.', slide: 17 })
+        q('m4-t2', 'Un ácido HA (pKa 5) reacciona con una amina cuyo ion amonio tiene pKa 9. El equilibrio está…', [{ text: 'Desplazado hacia la sal (productos)', correct: true }, { text: 'Desplazado hacia los reactivos', misconception: 'strong-side' }, { text: 'Exactamente en el medio', note: 'Hay 4 unidades de diferencia: K = 10⁴.' }], { explain: 'El ion amonio (pKa 9) es el ácido más débil: se favorece su formación, con K = 10^(9−5) = 10⁴.', slide: 17 }),
+        write('m4-w1', 'Explícalo con tus palabras: ¿por qué la trietilamina queda casi toda protonada en ácido acético?',
+          'Compito los dos ácidos del equilibrio: el ácido acético (pKa 4,76) y el ion trietilamonio (pKa 10,76). El equilibrio favorece al ácido más débil, el de pKa mayor: el ion trietilamonio. Como la diferencia es de 6 unidades (K = 10⁶), casi toda la amina queda protonada.',
+          ['Comparé los pKa de los dos ácidos (4,76 y 10,76)', 'Dije que el equilibrio favorece al ácido más débil (el de pKa mayor)', 'Concluí que la amina queda como ion trietilamonio'],
+          { explain: 'El H⁺ termina donde lo agarran más fuerte: en el lado del ácido más débil.', slide: 17 })
       ]
     }
   },
@@ -574,7 +580,11 @@
       transfer: [
         order('m5-t1', 'Estilo PEP: ordena de menor a mayor basicidad.', [['pyrrole', 'Pirrol'], ['pyridine', 'Piridina'], ['piperidine', 'Piperidina (anillo saturado con N–H)']], ['pyrrole', 'pyridine', 'piperidine'],
           { direction: 'De menor a mayor basicidad.', explain: 'Pirrol (par en el sexteto aromático) < piridina (sp², pKa 5,2) < piperidina (sp³, pKa ≈ 11).', misconception: 'pyrrole-pair', slide: 26 }),
-        q('m5-t2', '¿Por qué el pirrol casi no es básico?', [{ text: 'Porque protonar su N destruiría la aromaticidad', correct: true }, { text: 'Porque su N no tiene par libre', note: 'Sí lo tiene, pero ese par forma parte del sexteto aromático.' }, { text: 'Porque su N es sp³', misconception: 'pyrrole-pair' }], { explain: 'Su par libre es uno de los 6 electrones π. Usarlo para captar un H⁺ rompe la aromaticidad: cuesta demasiado.', slide: 26 })
+        q('m5-t2', '¿Por qué el pirrol casi no es básico?', [{ text: 'Porque protonar su N destruiría la aromaticidad', correct: true }, { text: 'Porque su N no tiene par libre', note: 'Sí lo tiene, pero ese par forma parte del sexteto aromático.' }, { text: 'Porque su N es sp³', misconception: 'pyrrole-pair' }], { explain: 'Su par libre es uno de los 6 electrones π. Usarlo para captar un H⁺ rompe la aromaticidad: cuesta demasiado.', slide: 26 }),
+        write('m5-w1', 'Explícalo con tus palabras: ¿por qué la anilina es mucho menos básica que la ciclohexilamina?',
+          'En la anilina el par libre del N está deslocalizado en el anillo por resonancia, así que está menos disponible para captar un H⁺. Además, al protonarla se pierde esa estabilización. En la ciclohexilamina el par queda localizado en el N. Por eso el pKa del ion anilinio es 4,6 y el del ciclohexilamonio 10,6.',
+          ['Dije que el par libre de la anilina se reparte en el anillo (resonancia)', 'Dije que así está menos disponible para captar un H⁺', 'Comparé con la ciclohexilamina, donde el par queda en el N'],
+          { explain: 'Un par repartido es un par menos disponible.', slide: 23 })
       ]
     }
   },
@@ -663,7 +673,11 @@
       ],
       transfer: [
         q('m7-t1', '2-Butanamina + 1) CH₃I exceso 2) Ag₂O, H₂O, calor. ¿Producto principal?', [{ text: '1-Buteno', correct: true }, { text: '2-Buteno', misconception: 'zaitsev-hofmann' }, { text: '2-Butanol', note: 'No es una sustitución: es una eliminación E2.' }], { explain: 'Hofmann: el alqueno menos sustituido.', slide: 36 }),
-        q('m7-t2', 'Estilo PEP (pregunta 4a): desde anilina, ¿cómo obtienes la sal C₆H₅N₂⁺?', [{ text: 'NaNO₂ / HCl en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CH₃I en exceso', note: 'Eso metila el N; no forma diazonio.' }], { explain: 'La diazotación con NaNO₂/HCl (0–5 °C) es la respuesta de la pauta.', slide: 39 })
+        q('m7-t2', 'Estilo PEP (pregunta 4a): desde anilina, ¿cómo obtienes la sal C₆H₅N₂⁺?', [{ text: 'NaNO₂ / HCl en frío', correct: true }, { text: 'HNO₃ / H₂SO₄', misconception: 'nitration-confusion' }, { text: 'CH₃I en exceso', note: 'Eso metila el N; no forma diazonio.' }], { explain: 'La diazotación con NaNO₂/HCl (0–5 °C) es la respuesta de la pauta.', slide: 39 }),
+        write('m7-w1', 'Explícalo con tus palabras: ¿por qué una amina terciaria no forma amida con cloruro de acetilo?',
+          'Para formar la amida, el N ataca al C=O y después cambia uno de sus H por el grupo acilo. Una amina terciaria no tiene H en el N, así que no puede completar ese cambio y no se forma la amida neutra.',
+          ['Dije que la amina terciaria no tiene H en el N', 'Expliqué que en la acilación el N cambia un H por el grupo acilo', 'Concluí que sin ese H no se forma la amida'],
+          { explain: 'Acilar es cambiar un H del N por un acilo: sin H no hay cambio.', slide: 35 })
       ]
     }
   },
@@ -706,4 +720,49 @@
     }
   }
   );
+
+  /* Conceptos: las hojas del árbol vivo (docs/clase-viva/DISENO.md §3). "needs" son sus prerrequisitos;
+     los que empiezan con "base." son raíces que enseñará la clase base. */
+  cls.concepts = [
+    { id: 'base.lewis', title: 'Lewis y par libre', root: true },
+    { id: 'base.carga', title: 'Cargas formales', root: true, needs: ['base.lewis'] },
+    { id: 'base.acido-base', title: 'Ácido-base y pKa', root: true, needs: ['base.lewis'] },
+    { id: 'base.sn-e', title: 'SN2 y E2', root: true, needs: ['base.lewis'] },
+    { id: 'am.par-libre', mission: 'm1', title: 'El par libre: base y nucleófilo', needs: ['base.lewis', 'base.carga'] },
+    { id: 'am.clasificacion', mission: 'm1', title: 'Aminas 1°, 2°, 3° y sales', needs: ['am.par-libre'] },
+    { id: 'am.geometria', mission: 'm1', title: 'Forma e inversión del N', needs: ['am.par-libre'] },
+    { id: 'am.nombres', mission: 'm2', title: 'Nombrar alquilaminas', needs: ['am.clasificacion'] },
+    { id: 'am.nombres-aril', mission: 'm2', title: 'Anilinas y prioridad de grupos', needs: ['am.nombres'] },
+    { id: 'am.fisicas', mission: 'm3', title: 'Ebullición y solubilidad', needs: ['am.clasificacion'] },
+    { id: 'am.sales', mission: 'm3', title: 'Sales y extracción', needs: ['am.par-libre', 'base.acido-base'] },
+    { id: 'am.pka', mission: 'm4', title: 'Basicidad con el pKa', needs: ['base.acido-base'] },
+    { id: 'am.equilibrio', mission: 'm4', title: 'Hacia dónde va el equilibrio', needs: ['am.pka'] },
+    { id: 'am.resonancia', mission: 'm5', title: 'Resonancia y sustituyentes', needs: ['am.pka'] },
+    { id: 'am.heterociclos', mission: 'm5', title: 'Heterociclos e hibridación', needs: ['am.pka'] },
+    { id: 'am.orden', mission: 'm5', title: 'Ordenar por basicidad (P3)', needs: ['am.resonancia', 'am.heterociclos'] },
+    { id: 'am.alquilacion', mission: 'm6', title: 'Alquilación, azida y Gabriel', needs: ['am.par-libre', 'base.sn-e'] },
+    { id: 'am.reduccion', mission: 'm6', title: 'Reducciones y aminación reductiva', needs: ['am.par-libre'] },
+    { id: 'am.acilacion', mission: 'm7', title: 'Acilación: de amina a amida', needs: ['am.par-libre', 'am.clasificacion'] },
+    { id: 'am.hofmann', mission: 'm7', title: 'Eliminación de Hofmann', needs: ['base.sn-e'] },
+    { id: 'am.diazonio', mission: 'm7', title: 'Sales de diazonio', needs: ['am.par-libre'] },
+    { id: 'am.espectro', mission: 'm8', title: 'IR, RMN y masas', needs: ['am.clasificacion'] }
+  ];
+  const CONCEPT_OF = {
+    'm1-d1': 'am.clasificacion', 'm1-d2': 'am.par-libre', 'm1-d3': 'am.geometria', 'm1-p1': 'am.clasificacion', 'm1-p2': 'am.par-libre',
+    'm1-p3': 'am.geometria', 'm1-c1': 'am.clasificacion', 'm1-t1': 'am.clasificacion', 'm1-t2': 'am.par-libre',
+    'm2-d1': 'am.nombres', 'm2-d2': 'am.nombres-aril', 'm2-p1': 'am.nombres', 'm2-p2': 'am.nombres', 'm2-p3': 'am.nombres-aril',
+    'm2-p4': 'am.nombres-aril', 'm2-c1': 'am.nombres', 'm2-t1': 'am.nombres', 'm2-t2': 'am.nombres-aril',
+    'm3-d1': 'am.fisicas', 'm3-d2': 'am.fisicas', 'm3-p1': 'am.fisicas', 'm3-p2': 'am.fisicas', 'm3-p3': 'am.sales', 'm3-t1': 'am.sales', 'm3-t2': 'am.sales',
+    'm4-d1': 'am.pka', 'm4-d2': 'am.equilibrio', 'm4-p1': 'am.pka', 'm4-p2': 'am.pka', 'm4-p3': 'am.pka', 'm4-t1': 'am.equilibrio',
+    'm4-t2': 'am.equilibrio', 'm4-w1': 'am.equilibrio',
+    'm5-d1': 'am.resonancia', 'm5-d2': 'am.heterociclos', 'm5-p1': 'am.orden', 'm5-p2': 'am.heterociclos', 'm5-p3': 'am.resonancia',
+    'm5-p4': 'am.resonancia', 'm5-c1': 'am.orden', 'm5-t1': 'am.orden', 'm5-t2': 'am.heterociclos', 'm5-w1': 'am.resonancia',
+    'm6-d1': 'am.alquilacion', 'm6-d2': 'am.reduccion', 'm6-p1': 'am.alquilacion', 'm6-p2': 'am.reduccion', 'm6-p3': 'am.alquilacion',
+    'm6-c1': 'am.reduccion', 'm6-t1': 'am.alquilacion', 'm6-t2': 'am.reduccion',
+    'm7-d1': 'am.hofmann', 'm7-d2': 'am.diazonio', 'm7-p1': 'am.hofmann', 'm7-p2': 'am.diazonio', 'm7-p3': 'am.acilacion',
+    'm7-c1': 'am.diazonio', 'm7-t1': 'am.hofmann', 'm7-t2': 'am.diazonio', 'm7-w1': 'am.acilacion',
+    'm8-d1': 'am.espectro', 'm8-d2': 'am.espectro', 'm8-p1': 'am.espectro', 'm8-p2': 'am.espectro', 'm8-p3': 'am.espectro', 'm8-t1': 'am.espectro'
+  };
+  for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
+    for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

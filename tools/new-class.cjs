@@ -28,6 +28,7 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
   const classify = (id, prompt, buckets, cards, extra = {}) => ({ id, type: 'classify', prompt, buckets: buckets.map(([bid, label]) => ({ id: bid, label })), cards: cards.map(([cid, text, bucket]) => ({ id: cid, text, bucket })), source: SRC, ...extra });
   const match = (id, prompt, pairs, extra = {}) => ({ id, type: 'match', prompt, pairs: pairs.map(([left, right]) => ({ left, right })), source: SRC, ...extra });
   const pick = (id, prompt, molecules, targets, answer, extra = {}) => ({ id, type: 'pick', prompt, molecules, targets, answer, source: SRC, ...extra });
+  const write = (id, prompt, model, rubric, extra = {}) => ({ id, type: 'write', prompt, model, rubric, source: SRC, ...extra });
 
   window.NexoClasses = window.NexoClasses || {};
   window.NexoClasses[${JSON.stringify(id)}] = {
@@ -49,6 +50,8 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
     // Glosario en tres capas: en simple, definición de prueba y "más simple todavía" (una analogía).
     glossary: [{ term: 'REEMPLAZAR: término', mission: 'm1', def: 'REEMPLAZAR: definición exacta, como en la prueba',
       simple: 'REEMPLAZAR: lo mismo en palabras simples', simpler: 'REEMPLAZAR: una analogía de la vida diaria' }],
+    // Conceptos: las hojas del árbol. Cada actividad dice a cuál pertenece con "concept".
+    concepts: [{ id: 'c1', mission: 'm1', title: 'REEMPLAZAR: idea que se aprende', needs: [] }],
     curiosities: [{ text: 'REEMPLAZAR: dato curioso sacado de las diapositivas.', slide: 1 }],
     slideImages: {},   // se llena solo con tools/classroom-art/slides.py
     slides: { 1: { title: 'REEMPLAZAR: título de la diapositiva 1', bullets: ['REEMPLAZAR: texto de la diapositiva'] } },
@@ -57,7 +60,7 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
         id: 'm1', title: 'REEMPLAZAR: título de la misión', subtitle: 'REEMPLAZAR: de qué trata, en una línea', minutes: 15, slides: '1', pep: 'REEMPLAZAR: qué pregunta de la prueba prepara',
         stages: {
           diagnostic: [   // 2–3 preguntas sin pistas: deciden si se puede saltar la lección
-            q('m1-d1', 'REEMPLAZAR: pregunta', [{ text: 'Correcta', correct: true }, { text: 'Distractor con error típico', misconception: 'error-ejemplo' }, { text: 'Distractor', note: 'REEMPLAZAR: por qué no' }], { explain: 'REEMPLAZAR: explicación', slide: 1 })
+            q('m1-d1', 'REEMPLAZAR: pregunta', [{ text: 'Correcta', correct: true }, { text: 'Distractor con error típico', misconception: 'error-ejemplo' }, { text: 'Distractor', note: 'REEMPLAZAR: por qué no' }], { concept: 'c1', explain: 'REEMPLAZAR: explicación', slide: 1 })
           ],
           fundamentals: [ // bases "desde cero" (prerrequisitos), con dibujo opcional (svg)
             { id: 'f1', title: 'Desde cero: REEMPLAZAR', body: 'REEMPLAZAR: lo mínimo, en simple.', deeper: 'REEMPLAZAR: versión paso a paso para "Explícame más simple".' }
@@ -70,15 +73,17 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
             steps: [{ text: 'REEMPLAZAR: paso 1' }, { text: 'REEMPLAZAR: paso 2', ask: 'REEMPLAZAR: ¿qué pasa aquí?' }]
           },
           practice: [     // actividades variadas; todas necesitan pista (hint) y diapositiva
-            q('m1-p1', 'REEMPLAZAR', [{ text: 'Correcta', correct: true }, { text: 'Otra', note: 'REEMPLAZAR' }], { explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
-            order('m1-p2', 'REEMPLAZAR: ordena…', [['a', 'Primero'], ['b', 'Segundo'], ['c', 'Tercero']], ['a', 'b', 'c'], { direction: 'De menor a mayor.', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
-            classify('m1-p3', 'REEMPLAZAR: clasifica…', [['x', 'Caldero 1'], ['y', 'Caldero 2']], [['c1', 'Tarjeta 1', 'x'], ['c2', 'Tarjeta 2', 'y']], { explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
-            match('m1-p4', 'REEMPLAZAR: une…', [['Izquierda 1', 'Derecha 1'], ['Izquierda 2', 'Derecha 2']], { explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
-            pick('m1-p5', 'REEMPLAZAR: toca…', [[{ t: 'Parte A', target: 'a' }, { t: '–' }, { t: 'Parte B', target: 'b' }]], { a: { label: 'Parte A' }, b: { label: 'Parte B', note: 'REEMPLAZAR' } }, 'a', { explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' })
+            q('m1-p1', 'REEMPLAZAR', [{ text: 'Correcta', correct: true }, { text: 'Otra', note: 'REEMPLAZAR' }], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
+            order('m1-p2', 'REEMPLAZAR: ordena…', [['a', 'Primero'], ['b', 'Segundo'], ['c', 'Tercero']], ['a', 'b', 'c'], { concept: 'c1', direction: 'De menor a mayor.', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
+            classify('m1-p3', 'REEMPLAZAR: clasifica…', [['x', 'Caldero 1'], ['y', 'Caldero 2']], [['c1', 'Tarjeta 1', 'x'], ['c2', 'Tarjeta 2', 'y']], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
+            match('m1-p4', 'REEMPLAZAR: une…', [['Izquierda 1', 'Derecha 1'], ['Izquierda 2', 'Derecha 2']], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
+            pick('m1-p5', 'REEMPLAZAR: toca…', [[{ t: 'Parte A', target: 'a' }, { t: '–' }, { t: 'Parte B', target: 'b' }]], { a: { label: 'Parte A' }, b: { label: 'Parte B', note: 'REEMPLAZAR' } }, 'a', { concept: 'c1', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' })
           ],
           challenge: [],  // opcional: aparece en Expedición si la práctica salió sin ayuda
           transfer: [     // problema nuevo, estilo prueba, sin ayuda
-            q('m1-t1', 'REEMPLAZAR: estilo prueba', [{ text: 'Correcta', correct: true }, { text: 'Otra', note: 'REEMPLAZAR' }], { explain: 'REEMPLAZAR', slide: 1 })
+            q('m1-t1', 'REEMPLAZAR: estilo prueba', [{ text: 'Correcta', correct: true }, { text: 'Otra', note: 'REEMPLAZAR' }], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1 }),
+            // Escrita (escalón 5): la única forma de que una hoja se ponga verde. Se autocorrige con la pauta de ideas.
+            write('m1-w1', 'REEMPLAZAR: explícalo con tus palabras…', 'REEMPLAZAR: respuesta modelo completa, de al menos dos frases.', ['REEMPLAZAR: idea 1 de la pauta', 'REEMPLAZAR: idea 2'], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1 })
           ]
         }
       }

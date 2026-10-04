@@ -37,7 +37,7 @@
     const state = api.getState();
     if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {};
     const s = state.classSessions[id] ||= {};
-    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
+    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
     if (!Number.isInteger(s.beat)) s.beat = 0;
     return s;
   }
@@ -183,6 +183,7 @@
   /* ───────── Actividades ─────────
      choice (alternativas) · order (ordenar tarjetas) · classify (clasificar en calderos)
      match (unir pares) · pick (tocar la parte correcta de una molécula). */
+  const MIN_WRITE = 25;
   const seeded = (list, seed) => list.map((x, i) => [x, [...`${seed}${i}`].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 9973, 7)]).sort((a, b) => a[1] - b[1]).map(([x]) => x);
   const recordOf = (s, item, retry) => retry ? s.retries[item.id] : s.answers[item.id];
   const workOf = (s, item, retry) => (s.work[retry ? `${item.id}::r` : item.id] ||= {});
@@ -194,6 +195,8 @@
     if (item.type === 'classify') return item.cards.every(c => value?.[c.id] === c.bucket);
     if (item.type === 'match') return item.pairs.every((_, i) => Number(value?.[i]) === i);
     if (item.type === 'pick') return value === item.answer;
+    // Escrita: autocorrección honesta; cuenta solo si escribiste algo y marcaste todas las ideas de la pauta.
+    if (item.type === 'write') return String(value?.text || '').trim().length >= MIN_WRITE && item.rubric.every((_, i) => value?.checks?.[i] === true);
     return Boolean(item.options[value]?.correct);
   }
   function mcOf(cls, item, rec) {
@@ -206,6 +209,7 @@
     if (!item.type || item.type === 'choice') return item.options[rec.choice]?.text;
     if (item.type === 'pick') return item.targets[rec.value]?.label;
     if (item.type === 'order') return rec.value.map(id => item.cards.find(c => c.id === id)?.text).join(' < ');
+    if (item.type === 'write') return 'tu respuesta escrita';
     return 'tu propuesta';
   }
 
@@ -253,6 +257,21 @@
         ${done && !rec.correct && retry ? `<p class="cr-solution">${item.pairs.map(p => `${md(p.left)} → ${md(p.right)}`).join(' · ')}</p>` : ''}
         ${check(Object.keys(pairs).length === item.pairs.length)}</div>`;
     }
+    if (item.type === 'write') {
+      const text = done ? rec.value.text : (w.text || '');
+      if (!done && !w.revealed) return `<div class="cr-write"><p class="cr-act-help">Escríbelo con tus palabras. Después verás la respuesta modelo y marcarás qué ideas tenías.</p>
+        <textarea class="cr-textarea" data-cr-text="${esc(item.id)}" data-retry="${retry ? 1 : 0}" rows="5" aria-label="Tu respuesta" placeholder="Explícalo como si se lo contaras a un compañero…">${esc(text)}</textarea>
+        ${w.warn ? '<p class="cr-warn">Escribe un poco más antes de comparar: una o dos frases bastan.</p>' : ''}
+        <div class="cr-check">${actBtn(item, retry, 'act-reveal', '', 'Comparar con la respuesta modelo ▸', 'cr-btn cr-primary')}</div></div>`;
+      const checks = done ? rec.value.checks : (w.checks ||= item.rubric.map(() => false));
+      return `<div class="cr-write is-compare"><div class="cr-write-cols">
+        <div class="cr-write-box"><p class="cr-eyebrow">Tu respuesta</p><p class="cr-write-mine">${esc(text)}</p></div>
+        <div class="cr-write-box is-model"><p class="cr-eyebrow">Respuesta modelo</p><p>${md(item.model)}</p></div></div>
+        <p class="cr-act-help">${done ? 'Así te autocorregiste.' : 'Marca cada idea que <b>sí</b> estaba en tu respuesta. Sé honesto: esto mide lo que de verdad sabes.'}</p>
+        <ul class="cr-rubric">${item.rubric.map((r, i) => `<li>${actBtn(item, retry, 'act-rub', `data-i="${i}" aria-pressed="${Boolean(checks[i])}"`,
+          `<span class="cr-rub-box" aria-hidden="true">${checks[i] ? '✓' : ''}</span><span>${md(r)}</span>`, `cr-rub ${checks[i] ? 'is-on' : ''}`, done)}</li>`).join('')}</ul>
+        ${done ? '' : `<div class="cr-check">${actBtn(item, retry, 'act-check', '', 'Listo, así me fue ▸', 'cr-btn cr-primary')}</div>`}</div>`;
+    }
     if (item.type === 'pick') {
       const val = done ? rec.value : null;
       const part = p => p.target
@@ -271,6 +290,7 @@
       if (item.type === 'pick') extra = `<ul>${Object.entries(item.targets).map(([id, t]) => {
         const mc = cls.misconceptions[t.misconception]; const reason = id === item.answer ? item.explain : (mc ? mc.why : t.note);
         return reason ? `<li class="${id === item.answer ? 'is-ok' : ''}"><b>${esc(t.label)}</b>${id === item.answer ? ' (correcta)' : ''}: ${md(reason)}</li>` : ''; }).join('')}</ul>`;
+      else if (item.type === 'write') extra = '';
       else if (item.type === 'order') extra = `<p>Orden correcto: ${item.answer.map(id => md(item.cards.find(c => c.id === id).text)).join(' &lt; ')}</p>`;
       return `<details class="cr-why" open><summary>La explicación completa</summary><p>${md(item.explain)}</p>${extra}</details>`;
     }
@@ -281,6 +301,56 @@
     }).join('');
     return `<details class="cr-why" open><summary>¿Por qué cada alternativa?</summary><ul>${rows}</ul></details>`;
   }
+
+  /* ───────── Barra de confianza (docs/clase-viva/DISENO.md §5) ─────────
+     Antes de responder: qué tan seguro estás. Con 60 % o menos, por qué. Después: qué significa tu resultado. */
+  const EV = () => window.NexoClassEvidence;
+  function confidenceMarkup(item, s) {
+    const conf = s.conf[item.id], why = s.confWhy[item.id], set = conf !== undefined;
+    const words = !set ? 'Mueve la barra' : conf <= 20 ? 'Estoy adivinando' : conf <= 60 ? 'Tengo dudas' : conf < 80 ? 'Bastante seguro' : 'Muy seguro';
+    return `<div class="cr-conf ${set ? '' : 'is-unset'}">
+      <label class="cr-conf-label" for="conf-${esc(item.id)}">Antes de responder: ¿qué tan seguro estás? <b>${set ? `${conf} %` : ''}</b> <span>${words}</span></label>
+      <input id="conf-${esc(item.id)}" class="cr-conf-range" type="range" min="0" max="100" step="10" value="${set ? conf : 50}" data-cr-conf="${esc(item.id)}"
+        style="--v:${set ? conf : 50}%" aria-valuetext="${set ? `${conf} por ciento` : 'sin marcar'}">
+      <div class="cr-conf-scale" aria-hidden="true"><span>Adivino</span><span>Dudo</span><span>Seguro</span></div>
+      ${set && conf <= 60 ? `<div class="cr-conf-why" role="group" aria-label="¿Por qué no estás tan seguro? (opcional)"><span>¿Por qué? <small>(opcional)</small></span>
+        ${Object.entries(EV()?.WHY || {}).map(([k, label]) => `<button class="cr-chip cr-why-chip ${why === k ? 'is-selected' : ''}" data-cr="conf-why" data-why="${k}" data-item="${esc(item.id)}" aria-pressed="${why === k}">${label}</button>`).join('')}</div>` : ''}
+    </div>`;
+  }
+  function confidenceResult(cls, item, rec) {
+    if (!rec || rec.confidence === null || rec.confidence === undefined) return '';
+    const c = rec.confidence, kind = rec.kind;
+    const text = {
+      solido: `Dijiste ${c} % y acertaste: <b>sólido</b>.`,
+      alerta: `Dijiste ${c} % y no era así. <b>Este es el error más valioso</b>: creías saberlo. Lee la explicación con calma.`,
+      fragil: `Acertaste, pero con ${c} %: <b>acierto frágil</b>. Cuenta menos y esta idea volverá antes.`,
+      consciente: `Ya dudabas (${c} %): <b>bien detectado</b>. Ahora sabes qué reforzar.`,
+      medio: `Dijiste ${c} %.`
+    }[kind] || '';
+    let route = '';
+    if (!rec.correct || kind === 'fragil') {
+      if (rec.why === 'regla') route = `<button class="cr-btn cr-small" data-cr="spot" data-spot="sage">Repasar la regla desde cero</button>`;
+      if (rec.why === 'pregunta') route = `<p class="cr-conf-route"><b>Dicho de otra forma:</b> ${md(item.plain || item.hint || item.explain)}</p>`;
+      if (rec.why === 'adivino') route = `<p class="cr-conf-route">Adivinar está bien aquí: lo contamos como algo por aprender, no como sabido.</p>`;
+    }
+    return `<div class="cr-conf-result is-${esc(kind)}"><p>${text}</p>${route}</div>`;
+  }
+  /* Vista previa del árbol (etapa 1): cada concepto con su hoja. En la etapa 2 se dibuja como árbol vivo. */
+  function leafChips(cls, api, id, filter = () => true) {
+    const E = EV();
+    if (!E || !cls.concepts) return '';
+    const store = E.storeFor(api.getState(), id), all = E.leaves(cls, store);
+    return `<ul class="cr-leaves">${cls.concepts.filter(filter).map(c => { const l = all[c.id];
+      return `<li class="cr-leaf is-${l.shown}"><span class="cr-leaf-dot" aria-hidden="true"></span><b>${esc(c.title)}</b><small>${esc(l.label)}</small></li>`; }).join('')}</ul>`;
+  }
+  function calibrationLine(cls, api, id) {
+    const E = EV();
+    if (!E) return '';
+    const bands = E.calibration(E.storeFor(api.getState(), id).records).filter(x => x.n);
+    if (!bands.length) return '';
+    return `<p class="cr-calib"><b>Tu calibración:</b> ${bands.map(x => `cuando dices ${x.label} %, aciertas ${x.right} de ${x.n}`).join(' · ')}.</p>`;
+  }
+  const showWhy = rec => rec && (rec.correct || rec.kind === 'alerta' || rec.why === 'dos');
 
   /* Qué dice el sabio y qué aparece al centro en cada momento. */
   function moment(cls, api, s, b) {
@@ -352,7 +422,7 @@
       if (!record) {
         sage.text = { diagnostic: 'Responde con lo que sabes.', practice: 'Tu turno.', challenge: 'Este es más difícil. Confío en ti.', transfer: 'Un caso nuevo. Piensa como en la prueba.' }[b.stage];
       } else if (record.correct) {
-        sage.text = `${hint ? 'Bien, con una pista.' : '¡Exacto, sin ayuda!'} ${item.explain}`; sage.mood = 'proud'; sage.actions = cont();
+        sage.text = `${hint ? 'Bien, con una pista.' : record.kind === 'fragil' ? 'Bien, aunque dudabas.' : '¡Exacto, sin ayuda!'} ${item.explain}`; sage.mood = 'proud'; sage.actions = cont();
       } else {
         const mc = mcOf(cls, item, record);
         sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
@@ -361,8 +431,12 @@
       center = `<article class="cr-card ${record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
         <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
-        ${activityMarkup(cls, s, item)}
-        ${record?.correct ? whyOthers(cls, item) : ''}
+        ${record ? '' : confidenceMarkup(item, s)}
+        <fieldset class="cr-gate" ${!record && s.conf[item.id] === undefined ? 'disabled aria-describedby="gate-note"' : ''}>
+          ${!record && s.conf[item.id] === undefined ? '<p class="cr-gate-note" id="gate-note">Primero marca tu confianza en la barra.</p>' : ''}
+          ${activityMarkup(cls, s, item)}</fieldset>
+        ${confidenceResult(cls, item, record)}
+        ${showWhy(record) ? whyOthers(cls, item) : ''}
         ${item.slide ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
       return { sage, center };
     }
@@ -400,11 +474,14 @@
         return `<div class="cr-goal-close"><p class="cr-eyebrow">Camino al 7</p>${goalMeter(goal)}
           <p>${here ? `${s.path === 'misiones' ? 'Esta misión' : 'Esta clase'} vale <b>${pts(here)} pts</b> de la PEP y demostraste <b>${pts(got)}</b>.` : 'Esta misión es <b>base</b>: no da puntos directos, pero sin ella no se puede responder lo que sí los da.'}
           En total llevas <b>${pts(goal.earned)} de ${goal.total}</b>.</p><button class="cr-link" data-cr="goal">Ver qué me falta para el 7</button></div>`; })()}
+      <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas${s.path === 'misiones' ? ' en esta misión' : ''}</p>
+        ${leafChips(cls, api, cls.id, c => s.path !== 'misiones' ? !c.root : c.mission === s.mission)}${calibrationLine(cls, api, cls.id)}
+        <p class="cr-note">Las hojas se ponen <b>verdes</b> solo cuando produces la respuesta tú solo (escalón 5), por ejemplo al escribirla. Elegir entre alternativas deja un <b>brote</b>.</p></div>
       <p class="cr-note">Todavía no es dominio: cuenta como <b>retenido</b> cuando lo recuerdas sin ayuda 24 horas o más después.</p></div>`;
     return { sage, center };
   }
 
-  function panel(cls, s, b) {
+  function panel(cls, s, b, api) {
     if (s.slideOpen) {
       const numbers = Object.keys({ ...cls.slides, ...cls.slideImages }).map(Number).sort((x, y) => x - y);
       const n = Number(s.slideOpen), i = numbers.indexOf(n);
@@ -446,6 +523,10 @@
           <div class="cr-goal-bar"><span style="width:${q.points ? Math.round(q.earned / q.points * 100) : 0}%"></span></div>
           <div class="cr-row">${q.missions.map(mId => { const m = missionById(cls, mId); return m ? `<button class="cr-btn cr-small" data-cr="mission" data-mission="${m.id}">${esc(m.title)} ▸</button>` : ''; }).join('')}</div></li>`).join('')}
           ${(goal.rest || []).map(r => `<li class="is-later"><div><b>${esc(r.label)}</b><span>${pts(r.points)} pts · ${esc(r.note || '')}</span></div></li>`).join('')}</ul>
+        <p class="cr-eyebrow">Lo que sabes, concepto por concepto</p>
+        ${cls.missions.map(m => `<div class="cr-leaf-group"><b>${esc(m.title)}</b>${leafChips(cls, api, cls.id, c => c.mission === m.id)}</div>`).join('')}
+        <div class="cr-leaf-group"><b>Raíces (clase base)</b>${leafChips(cls, api, cls.id, c => c.root)}</div>
+        ${calibrationLine(cls, api, cls.id)}
         <p class="cr-note">Las misiones marcadas como <b>base</b> no dan puntos directos, pero sin ellas no se puede responder lo que sí los da. Y ojo: demostrarlo hoy no es dominarlo. Cuenta como <b>retenido</b> cuando lo repites sin ayuda 24 horas o más después.</p>` : '';
     } else if (s.panel === 'curio') {
       const list = cls.curiosities || [], c = list[(s.curio || 0) % Math.max(1, list.length)];
@@ -494,18 +575,53 @@
         ${s.mascotSay ? `<p class="cr-mascot-say"><b>Tu compañero:</b> ${md(s.mascotSay)}</p>` : ''}
         <div class="cr-actions">${sage.actions}</div>
       </section>
-      ${panel(cls, s, b)}
+      ${panel(cls, s, b, api)}
     </section>`;
     document.body.classList.add('in-classroom');
     s.burst = null; // la reacción de la escena dura una sola vista
     api.hydrate();
     const root = api.app.querySelector('.classroom');
     root.addEventListener('click', event => onClick(event, id, api));
+    // La barra de confianza se marca al soltarla (también si la dejas en 50 %) o con las flechas del teclado.
+    const commit = event => {
+      const range = event.target.closest?.('[data-cr-conf]');
+      if (!range) return;
+      const value = Number(range.value);
+      if (s.conf[range.dataset.crConf] === value) return;
+      s.conf[range.dataset.crConf] = value;
+      rerender(id, api);
+      api.app.querySelector(`[data-cr-conf="${range.dataset.crConf}"]`)?.focus({ preventScroll: true });
+    };
+    root.addEventListener('change', commit);
+    root.addEventListener('pointerup', commit);
+    root.addEventListener('input', event => {
+      const range = event.target.closest('[data-cr-conf]');
+      if (range) { range.style.setProperty('--v', `${range.value}%`); const b = range.previousElementSibling?.querySelector('b'); if (b) b.textContent = `${range.value} %`; return; }
+      const box = event.target.closest('[data-cr-text]');
+      if (box) { const it = allItems(cls).find(x => x.item.id === box.dataset.crText)?.item; if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
+    });
     root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
     (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
   }
 
   function rerender(id, api) { api.saveState(); render(id, api); }
+
+  /* Cada respuesta deja evidencia (evidence.js) y programa cuándo vuelve el concepto (FSRS). */
+  function logEvidence(cls, s, api, id, b, item, rec, retry) {
+    const E = EV();
+    if (!E) return;
+    const missionId = b.m?.id || cls.missions.find(m => allItems(cls, m.id).some(x => x.item === item))?.id;
+    const state = api.getState();
+    const ev = E.record(state, id, { itemId: item.id, conceptId: E.conceptOf(item, missionId), missionId, stage: b.stage || 'rescue',
+      step: E.stepOf(item), correct: rec.correct, hint: Boolean(rec.hint), retry, transfer: b.stage === 'transfer',
+      confidence: retry ? null : rec.confidence ?? null, why: retry ? null : rec.why || null, at: rec.at });
+    E.schedule(state, id, ev).then(() => api.saveState()).catch(() => { /* sin repaso programado: la evidencia queda igual */ });
+  }
+  const withConfidence = (s, item, rec) => {
+    const confidence = s.conf[item.id] ?? null;
+    return { ...rec, confidence, why: confidence !== null && confidence <= 60 ? s.confWhy[item.id] || null : null,
+      kind: EV()?.confidenceKind(confidence, rec.correct) || null };
+  };
 
   function onClick(event, id, api) {
     const button = event.target.closest('[data-cr]');
@@ -540,6 +656,7 @@
       api.track?.('class_started', { class_id: id, path: s.path });
       return rerender(id, api);
     }
+    if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
     if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
     if (action === 'restart') { s.path = null; s.mission = null; s.beat = 0; s.mascotMood = 'idle'; return rerender(id, api); }
@@ -570,8 +687,9 @@
       } else {
         if (s.answers[itemId]) return;
         if (b.stage === 'diagnostic' || b.stage === 'transfer') delete s.hints[itemId];
-        s.answers[itemId] = { choice, correct, hint: Boolean(s.hints[itemId]), stage: b.stage, at: new Date().toISOString() };
+        s.answers[itemId] = withConfidence(s, item, { choice, correct, hint: Boolean(s.hints[itemId]), stage: b.stage, at: new Date().toISOString() });
       }
+      logEvidence(cls, s, api, id, b, item, retry ? s.retries[itemId] : s.answers[itemId], retry);
       s.mascotMood = correct ? 'happy' : 'worry'; s.burst = correct ? 'right' : 'wrong';
       api.track?.('class_answer', { class_id: id, correct, retry });
       return rerender(id, api);
@@ -583,7 +701,13 @@
     const item = allItems(cls).find(entry => entry.item.id === button.dataset.item)?.item;
     if (!item || recordOf(s, item, retry)) return;
     const w = workOf(s, item, retry);
-    if (action === 'act-pick') { (w.seq ||= []).push(button.dataset.card); }
+    if (action === 'act-reveal') {
+      const box = button.closest('.cr-write')?.querySelector('textarea');
+      if (box) w.text = box.value;
+      if (String(w.text || '').trim().length < MIN_WRITE) w.warn = true; else { w.warn = false; w.revealed = true; }
+    }
+    else if (action === 'act-rub') { const i = Number(button.dataset.i); (w.checks ||= item.rubric.map(() => false))[i] = !w.checks[i]; }
+    else if (action === 'act-pick') { (w.seq ||= []).push(button.dataset.card); }
     else if (action === 'act-unpick') { w.seq.splice(Number(button.dataset.i), 1); }
     else if (action === 'act-sel') { w.sel = w.sel === button.dataset.card ? null : button.dataset.card; }
     else if (action === 'act-drop' && w.sel) { (w.assign ||= {})[w.sel] = button.dataset.bucket; w.sel = null; }
@@ -596,14 +720,16 @@
     }
     else if (action === 'act-target' || action === 'act-check') {
       const value = action === 'act-target' ? button.dataset.target
-        : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign } : { ...w.pairs };
+        : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign }
+        : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])] } : { ...w.pairs };
       const correct = isCorrect(item, value);
       const record = { value, correct, at: new Date().toISOString() };
       if (retry) s.retries[item.id] = record;
       else {
         if (b.stage === 'diagnostic' || b.stage === 'transfer') delete s.hints[item.id];
-        s.answers[item.id] = { ...record, hint: Boolean(s.hints[item.id]), stage: b.stage };
+        s.answers[item.id] = withConfidence(s, item, { ...record, hint: Boolean(s.hints[item.id]), stage: b.stage });
       }
+      logEvidence(cls, s, api, id, b, item, retry ? s.retries[item.id] : s.answers[item.id], retry);
       s.mascotMood = correct ? 'happy' : 'worry'; s.burst = correct ? 'right' : 'wrong';
       api.track?.('class_answer', { class_id: id, correct, retry });
     }

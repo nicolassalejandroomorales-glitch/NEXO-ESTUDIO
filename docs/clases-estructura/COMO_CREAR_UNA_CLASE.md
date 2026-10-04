@@ -65,6 +65,14 @@ Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por mis
 | `classify` | Pone tarjetas en calderos | "Aromático, antiaromático o no aromático" |
 | `match` | Une pares | Reactivo → producto, estructura → nombre |
 | `pick` | Toca una parte de la molécula | "¿Cuál N es más básico?", "¿qué grupo manda?" |
+| `write` | Escribe la respuesta, la compara con la modelo y marca qué ideas tenía | "Explícalo con tus palabras". Es la única que vale **escalón 5**: sin ella, las hojas no pasan de brote |
+
+### Conceptos, escalones y confianza (motor de evidencia)
+
+- `concepts`: las hojas del árbol. Cada actividad declara su `concept`. La prueba exige que exista.
+- Escalón por tipo: elegir = 2 (reconocer), ordenar/clasificar/unir/tocar = 3 (completar), escribir = 5 (producir solo). Una actividad puede fijar `step`.
+- Antes de cada pregunta aparece la **barra de confianza**; con 60 % o menos pide el porqué (opcional).
+- El motor (`dist/classes/evidence.js`) calcula la hoja de cada concepto y agenda el repaso con FSRS. Sus reglas se prueban en `tools/class-evidence-test.cjs`.
 
 ## Paso a paso
 
