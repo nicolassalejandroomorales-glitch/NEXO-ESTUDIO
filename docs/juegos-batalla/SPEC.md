@@ -14,7 +14,7 @@ hay que vencer a **3 guardianes**, que se desbloquean en orden:
 | 3 | Benceno malvado | Catedral aromática (rosetón, vitrales) | SEA, directores, Friedel-Crafts, síntesis desde benceno (P1, P2), diazonio |
 | 4 | **Rey Amonio** (final, 3 fases) | Salón del trono | Basicidad (P3), Hofmann, mecanismo con flechas + repaso de todo |
 
-Código: `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/`). Contenido editable en `dist/games/pep1/contenido.js`.
+Código: `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`). Contenido editable en `dist/games/pep1/contenido.js`.
 
 ## Decisiones (pedidas por Niquito)
 
@@ -22,7 +22,7 @@ Código: `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/`). Conteni
    Rohrer y Taylor 2007) y, si fallas un tema, el turno siguiente vuelve a ese tema en otro formato.
 2. **Varios tipos de pregunta** (no solo alternativas): **conectar** pares, **ordenar**, **clasificar** en cajas, **ruta de síntesis**
    paso a paso, **elegir** y **flecha** de mecanismo (Rey). Salen de la pauta real de la PEP 1 2025 (`dist/assets/exams/13_…jpg`, `07_…jpg`).
-3. **Harta vida**: 150 / 170 / 190 / 240 PV. Una pelea completa son ~12 a 18 aciertos.
+3. **Harta vida**: 180 / 200 / 220 / 280 PV. Una pelea completa son ~12 a 20 aciertos.
 4. **El conocimiento manda**: solo un acierto completo hace daño fuerte. En preguntas de varias partes, más de la mitad bien da daño parcial,
    pero cuenta como error (el tema vuelve). Pista = daño ×0,5. Esquivar nunca cuenta como dominio.
 5. **Combate mejorado**: racha de aciertos sin ayuda (daño hasta ×1,4), barra de precisión al canalizar (crítico ×1,5),

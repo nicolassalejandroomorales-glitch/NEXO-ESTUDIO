@@ -42,6 +42,8 @@ P1.molSVG = function(key, size){
     const [x,y,a]=V[k], px=-Math.sin(a), py=Math.cos(a), bx=x+Math.cos(a)*6, by=y+Math.sin(a)*6;
     o += `<circle cx="${(bx+px*7).toFixed(1)}" cy="${(by+py*7).toFixed(1)}" r="1.6" class="dot"/><circle cx="${(bx+px*11).toFixed(1)}" cy="${(by+py*11).toFixed(1)}" r="1.6" class="dot"/>`;
   }
-  return `<svg class="mol" viewBox="0 0 140 112" width="${size||70}" height="${Math.round((size||70)*.8)}" aria-hidden="true">${o}</svg>`;
+  // el marco se ajusta a la molécula: anillo solo → más grande; con sustituyentes → deja espacio para el texto
+  const half = R + (Object.keys(sus).length ? 34 : (Object.keys(carga).length||s.par ? 17 : 9)), sz = size||70;
+  return `<svg class="mol" viewBox="${cx-half} ${cy-half} ${half*2} ${half*2}" width="${sz}" height="${sz}" aria-hidden="true">${o}</svg>`;
 };
 })();

@@ -127,3 +127,7 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   **Sin scripts Luau** (los `.riv` con scripts necesitan firma/cuenta; sin scripts funcionan local). Tienda y Mascota muestran "Disponible próximamente".
 - **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. SPEC borrador en `docs/juegos/SPEC.md` (esperando decisiones de Niquito). Principio: los juegos deben alimentar
   el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
+- **Campaña "Camino a la PEP 1"** (4 oct 2026): `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`; `?todo=1` abre todos los jefes).
+  3 guardianes que se desbloquean (Trimetilamina, Ciclobutadieno, Benceno malvado) + Rey Amonio final; el juego elige el desafío (conectar, ordenar,
+  clasificar, ruta de síntesis, elegir, flecha) con preguntas de la pauta PEP 1 2025. Preguntas en `contenido.js`. Ver `docs/juegos-batalla/SPEC.md`.
+  Pendiente: aprobación visual y conectarlo a `#/games`.
