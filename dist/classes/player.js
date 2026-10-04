@@ -397,6 +397,7 @@
 
   function render(id, api) {
     const cls = window.NexoClasses?.[id];
+    if (window.NexoClassSlides?.[id]) cls.slideImages = window.NexoClassSlides[id]; // imágenes reales del PPT (tools/classroom-art/slides.py)
     const s = sessionFor(api, id);
     if (s.path && !PATHS[s.path]) s.path = null;
     const list = beats(cls, s);

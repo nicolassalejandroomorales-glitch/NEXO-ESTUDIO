@@ -292,6 +292,26 @@
     47: { title: 'Espectrometría de masas', bullets: ['Regla del nitrógeno: un número impar de N da un ion molecular de masa impar.', 'Las aminas sufren escisión α: radical + catión estabilizado por resonancia.'] }
   });
 
+  cls.glossary.push(
+    ['Alquilamina / alcanamina', 'Dos formas de nombrar: grupo + "amina" (etilamina) o alcano con -amina (2-butanamina).'],
+    ['Anilina', 'C₆H₅–NH₂, la amina aromática base. Sus derivados se nombran a partir de ella.'],
+    ['pKa del ion amonio (pKaH)', 'Mide la basicidad de una amina: mientras más alto, más básica.'],
+    ['pKa + pKb = 14', 'Relación entre un ácido y su base conjugada en agua a 25 °C (Ka·Kb = Kw).'],
+    ['Resonancia / deslocalización', 'Electrones repartidos en varios átomos; un par repartido está menos disponible para captar H⁺.'],
+    ['Aromaticidad (Hückel)', 'Anillo plano, conjugado y con 4n + 2 electrones π: muy estable.'],
+    ['Efecto inductivo', 'Atracción o donación de densidad electrónica a través de enlaces σ.'],
+    ['Carácter s', 'Proporción de orbital s en un híbrido: sp (50 %) > sp² (33 %) > sp³ (25 %). Más carácter s retiene más los electrones.'],
+    ['SN2', 'Sustitución en un paso: el nucleófilo entra por detrás y el grupo saliente sale.'],
+    ['Polialquilación', 'Cuando la amina formada sigue reaccionando con el haluro y se obtiene una mezcla.'],
+    ['Síntesis de Gabriel', 'Ftalimida + KOH, R–X, luego hidrazina: da solo la amina primaria.'],
+    ['Aminación reductiva', 'Carbonilo + NH₃ o amina + reductor (NaBH₃CN): forma una amina.'],
+    ['Eliminación de Hofmann', 'CH₃I en exceso, Ag₂O y calor: da el alqueno menos sustituido.'],
+    ['Sal de diazonio', 'Ar–N₂⁺, formada con NaNO₂/HCl en frío; el N₂ es un grupo saliente excelente.'],
+    ['Sandmeyer / Schiemann', 'Sales de cobre(I) dan Ar–Cl, Ar–Br, Ar–CN; HBF₄ y calor dan Ar–F.'],
+    ['Regla del nitrógeno', 'Número impar de N → masa molecular impar.'],
+    ['Escisión α', 'Ruptura típica de aminas en masas: radical + catión estabilizado.']
+  );
+
   cls.missions.push(
   /* ── Misión 2 ── */
   {
@@ -468,9 +488,9 @@
       practice: [
         order('m5-p1', 'Ordena de menor a mayor basicidad.', [['nitro', 'p-Nitroanilina'], ['an', 'Anilina'], ['meo', 'p-Metoxianilina'], ['cy', 'Ciclohexilamina']], ['nitro', 'an', 'meo', 'cy'],
           { direction: 'De menor a mayor basicidad.', explain: 'p-Nitroanilina (1,0) < anilina (4,6) < p-metoxianilina (5,3) < ciclohexilamina (10,6).', misconception: 'subst-effect', slide: 24, hint: 'Primero separa la que no tiene anillo; después mira donador y aceptor.' }),
-        pick('m5-p2', 'La nicotina tiene dos nitrógenos. Toca el más básico.', [[{ t: 'N del anillo aromático (tipo piridina, sp²)', target: 'pyr' }], [{ t: 'N–CH₃ del anillo saturado (tipo pirrolidina, sp³)', target: 'pyrr' }]],
+        pick('m5-p2', 'La nicotina tiene dos nitrógenos. Toca el más básico.', [[{ t: 'N del anillo de seis (aromático)', target: 'pyr' }], [{ t: 'N–CH₃ del anillo de cinco (saturado)', target: 'pyrr' }]],
           { pyr: { label: 'N de la piridina', misconception: 'hybrid-s' }, pyrr: { label: 'N de la pirrolidina' } }, 'pyrr',
-          { explain: 'El N de la pirrolidina es sp³ con su par libre localizado (su ion amonio tiene pKa ≈ 8). El de la piridina es sp²: su par está más retenido (pKa ≈ 3 en la nicotina). Justo lo que pregunta la PEP: "¿cuál N es más básico?"', slide: 27, captions: ['Nicotina'], hint: 'Compara la hibridación de cada N.' }),
+          { explain: 'El N de la pirrolidina es sp³ con su par libre localizado (su ion amonio tiene pKa ≈ 8). El de la piridina es sp²: su par está más retenido (pKa ≈ 3 en la nicotina). Justo lo que pregunta la PEP: "¿cuál N es más básico?"', slide: 27, captions: ['Nicotina'], hint: '¿Cuál de los dos N es como el de una amina común, y cuál como el de la piridina?' }),
         pick('m5-p3', 'En H₂N–CH₂–CH₂–NH–CO–CH₃, toca el nitrógeno más básico.', [[{ t: 'H₂N', target: 'amine' }, { t: '–CH₂–CH₂–' }, { t: 'NH', target: 'amide' }, { t: '–CO–CH₃' }]],
           { amine: { label: 'El NH₂ (amina)' }, amide: { label: 'El NH de la amida', misconception: 'amide-basic' } }, 'amine',
           { explain: 'El NH₂ es una amina alifática con su par libre disponible. El NH pegado al C=O es una amida: su par está deslocalizado y no es básico.', slide: 22, captions: ['N-(2-aminoetil)acetamida'], hint: '¿Cuál N está pegado a un C=O?' }),
