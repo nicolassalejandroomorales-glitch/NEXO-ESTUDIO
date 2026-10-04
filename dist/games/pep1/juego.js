@@ -7,6 +7,7 @@
 (function(){
 'use strict';
 const P1=window.P1, A=P1.arte, AU=P1.audio, D=P1.desafios, RM=A.RM;
+A.pulso=()=>RM?0:AU.pulso();
 const $=id=>document.getElementById(id);
 const cv=$('arena'), ctx=cv.getContext('2d');
 const rand=(a,b)=>a+Math.random()*(b-a), clamp=(v,a,b)=>Math.max(a,Math.min(b,v)), ease=k=>1-Math.pow(1-k,3);
@@ -467,17 +468,23 @@ function update(dt){
 }
 function render(dt){
   ctx.setTransform(G.k,0,0,G.k,0,0);
-  if(pantalla==='mapa'||!S){ A.pintarArena('trono',ctx,W,H,G,G.k,tMapa,1,dt); ctx.fillStyle='rgba(8,12,14,.55)'; ctx.fillRect(0,0,W,H); return; }
+  if(pantalla==='mapa'||!S){ A.cam.x=A.cam.y=0; A.pintarArena('trono',ctx,W,H,G,G.k,tMapa,1,dt); A.pintarFrente('trono',ctx,W,H,G,G.k,tMapa,1,dt); ctx.fillStyle='rgba(8,12,14,.5)'; ctx.fillRect(0,0,W,H); return; }
   const sx=S.shake?rand(-S.shake,S.shake)*.6:0, sy=S.shake?rand(-S.shake,S.shake)*.6:0; ctx.translate(sx,sy);
+  // paralaje suave: el escenario se desplaza un poco según dónde está la estrella
+  A.cam.x+=((S.soul.x-W/2)/(W/2)-A.cam.x)*Math.min(1,dt*3); A.cam.y+=((S.soul.y-G.by)/(H/2)-A.cam.y)*Math.min(1,dt*3);
   A.pintarArena(S.J.arena,ctx,W,H,G,G.k,S.t,S.phase,dt);
   const E=S.enemy;
   A.jefes[S.J.id](ctx,G.ex+E.hx,G.ey,NARROW?.95:1,{t:S.t,fase:S.phase,flash:E.flash,sq:clamp(E.sq,-.25,.25),look:Math.atan2(S.soul.y-G.ey,S.soul.x-G.ex),blink:E.blink,
     enter:E.enter,dissolve:E.dissolve,atacando:!!E.atk,especial:E.inv,feliz:E.feliz});
+  A.pintarFrente(S.J.arena,ctx,W,H,G,G.k,S.t,S.phase,dt);
   drawBox(); drawBullets(); drawSoul(); drawFx(); drawHud();
 }
 let last=performance.now();
+let lento=0;
 function frame(now){
-  const dt=Math.min(.05,(now-last)/1000); last=now;
+  const dtReal=(now-last)/1000, dt=Math.min(.05,dtReal); last=now;
+  // si va lento por varios segundos (computador o celular modesto), se apagan efectos decorativos
+  if(pantalla==='pelea'&&!A.baja&&!document.hidden){ lento=dtReal>.034&&dtReal<.5?lento+1:Math.max(0,lento-2); if(lento>150){A.baja=true;console.info('Nexo: calidad baja activada para mantener la fluidez');} }
   if(pantalla==='mapa'){tMapa+=0;pintarMinis(dt);}
   else if(S) update(dt);
   try{ render(dt); }catch(e){ console.error(e); }
@@ -512,5 +519,5 @@ addEventListener('resize',()=>{layout();});
 
 layout(); mostrarMapa(); requestAnimationFrame(frame);
 // Ganchos para pruebas automáticas (no afectan el juego).
-window.__pep1={tick(dt=.05){if(S)update(dt);else pintarMinis(dt);render(dt);},get S(){return S;},get prog(){return prog;},empezar,mostrarMapa,pickChallenge,enemyTurn,endGame,stopChannel,PATRONES,AU};
+window.__pep1={tick(dt=.05,dibujar=true){if(S)update(dt);else pintarMinis(dt);if(dibujar)render(dt);},get S(){return S;},get prog(){return prog;},empezar,mostrarMapa,pickChallenge,enemyTurn,endGame,stopChannel,PATRONES,AU};
 })();

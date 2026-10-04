@@ -32,6 +32,20 @@ Código: `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`
 7. **Jefes en 3D simple** (esferas y enlaces que giran) con animación fluida: entrada, respiración, golpe con resorte, transformación de fase y disolución.
 8. Progreso guardado en el navegador (`localStorage`, solo comodidad). `?todo=1` en la URL abre todos los jefes para probar.
 
+## v2 (4 oct 2026, pedida por Niquito tras aprobar la base)
+
+- **Música de combate por jefe**, más rápida y "movida" (batería, staccato "tan tan tan", galope). Firma de cada uno:
+  Trimetilamina = tuba saltarina + pizzicato + oboe (Mi menor, 138→150) · Ciclobutadieno = semicorcheas + arpegiador eléctrico (Do menor, 160→174) ·
+  Benceno = órgano + coro + doble bombo (Sol menor, 144→156) · Rey = galope + metales + coro en la fase 3 (Re menor, 128→140→152).
+  La música sigue durante las preguntas (más suave) y cada fase sube el tempo y suma capas.
+- **Arenas "de jefe"** (antes se veían planas): sello mágico giratorio con runas químicas detrás de cada jefe que late con la batería,
+  círculo en el piso, rayos de luz, partículas en espiral hacia el jefe, siluetas en primer plano con paralaje y viñeta.
+  Ciénaga maldita (luna tóxica, altar, árboles muertos) · Reactor inestable (anillos de energía 3D, escombros, tormenta por el techo) ·
+  Catedral (sello hexagonal, plataformas flotantes, incensarios) · Salón del trono (columnata en profundidad, trono, cortinas, rocas que levitan en fase 2).
+- **Rey Amonio v2**: cuerpo de cristal con núcleo de N y remolino de electrones, corona con halo, cuello de armiño con broche "+",
+  cetro con H⁺, enlaces de energía y ojos dorados (rojos y con colmillos desde la fase 2).
+- **Calidad automática**: si el juego va lento (computador o celular modesto) apaga rayos y remolinos. Forzar con `?calidad=baja`.
+
 ## Criterios de aceptación
 
 - Se juega completo de principio a fin: mapa → 3 guardianes → Rey Amonio → final, sin errores en consola.
