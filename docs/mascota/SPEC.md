@@ -23,6 +23,16 @@ Antes de la vida en la sala se borra todo lo viejo para rehacerlo con el diseño
 **Quedó pendiente de la Fase 0**: CSS muerto del avatar/tienda en `styles.css`, `arcane.css` y `update01.css` (no estorba; limpiarlo al hacer la tienda nueva),
 y pruebas de navegador/nube que aún mencionan la mascota vieja (`e2e-test`, `cloud-e2e`, `cloud-test`, `database-test`, `optimize-room-art`).
 
+## Fase 1 — Diseño de las 3 mascotas en Rive (4 oct 2026)
+
+- **Especies**: velociraptor, capibara, zorro. Estilo **tierno de cuento** (cabeza grande, redondos, ojos expresivos, sombreado cálido).
+- **Herramienta**: Rive CLI oficial 1.3.0 (`rive.exe`), formato RML (texto → `.riv`). Verificación con `rive <dir> --verify` y capturas con `--screenshot`.
+- **Un solo esqueleto** para las tres: grupos (`Node`) con pivote para cola, piernas, cuerpo, cabeza, brazos y mano (ancla para el libro).
+  Las animaciones (idle, caminar, sacar libro, leer, emotes) se generan una vez y sirven a las tres. Expresiones con `Solo` (ojos/boca).
+- **Sin huesos con skinning ni scripts Luau** al inicio: grupos rígidos con pivotes (más simple y robusto); sin scripts no hace falta firma ni cuenta.
+- **Fuente única**: `tools/mascots/` genera el RML (`rive/mascotas/`) desde la geometría de cada especie; boceto rápido en `dist/dev/mascotas.html`.
+- El reproductor web de Rive se vuelve a agregar a `dist/vendor/` cuando las mascotas entren a la app (versión compatible con la CLI).
+
 ## Qué
 
 **1. Estaciones**: 4 lugares de la sala (anclas de `home-scene.js`, hoy solo el escritorio está calibrado).

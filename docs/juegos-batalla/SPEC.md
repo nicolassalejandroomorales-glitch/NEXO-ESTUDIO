@@ -1,63 +1,48 @@
-# Batalla con esquiva (inspirada en el género de Undertale) — SPEC borrador, 3 oct 2026
+# Batalla con esquiva → Campaña "Camino a la PEP 1" — SPEC (4 oct 2026)
 
-Parte de `docs/juegos/SPEC.md`. Estado: **borrador, esperando decisiones de Niquito**.
+Parte de `docs/juegos/SPEC.md`. Estado: **en construcción, esperando aprobación visual de Niquito**.
 
 ## Qué
 
-Un combate por turnos con dos fases, para el área de Juegos (candidato a **Boss Arena**):
-1. **Turno del estudiante**: acciones de estudio variadas (no solo preguntas).
-2. **Turno del enemigo**: una fase de **esquivar** ataques dentro de una caja, moviendo un pequeño símbolo (un "alma" propia de Nexo).
+Un juego de jefes para preparar la **PEP 1 de Orgánica II** (aminas y aromáticos). Antes de la pelea final contra el **Rey Amonio**
+hay que vencer a **3 guardianes**, que se desbloquean en orden:
 
-Con **música de combate épica** que cambia según la fase.
+| # | Jefe | Arena | Temas (lo que de verdad pregunta la PEP 1 2025) |
+|---|---|---|---|
+| 1 | Trimetilamina, "la amina apestosa" | Muelle del pantano (noche, faroles, niebla) | Aminas: clasificación, propiedades, IR, nomenclatura, síntesis (Gabriel, azida, reducción, P4) |
+| 2 | Ciclobutadieno, "el antiaromático" | Laboratorio en ruinas (tormenta, bobina, matraces) | Hückel (P5), heterociclos, basicidad de heterociclos y anilinas |
+| 3 | Benceno malvado | Catedral aromática (rosetón, vitrales) | SEA, directores, Friedel-Crafts, síntesis desde benceno (P1, P2), diazonio |
+| 4 | **Rey Amonio** (final, 3 fases) | Salón del trono | Basicidad (P3), Hofmann, mecanismo con flechas + repaso de todo |
 
-## Límite de propiedad intelectual (de la visión original, `docs/contexto/VISION_ARCANE_STUDY_ORIGINAL.txt`)
+Código: `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/`). Contenido editable en `dist/games/pep1/contenido.js`.
 
-Solo se toma la inspiración conceptual (turno de decisión + esquiva). **Nada** de assets, interfaz, personajes, música ni nombres de Undertale
-(ni copiar o imitar piezas concretas como Megalovania). Todo diseño y música propios.
+## Decisiones (pedidas por Niquito)
 
-## Decisiones propuestas
-
-1. **El conocimiento cambia la esquiva; la esquiva nunca cambia el conocimiento.**
-   - Respuesta correcta y sin ayuda → daño al jefe, caja de esquiva más grande o escudo.
-   - Respuesta incorrecta → el jefe ataca más fuerte, y **el patrón de balas representa el error** (p. ej. caen protones H⁺ si fallaste en protonación).
-   - Esquivar bien no suma evidencia ni "dominio". Solo da sensación de juego. Así nadie "aprueba" química por tener buenos reflejos.
-2. **Turno del estudiante: acciones variadas** (reusando los validadores de `dist/academic/structured.js`):
-   - *Predecir*: elegir quién gana/qué ocurre (decisiones discretas, verificadas).
-   - *Ordenar*: ordenar los pasos de un mecanismo.
-   - *Clasificar*: arrastrar moléculas a su categoría (ej. por basicidad).
-   - *Analizar*: pedir una pista (cuenta como ayuda; el daño baja).
-   - Un jefe no se derrota con un solo tipo de acción.
-3. **Evidencia**: igual que en el SPEC de Juegos: solo respuestas verificadas, `activityType:'game'`, errores alimentan Error Hunter y revisiones FSRS.
-4. **Tecnología**: **Phaser** (ya instalado, `dist/game/manager.js`) para la esquiva; el turno del estudiante en HTML/CSS normal sobre el mismo panel.
-5. **Controles**: teclado (flechas/WASD) y **joystick táctil** en móvil (390 px). Objetivo de poca fricción: se juega con una mano.
-6. **Accesibilidad y seguridad visual**: respeta `prefers-reduced-motion` (balas más lentas, sin destellos), modo "sin daño" opcional, y **nada de parpadeos
-   rápidos** (máx. 3 destellos por segundo).
-7. **Música (diseño propio)**:
-   - Generada con script reproducible, como el audio del grimorio (`tools/games-audio/`, salida en `dist/assets/audio/`), composición original.
-   - **Por capas**: base + percusión + melodía. La percusión sube en la fase de esquivar; la melodía crece cuando al jefe le queda poca vida.
-   - Aviso honesto: la música sintetizada por código suena **chiptune/synth épico**, no orquesta de película. Si quieres sonido orquestal, hay que
-     componerla tú o usar música con licencia libre (CC0/atribución) y registrar la fuente.
-
-## Cómo (en pasos chicos)
-
-1. Aprobar este SPEC y decidir estilo de música y arte.
-2. **Prueba técnica de esquiva**: caja + símbolo + 3 patrones de balas, teclado y táctil. Sin química todavía. Ver si "se siente bien".
-3. Conectar **un** jefe de Aminas (Basicidad) con 3 acciones de estudio y `recordAttempt`.
-4. Música v1 en capas y volumen/mute conectados a `NexoAudio`.
-5. Probar en 1440 y 390 px; ANTES/AHORA; aprobación visual de Niquito.
+1. **El juego decide el desafío**, no el estudiante. Director: nunca el mismo tipo dos veces seguidas (práctica intercalada,
+   Rohrer y Taylor 2007) y, si fallas un tema, el turno siguiente vuelve a ese tema en otro formato.
+2. **Varios tipos de pregunta** (no solo alternativas): **conectar** pares, **ordenar**, **clasificar** en cajas, **ruta de síntesis**
+   paso a paso, **elegir** y **flecha** de mecanismo (Rey). Salen de la pauta real de la PEP 1 2025 (`dist/assets/exams/13_…jpg`, `07_…jpg`).
+3. **Harta vida**: 150 / 170 / 190 / 240 PV. Una pelea completa son ~12 a 18 aciertos.
+4. **El conocimiento manda**: solo un acierto completo hace daño fuerte. En preguntas de varias partes, más de la mitad bien da daño parcial,
+   pero cuenta como error (el tema vuelve). Pista = daño ×0,5. Esquivar nunca cuenta como dominio.
+5. **Combate mejorado**: racha de aciertos sin ayuda (daño hasta ×1,4), barra de precisión al canalizar (crítico ×1,5),
+   **Foco** al rozar balas sin que te toquen (lleno = próximo acierto crítico), fases de furia, jefes 3 y 4 se curan al fallar,
+   té automático con poca vida, ataques que representan el error.
+6. **Música original de jefe por arena** (coro, metales, cuerdas, timbales; sintetizada en vivo, sin citar obras) que sube por fase.
+7. **Jefes en 3D simple** (esferas y enlaces que giran) con animación fluida: entrada, respiración, golpe con resorte, transformación de fase y disolución.
+8. Progreso guardado en el navegador (`localStorage`, solo comodidad). `?todo=1` en la URL abre todos los jefes para probar.
 
 ## Criterios de aceptación
 
-- La esquiva corre fluida (60 fps en desktop, sin tirones en móvil) y se puede jugar con teclado y con el dedo.
-- Una pelea completa deja intentos/evidencia verificada con `activityType:'game'`, sin duplicar al reintentar.
-- Esquivar perfecto con respuestas incorrectas **no** sube el estado de conocimiento.
-- La música hace loop sin clic, respeta el mute de Nexo y se pausa con la pestaña oculta.
-- `prefers-reduced-motion` y modo sin daño funcionan.
+- Se juega completo de principio a fin: mapa → 3 guardianes → Rey Amonio → final, sin errores en consola.
+- Cada tipo de desafío funciona con mouse y con el dedo (390 px), y corrige bien (probado por script).
+- `prefers-reduced-motion` reduce movimiento; el sonido respeta el botón y se pausa con la pestaña oculta.
+- Ningún destello rápido (máx. 3 por segundo).
 
-## Pendiente (preguntas para Niquito)
+## Pendiente
 
-- ¿Música: sintetizada por código (chiptune/synth épico, rápida de iterar) o la compones/consigues con licencia libre?
-- ¿Quién es el jefe y cómo se ve? (idea inicial: la propia molécula/concepto, p. ej. un "Jefe Amina")
-- ¿El alma del jugador es la mascota de Nexo o un símbolo nuevo?
-- ¿Ruta de "perdón" (resolver el combate explicando bien, sin dañar) además de ganar por daño?
-- Arte: ¿pixel art hecho por código como el refugio, o algo más simple primero?
+- Aprobación visual de Niquito (ANTES/AHORA).
+- Conectar a la app: tarjeta "Boss Arena" en `#/games` y `recordAttempt` con `activityType:'game'` (toca `app.js`, cambio chico).
+- Rediseño del Rey Amonio **por Niquito** (quiere diseñarlo él): la ficha `ENEMIGOS` en `contenido.js` y `arte.js` están listas para cambiar.
+- Más casos con estructuras dibujadas (hoy hay anillos simples en SVG; los productos complejos van en texto).
+- Si se quiere música orquestal real: componerla o usar pistas con licencia libre y registrar la fuente.
