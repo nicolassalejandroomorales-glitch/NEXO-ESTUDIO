@@ -27,11 +27,31 @@ y pruebas de navegador/nube que aún mencionan la mascota vieja (`e2e-test`, `cl
 
 - **Especies**: velociraptor, capibara, zorro. Estilo **tierno de cuento** (cabeza grande, redondos, ojos expresivos, sombreado cálido).
 - **Herramienta**: Rive CLI oficial 1.3.0 (`rive.exe`), formato RML (texto → `.riv`). Verificación con `rive <dir> --verify` y capturas con `--screenshot`.
-- **Un solo esqueleto** para las tres: grupos (`Node`) con pivote para cola, piernas, cuerpo, cabeza, brazos y mano (ancla para el libro).
-  Las animaciones (idle, caminar, sacar libro, leer, emotes) se generan una vez y sirven a las tres. Expresiones con `Solo` (ojos/boca).
+- ~~Un solo esqueleto para las tres~~ → **descartado** (boceto v1 feo: las obligaba a estar de pie como peluche). **Cada especie tiene su anatomía real**:
+  raptor horizontal con cola de contrapeso y garra en hoz; capibara y zorro **en 4 patas** (se sientan para leer). Lo compartido son los
+  *comportamientos* (mismas entradas de la máquina de estados: caminar, leer, emotes), no la forma.
+- **Concepto elegido: estilo "A · cuento"** (contorno limpio, sombreado suave, proporciones de animal real). Referencias en `conceptos/*-A-vector.jpg`
+  (generadas con Canva una sola vez; no generar más). Raptor: **escamas y rayas estilo película, sin plumas** (diseño propio, no copia de Jurassic Park).
 - **Sin huesos con skinning ni scripts Luau** al inicio: grupos rígidos con pivotes (más simple y robusto); sin scripts no hace falta firma ni cuenta.
 - **Fuente única**: `tools/mascots/` genera el RML (`rive/mascotas/`) desde la geometría de cada especie; boceto rápido en `dist/dev/mascotas.html`.
 - El reproductor web de Rive se vuelve a agregar a `dist/vendor/` cuando las mascotas entren a la app (versión compatible con la CLI).
+
+**Hecho (4 oct 2026)**: tubería Rive funcionando → `tools/mascots/build.cjs` (trazos estilo SVG → RML, partes con pivote, animaciones con curvas suaves,
+recortes) + `tools/mascots/raptor.cjs`. Compila con la CLI, verifica y exporta `dist/assets/mascotas/mascotas.riv`. El reproductor web
+(`dist/vendor/rive`, v2.42.2, recuperado de Git) lo carga sin problemas. Prueba en vivo: `http://127.0.0.1:8765/dev/mascotas.html`.
+Mesa de luz para calcar: `/dev/ref/mesa.html?f=raptor|capibara|zorro`. Raptor v2: respira, mueve cola/brazos y parpadea.
+**Sigue**: aprobación del raptor → capibara y zorro (4 patas) → caminar → sacar libro y leer → emotes.
+
+### Contrato del rig (igual para las 3 especies; lo usa la app)
+- **Máquina de estados** `Mascota`, entrada numérica **`accion`**: `0` Idle · `1` Caminar (en el lugar; la app desplaza la mascota por la sala)
+  · `2` Alcanzar (oneShot: se estira, toma el libro y queda con él). Mezcla de 220 ms entre acciones. Capa aparte `Ojos` con el parpadeo.
+- **Ranuras de accesorios** (Node vacíos, mismos nombres en todas): `RanuraCabeza`, `RanuraCara`, `RanuraCuello`, `RanuraEspalda`,
+  `RanuraMano`, `RanuraCola`. Cada una cuelga de su parte → el accesorio se mueve con ella. Accesorios futuros = un `Solo` por ranura
+  (primera opción vacía), igual que `ObjetoMano` (`Nada | Libro`) en `RanuraMano`.
+- El generador vuelve al reposo lo que una acción no anima (evita piernas dobladas al cambiar de acción).
+- Captura de prueba de cualquier cuadro: `node tools/mascots/build.cjs --estado=Alcanzar --advance=45` (después recompilar sin `--estado`).
+- Pendiente del raptor: en el cuadro medio de la caminata las piernas se cruzan (falta zancada más amplia), pies algo planos,
+  sombreado suave bajo la panza, y doblar la cola con huesos (más fluida).
 
 ## Qué
 

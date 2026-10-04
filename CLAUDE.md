@@ -102,6 +102,8 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
 
 - No tocar Supabase, SQL, migraciones, OAuth ni nada de cloud. No publicar en el Site.
 - Excepción autorizada (3 oct 2026): **clima real con Open-Meteo** (sin clave, ubicación fija Santiago, máx. cada 30 min, sin red = despejado). Ver `docs/mascota/SPEC.md`. Ningún otro servicio externo sin permiso.
+- **No generar imágenes con Canva** (ni otra IA de imágenes) sin que Niquito lo pida en ese momento (4 oct 2026: se agotó el crédito y no quiere más).
+  Los conceptos ya generados de las mascotas están en `docs/mascota/conceptos/`.
 - No borrar archivos del usuario. No reescribir la app desde cero.
 - No copiar arte de otros artistas ni objetos o personajes de series conocidas (por ejemplo, el báculo de Rudeus de Mushoku Tensei): solo diseños propios.
 
@@ -130,4 +132,4 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
 - **Campaña "Camino a la PEP 1"** (4 oct 2026): `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`; `?todo=1` abre todos los jefes).
   3 guardianes que se desbloquean (Trimetilamina, Ciclobutadieno, Benceno malvado) + Rey Amonio final; el juego elige el desafío (conectar, ordenar,
   clasificar, ruta de síntesis, elegir, flecha) con preguntas de la pauta PEP 1 2025. Preguntas en `contenido.js`. Ver `docs/juegos-batalla/SPEC.md`.
-  Pendiente: aprobación visual y conectarlo a `#/games`.
+  Base aprobada por Niquito (4 oct). En curso: música de combate por jefe, arenas "de jefe" y rediseño del Rey. Pendiente: conectarlo a `#/games`.
