@@ -50,15 +50,7 @@ fs.writeFileSync(path.join(root,'dist','config.js'),
   '/* Configuración pública generada. */\nwindow.NEXO_PUBLIC_CONFIG = Object.freeze(' +
   JSON.stringify(config).replace(/</g,'\\u003c') + ');\n');
 
-const context = { window: {} };
-for (const name of ['organic-pep1', 'organic-pep2', 'organic-pep3', 'organic-biomolecules']) {
-  vm.runInNewContext(fs.readFileSync(path.join(root, 'dist', `${name}.js`), 'utf8'), context, { filename: name });
-}
-const manifest = Object.fromEntries(Object.entries(context.window.NEXO_ORGANIC_COURSE).map(([id, lesson]) => [id, {
-  title: lesson.title, central: lesson.central, duration: lesson.duration
-}]));
-fs.writeFileSync(path.join(root, 'dist', 'organic-manifest.js'), `/* Catálogo ligero generado desde las clases canónicas. */\nwindow.NEXO_ORGANIC_COURSE = Object.assign(window.NEXO_ORGANIC_COURSE || {}, ${JSON.stringify(manifest, null, 2)});\n`);
-console.log(`Catálogo: ${Object.keys(manifest).length} clases de Orgánica.`);
+// organic-manifest.js es ahora un catálogo fijo (títulos de los temas); las clases se están rehaciendo.
 
 // También disponible por separado sin reemplazar config pública ni vendors.
 require('./build-startup.cjs');
