@@ -54,6 +54,16 @@ node smoke-test.cjs; node tools/room-test.cjs; node tools/update01-test.cjs   # 
 - En móvil (≤700 px) la sala se desliza de lado dentro de `.home-pan` (no se recorta).
 - Objetos actuales: ventana (pulso de luz), báculo → Tienda, sillón → Perfil, mapa enrollado → Bitácora (ponderaciones), pergamino → Calendario, estantería → Biblioteca, globo → Mapa de conocimiento, escritorio → Continuar estudiando.
 
+## Modelo y esfuerzo (cuidar los créditos)
+
+- Claude **no puede cambiar su propio modelo/esfuerzo**: Niquito lo cambia (`/model` o el selector de la app). Claude **recomienda**.
+- Al inicio de cada tarea, una línea: **Recomendado: <modelo> · esfuerzo <nivel>. Por qué: <razón>.** Y avisa durante la tarea si conviene subir o bajar.
+- Por defecto: **Sonnet 5.5 · esfuerzo medio** (~80-90 % del trabajo: refugio, grimorio, pantallas, arreglos).
+- **Opus** solo para: diseñar el motor académico (FSRS, estados, corrección real), diseñar la estructura de una clase, un bug que falló 2 veces, decisiones de arquitectura.
+- Regla: primero subir el esfuerzo, después el modelo. Planear con Opus (`SPEC.md`) y ejecutar con Sonnet.
+- Una sesión = un cambio. Leer `dist/app.js` por partes (pesa 236 KB), nunca entero. Delegar sub-tareas simples a modelos baratos.
+- Medir el costo por tarea terminada, no por mensaje. Revisar el gasto real cada pocas sesiones y recalibrar.
+
 ## Forma de trabajo (SDD liviano)
 
 1. Antes de programar, una página en `docs/<cambio>/SPEC.md`: **qué**, **decisiones**, **cómo**, **criterios de aceptación** y **pendiente**.
