@@ -39,6 +39,10 @@ for (const [id, file] of Object.entries(catalog)) {
   assert.ok(kinds({ path: 'misiones', mission: m1.id, answers: allRight }).includes('offer'), 'Diagnóstico perfecto ofrece saltar la lección');
   assert.ok(!kinds({ path: 'misiones', mission: m1.id, answers: allRight, skipExplain: { [m1.id]: true } }).includes('lesson'), 'Saltar la lección la quita');
   assert.ok(!kinds({ path: 'prueba' }).includes('lesson'), 'Prueba encima no pasa por la lección');
+  const lessons = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m1.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {} }).filter(b => b.kind === 'lesson');
+  assert.ok(lessons.some(b => b.zero) && lessons.findIndex(b => b.zero) < lessons.findIndex(b => !b.zero), 'Las bases desde cero van antes de la materia');
+  for (const blk of [...(m1.stages.fundamentals || []), ...m1.stages.explain]) assert.ok(blk.body && blk.title, `${blk.id}: bloque sin texto`);
+  for (const [term, def] of cls.glossary || []) assert.ok(term && def, 'glosario incompleto');
   for (const b of m1.stages.explain) if (b.slide) assert.ok(cls.slides?.[b.slide] || cls.slideImages?.[b.slide], `${b.id}: la diapositiva ${b.slide} no tiene texto ni imagen`);
 }
 console.log(`Aula: ${Object.keys(catalog).length} clase(s), ${items} preguntas con una correcta, errores con explicación y repaso; momentos y caminos OK.`);

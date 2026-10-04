@@ -13,6 +13,22 @@
      se usan las miniaturas, ampliadas y desenfocadas (is-mini). */
   const TOWER = { mini: true, dawn: 'assets/classroom/torre-amanecer-mini.jpg', day: 'assets/classroom/torre-mediodia-mini.jpg',
     dusk: 'assets/classroom/torre-atardecer-mini.jpg', night: 'assets/classroom/torre-noche-mini.jpg' };
+  /* Objetos tocables de cada pintura, en % del arte 16:9: [x, y, ancho, alto]. Igual que en el refugio:
+     invisibles, solo brillan al pasar el mouse. Se usan los de la pintura que domina a esa hora. */
+  const HOTSPOTS = {
+    day: { sage: [6, 30, 16, 62], book: [20, 55, 15, 20], board: [38, 18, 27, 40], window: [15, 12, 10, 33], flasks: [74, 58, 21, 20] },
+    dawn: { sage: [9, 35, 13, 60], book: [20, 50, 13, 22], board: [37, 15, 26, 40], window: [21, 15, 9, 35], flasks: [70, 55, 25, 17] },
+    dusk: { sage: [10, 30, 19, 65], book: [22, 42, 16, 18], board: [46, 10, 27, 35], window: [7, 2, 17, 46], flasks: [81, 58, 17, 24] },
+    night: { sage: [8, 40, 21, 55], book: [28, 55, 12, 17], board: [37, 8, 26, 54], window: [8, 10, 12, 30], flasks: [78, 55, 19, 20] }
+  };
+  const SPOT_LABEL = { sage: 'Pedirle al sabio que explique desde cero', book: 'Abrir el glosario del sabio', board: 'Ver las diapositivas de la clase',
+    window: 'Cambiar la hora de la torre', flasks: 'Mezclar los frascos: dato curioso' };
+  const HOURS = [7, 12.5, 18.6, 22];
+  function dominantScene() {
+    const style = getComputedStyle(document.body);
+    return SCENES.reduce((best, key) => (parseFloat(style.getPropertyValue(`--w-${key}`)) || (key === 'day' ? 0.01 : 0)) >
+      (parseFloat(style.getPropertyValue(`--w-${best}`)) || (best === 'day' ? 0.01 : 0)) ? key : best, 'day');
+  }
   const esc = value => String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
   const md = value => esc(value).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
 
@@ -58,6 +74,11 @@
       const diag = m.stages.diagnostic || [];
       if (diag.length && diag.every(item => s.answers[item.id]?.correct)) out.push({ kind: 'offer', m });
       if (!s.skipExplain[m.id]) {
+        if ((m.stages.fundamentals || []).length) {
+          say('Empecemos desde cero, para que nada quede en el aire. Si algo ya lo sabes, pasa rápido.', m);
+          m.stages.fundamentals.forEach(block => out.push({ kind: 'lesson', block, m, zero: true }));
+          say('Con esas bases, ahora sí: la materia de la clase.', m);
+        }
         (m.stages.explain || []).forEach(block => out.push({ kind: 'lesson', block, m }));
         if (m.stages.worked) {
           say(`Veamos un experimento. ${m.stages.worked.prompt}`, m);
@@ -92,8 +113,12 @@
 
   function scene(cls) {
     const art = cls.scene || TOWER;
-    return `<div class="cr-scene ${art.mini ? 'is-mini' : ''}" aria-hidden="true">${SCENES.map(key => `<div class="cr-scene-layer is-${key}" ${art[key] ? `style="background-image:url('${esc(art[key])}')"` : ''}></div>`).join('')}
-      <div class="cr-scene-shade"></div><div class="cr-motes"></div></div>`;
+    const spots = HOTSPOTS[dominantScene()];
+    return `<div class="cr-scene ${art.mini ? 'is-mini' : ''}"><div class="cr-art">
+      ${SCENES.map(key => `<div class="cr-scene-layer is-${key}" aria-hidden="true" ${art[key] ? `style="background-image:url('${esc(art[key])}')"` : ''}></div>`).join('')}
+      <div class="cr-scene-shade" aria-hidden="true"></div>
+      ${Object.entries(spots).map(([id, [x, y, w, h]]) => `<button class="cr-spot is-${id}" data-cr="spot" data-spot="${id}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%" aria-label="${esc(SPOT_LABEL[id])}" title="${esc(SPOT_LABEL[id])}"></button>`).join('')}
+      </div><div class="cr-motes" aria-hidden="true"></div></div>`;
   }
 
   function slideMarkup(cls, n, { large = false } = {}) {
@@ -117,6 +142,15 @@
       return `<li><button class="cr-option ${tone}" data-cr="answer" data-item="${esc(item.id)}" data-choice="${i}" data-retry="${retry ? 1 : 0}" ${record ? 'disabled' : ''}>
         <span class="cr-letter">${String.fromCharCode(65 + i)}</span><span>${esc(opt.text)}</span></button></li>`;
     }).join('')}</ol>`;
+  }
+
+  function whyOthers(cls, item) {
+    const rows = item.options.map((o, i) => {
+      const mc = cls.misconceptions[o.misconception];
+      const reason = o.correct ? item.explain : mc ? mc.why : o.note;
+      return reason ? `<li class="${o.correct ? 'is-ok' : ''}"><b>${String.fromCharCode(65 + i)}. ${esc(o.text)}</b>${o.correct ? ' (correcta)' : ''}: ${md(reason)}</li>` : '';
+    }).join('');
+    return `<details class="cr-why" open><summary>¿Por qué cada alternativa?</summary><ul>${rows}</ul></details>`;
   }
 
   /* Qué dice el sabio y qué aparece al centro en cada momento. */
@@ -143,11 +177,16 @@
       return { sage, center };
     }
     if (b.kind === 'lesson') {
-      const blk = b.block;
+      const blk = b.block, deepKey = `deep-${blk.id}`, deep = s.revealed[deepKey];
       sage.text = `**${blk.title}.** ${blk.body}`;
-      sage.actions = cont('Entendido');
-      center = `<div class="cr-lesson">${blk.slide ? projection(cls, blk.slide) : ''}
-        ${blk.rows || blk.note ? `<div class="cr-parchment">${blk.rows ? `<dl class="cr-rows">${blk.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}</div>` : ''}</div>`;
+      sage.actions = `${blk.deeper ? `<button class="cr-btn" data-cr="deeper" data-key="${deepKey}" aria-expanded="${Boolean(deep)}">${deep ? 'Ocultar la explicación simple' : 'Explícame más simple'}</button>` : ''}${cont('Entendido')}`;
+      const parchment = blk.svg || blk.rows || blk.note || deep ? `<div class="cr-parchment">
+        <p class="cr-eyebrow">${b.zero ? 'Desde cero' : 'Lección'} · ${esc(blk.title.replace(/^Desde cero: /, ''))}</p>
+        ${blk.svg ? `<div class="cr-figure">${blk.svg}</div>` : ''}
+        ${blk.rows ? `<dl class="cr-rows">${blk.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
+        ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}
+        ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>` : '';
+      center = `<div class="cr-lesson">${blk.slide ? projection(cls, blk.slide) : ''}${parchment}</div>`;
       return { sage, center };
     }
     if (b.kind === 'step') {
@@ -178,6 +217,7 @@
         <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
         ${optionsMarkup(cls, s, item)}
+        ${record?.correct ? whyOthers(cls, item) : ''}
         ${item.slide ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
       return { sage, center };
     }
@@ -193,7 +233,7 @@
         sage.mood = retry.correct ? 'proud' : 'concerned'; sage.actions = cont();
       }
       center = `<div class="cr-lesson">${block?.slide ? projection(cls, block.slide) : ''}
-        <article class="cr-card"><p class="cr-eyebrow">Rescate${mc?.prereq ? ` · repasa: ${esc(mc.prereq.title)}` : ''}</p><p class="cr-q">${md(item.prompt)}</p>${optionsMarkup(cls, s, item, { retry: true })}</article></div>`;
+        <article class="cr-card"><p class="cr-eyebrow">Rescate${mc?.prereq ? ` · repasa: ${esc(mc.prereq.title)}` : ''}</p><p class="cr-q">${md(item.prompt)}</p>${optionsMarkup(cls, s, item, { retry: true })}${retry ? whyOthers(cls, item) : ''}</article></div>`;
       return { sage, center };
     }
     // Cierre
@@ -212,17 +252,34 @@
     return { sage, center };
   }
 
-  function lightbox(cls, s) {
-    if (!s.slideOpen) return '';
-    const numbers = Object.keys({ ...cls.slides, ...cls.slideImages }).map(Number).sort((a, b) => a - b);
-    const n = Number(s.slideOpen), i = numbers.indexOf(n);
-    return `<div class="cr-lightbox" role="dialog" aria-modal="true" aria-label="Diapositivas de la clase">
-      <div class="cr-lightbox-inner"><header><b>Clase de cátedra · ${esc(Object.values(cls.sources)[0]?.author || '')}</b><button class="cr-btn cr-small" data-cr="slides-close">Cerrar ✕</button></header>
-      <div class="cr-lightbox-slide"><p class="cr-eyebrow">Diapositiva ${esc(n)}</p>${slideMarkup(cls, n, { large: true })}</div>
-      <footer><button class="cr-btn" data-cr="slides" data-slide="${numbers[i - 1] ?? ''}" ${i > 0 ? '' : 'disabled'}>◂ Anterior</button>
-        <span>${i + 1} de ${numbers.length}</span>
-        <button class="cr-btn" data-cr="slides" data-slide="${numbers[i + 1] ?? ''}" ${i < numbers.length - 1 ? '' : 'disabled'}>Siguiente ▸</button></footer>
-      ${cls.slideImages && Object.keys(cls.slideImages).length ? '' : '<p class="cr-muted">Mostrando el texto de la diapositiva. Las imágenes originales llegan cuando se pueda descargar el PDF.</p>'}</div></div>`;
+  function panel(cls, s, b) {
+    if (s.slideOpen) {
+      const numbers = Object.keys({ ...cls.slides, ...cls.slideImages }).map(Number).sort((x, y) => x - y);
+      const n = Number(s.slideOpen), i = numbers.indexOf(n);
+      return `<div class="cr-lightbox" role="dialog" aria-modal="true" aria-label="Diapositivas de la clase">
+        <div class="cr-lightbox-inner"><header><b>Clase de cátedra · ${esc(Object.values(cls.sources)[0]?.author || '')}</b><button class="cr-btn cr-small" data-cr="panel-close">Cerrar ✕</button></header>
+        <div class="cr-lightbox-slide"><p class="cr-eyebrow">Diapositiva ${esc(n)}</p>${slideMarkup(cls, n, { large: true })}</div>
+        <footer><button class="cr-btn" data-cr="slides" data-slide="${numbers[i - 1] ?? ''}" ${i > 0 ? '' : 'disabled'}>◂ Anterior</button>
+          <span>${i + 1} de ${numbers.length}</span>
+          <button class="cr-btn" data-cr="slides" data-slide="${numbers[i + 1] ?? ''}" ${i < numbers.length - 1 ? '' : 'disabled'}>Siguiente ▸</button></footer>
+        ${cls.slideImages && Object.keys(cls.slideImages).length ? '' : '<p class="cr-muted">Mostrando el texto de la diapositiva. Las imágenes originales llegan cuando se pueda descargar el PDF.</p>'}</div></div>`;
+    }
+    if (!s.panel) return '';
+    const m = b?.m || cls.missions[0];
+    let title = '', body = '';
+    if (s.panel === 'zero') {
+      title = 'El sabio explica desde cero';
+      body = (m.stages.fundamentals || []).map(f => `<section class="cr-zero"><h3>${esc(f.title.replace(/^Desde cero: /, ''))}</h3>${f.svg ? `<div class="cr-figure">${f.svg}</div>` : ''}<p>${md(f.body)}</p>${f.deeper ? `<p>${md(f.deeper)}</p>` : ''}${f.rows ? `<dl class="cr-rows">${f.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}</section>`).join('');
+    } else if (s.panel === 'glossary') {
+      title = 'Glosario del sabio';
+      body = `<dl class="cr-glossary">${(cls.glossary || []).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
+    } else if (s.panel === 'curio') {
+      const list = cls.curiosities || [], c = list[(s.curio || 0) % Math.max(1, list.length)];
+      title = 'Lo que dicen los frascos';
+      body = c ? `<p class="cr-curio">${esc(c.text)}</p><div class="cr-row"><button class="cr-btn cr-primary" data-cr="curio-next">Otro dato ▸</button>${c.slide ? `<button class="cr-btn" data-cr="slides" data-slide="${c.slide}">Ver diapositiva ${c.slide}</button>` : ''}</div>` : '';
+    }
+    return `<div class="cr-lightbox" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="cr-lightbox-inner cr-panel">
+      <header><b>${esc(title)}</b><button class="cr-btn cr-small" data-cr="panel-close">Cerrar ✕</button></header><div class="cr-panel-body">${body}</div></div></div>`;
   }
 
   function render(id, api) {
@@ -244,6 +301,8 @@
         <div class="cr-thread" role="progressbar" aria-label="Avance de la clase" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
         <button class="cr-btn cr-small cr-ghost" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
       </header>
+      <nav class="cr-objects" aria-label="Objetos de la torre">${[['sage', 'Sabio', 'Desde cero'], ['book', 'Libro', 'Glosario'], ['board', 'Pizarra', 'Diapositivas'], ['window', 'Ventana', 'Hora'], ['flasks', 'Frascos', 'Dato curioso']]
+        .map(([id, name, what]) => `<button class="cr-object" data-cr="spot" data-spot="${id}" aria-label="${esc(SPOT_LABEL[id])}"><b>${name}</b><span>${what}</span></button>`).join('')}</nav>
       <main class="cr-center" aria-live="polite">${center}</main>
       <section class="cr-dialog" data-mood="${esc(sage.mood)}" aria-label="El sabio">
         <button class="cr-mascot" data-cr="mascot" data-mood="${esc(mascotMood)}" aria-label="${hintable ? 'Pedir una pista a tu compañero' : 'Tu compañero'}">
@@ -253,14 +312,14 @@
         ${s.mascotSay ? `<p class="cr-mascot-say"><b>Tu compañero:</b> ${md(s.mascotSay)}</p>` : ''}
         <div class="cr-actions">${sage.actions}</div>
       </section>
-      ${lightbox(cls, s)}
+      ${panel(cls, s, b)}
     </section>`;
     document.body.classList.add('in-classroom');
     api.hydrate();
     const root = api.app.querySelector('.classroom');
     root.addEventListener('click', event => onClick(event, id, api));
-    root.addEventListener('keydown', event => { if (event.key === 'Escape' && s.slideOpen) { s.slideOpen = null; rerender(id, api); } });
-    (root.querySelector('.cr-lightbox [data-cr="slides-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
+    root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
+    (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
   }
 
   function rerender(id, api) { api.saveState(); render(id, api); }
@@ -274,9 +333,25 @@
     const action = button.dataset.cr;
     if (action !== 'mascot') { s.mascotSay = ''; }
 
-    if (action === 'exit') { document.body.classList.remove('in-classroom'); return api.exit(); }
+    if (action === 'exit') { document.body.classList.remove('in-classroom'); window.NexoAmbientTime?.stopPreview?.(); s.slideOpen = null; s.panel = null; return api.exit(); }
+    if (action === 'panel-close') { s.slideOpen = null; s.panel = null; return rerender(id, api); }
+    if (action === 'curio-next') { s.curio = (s.curio || 0) + 1; return rerender(id, api); }
+    if (action === 'deeper') { s.revealed[button.dataset.key] = !s.revealed[button.dataset.key]; return rerender(id, api); }
+    if (action === 'spot') {
+      const spot = button.dataset.spot;
+      if (spot === 'board') { s.slideOpen = String((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1); }
+      else if (spot === 'sage') { s.panel = 'zero'; }
+      else if (spot === 'book') { s.panel = 'glossary'; }
+      else if (spot === 'flasks') { s.panel = 'curio'; s.curio = (s.curio ?? -1) + 1; s.mascotMood = 'happy'; }
+      else if (spot === 'window') {
+        s.hourIdx = ((s.hourIdx ?? -1) + 1) % HOURS.length;
+        window.NexoAmbientTime?.preview?.(HOURS[s.hourIdx]);
+        s.mascotMood = 'happy'; s.mascotSay = ['¡Amaneció en la torre!', 'Mediodía: todo se ve clarito.', 'Qué lindo el atardecer…', 'De noche la torre brilla distinto.'][s.hourIdx];
+        setTimeout(() => { if (document.body.classList.contains('in-classroom')) render(id, api); }, 2300); // los objetos tocables siguen a la pintura que quedó
+      }
+      return rerender(id, api);
+    }
     if (action === 'slides') { if (button.dataset.slide) s.slideOpen = button.dataset.slide; return rerender(id, api); }
-    if (action === 'slides-close') { s.slideOpen = null; return rerender(id, api); }
     if (action === 'path') {
       s.path = button.dataset.path; s.mission = s.mission || cls.missions[0].id; s.beat = 1; s.mascotMood = 'happy';
       api.track?.('class_started', { class_id: id, path: s.path });

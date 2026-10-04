@@ -14,12 +14,12 @@ body.in-classroom .companion-presence { display: none !important; }
 
 /* Escena */
 .cr-scene { position: absolute; inset: 0; z-index: 0; }
-.cr-scene-layer { position: absolute; inset: -3%; background-size: cover; background-position: center 40%; opacity: 0; transition: opacity 2s linear; }
+.cr-scene-layer { position: absolute; inset: 0; background-size: cover; background-position: center 40%; opacity: 0; transition: opacity 2s linear; }
 .cr-scene-layer.is-dawn { opacity: var(--w-dawn, 0); }
 .cr-scene-layer.is-day { opacity: var(--w-day, 1); }
 .cr-scene-layer.is-dusk { opacity: var(--w-dusk, 0); }
 .cr-scene-layer.is-night { opacity: var(--w-night, 0); }
-.cr-scene.is-mini .cr-scene-layer { filter: blur(6px) saturate(1.15); transform: scale(1.05); }
+.cr-scene.is-mini .cr-scene-layer { filter: blur(2.5px) saturate(1.12); }
 .cr-scene-shade { position: absolute; inset: 0;
   background: radial-gradient(ellipse at 50% 35%, transparent 40%, rgb(10 6 4 / .45) 100%), linear-gradient(180deg, rgb(10 6 4 / .25) 0%, transparent 18%, transparent 55%, rgb(10 6 4 / .78) 100%); }
 .cr-motes { position: absolute; inset: 0; pointer-events: none; opacity: .7;
@@ -178,3 +178,46 @@ body[data-nexo-quality="low"] .cr-motes { display: none; }
 
 /* Color sólido de respaldo bajo los degradados del pergamino (legible aunque el degradado no cargue). */
 .cr-card, .cr-parchment, .cr-path { background-color: var(--parch); }
+
+/* La pintura vive en una caja 16:9 que cubre la pantalla, para que los objetos tocables calcen con el arte. */
+.cr-art { position: absolute; left: 50%; top: 50%; width: max(100vw, 177.78vh); height: max(56.25vw, 100vh); transform: translate(-50%, -50%); }
+.cr-spot { position: absolute; z-index: 1; padding: 0; border: 0; border-radius: 40%; background: transparent; cursor: pointer; transition: background .3s, box-shadow .3s; }
+.cr-spot:hover, .cr-spot:focus-visible { background: radial-gradient(ellipse at center, rgb(255 226 160 / .22), transparent 70%); box-shadow: 0 0 40px 10px rgb(255 214 140 / .18); outline: none; }
+.cr-spot:focus-visible { box-shadow: 0 0 0 3px var(--gold), 0 0 40px 10px rgb(255 214 140 / .18); }
+.cr-center { pointer-events: none; }
+.cr-center > * { pointer-events: auto; }
+
+/* Explicaciones */
+.cr-figure { display: grid; place-items: center; margin: 4px 0 12px; color: var(--ink); }
+.cr-svg { width: min(420px, 100%); height: auto; }
+.cr-deeper { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #fff7e3; border-left: 4px solid var(--right); color: var(--ink); line-height: 1.55; }
+.cr-deeper p { margin: 0; }
+.cr-why { margin-top: 14px; padding: 10px 12px; border-radius: 10px; background: rgb(255 250 240 / .75); color: var(--ink); }
+.cr-why summary { cursor: pointer; font-weight: 700; color: var(--gold-deep); }
+.cr-why ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 6px; line-height: 1.45; }
+.cr-why li.is-ok { color: #1f4d35; }
+
+/* Paneles: desde cero, glosario, dato curioso */
+.cr-panel { color: var(--ink); background: radial-gradient(ellipse at 30% 20%, #fbf3df, var(--parch) 60%, #ead9b5); background-color: var(--parch); border-color: var(--parch-edge); }
+.cr-panel header b { font-family: var(--font-title); font-size: 1.3rem; color: var(--ink); }
+.cr-panel-body { display: grid; gap: 14px; }
+.cr-zero { padding: 12px 14px; border-radius: 10px; background: rgb(255 250 240 / .75); }
+.cr-zero h3 { margin: 0 0 6px; font-family: var(--font-title); color: var(--ink); }
+.cr-zero p { margin: 6px 0 0; line-height: 1.55; }
+.cr-glossary { display: grid; gap: 8px; margin: 0; }
+.cr-glossary div { padding: 10px 12px; border-radius: 10px; background: rgb(255 250 240 / .75); }
+.cr-glossary dt { font-weight: 700; color: var(--ink); }
+.cr-glossary dd { margin: 4px 0 0; color: var(--ink-soft); line-height: 1.5; }
+.cr-curio { margin: 0; font-family: var(--font-title); font-size: 1.25rem; line-height: 1.5; color: var(--ink); }
+.cr-row { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* En el celular la pintura no cabe entera (como el refugio): los objetos también están en una fila compacta. */
+.cr-objects { display: none; }
+@media (max-width: 760px) {
+  .classroom { grid-template-rows: auto auto minmax(0, 1fr) auto; }
+  .cr-objects { position: relative; z-index: 2; display: flex; gap: 6px; padding: 0 10px 6px; overflow-x: auto; scrollbar-width: none; }
+  .cr-object { flex: 0 0 auto; display: flex; flex-direction: column; align-items: flex-start; padding: 5px 10px; border-radius: 10px; cursor: pointer;
+    border: 1px solid rgb(232 192 106 / .45); background: rgb(20 14 10 / .72); color: var(--chalk); font: inherit; }
+  .cr-object b { font-size: .8rem; }
+  .cr-object span { font-size: .7rem; color: #e9dcc4; }
+}

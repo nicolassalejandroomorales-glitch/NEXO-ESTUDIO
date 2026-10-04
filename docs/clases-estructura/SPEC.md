@@ -210,6 +210,8 @@ Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, 
 
 - **Torre guiada hecha (4 oct)**: el reproductor se rehízo como torre del alquimista. Sin barra de pasos: la clase es una secuencia de momentos (`beats()` en `player.js`) que el sabio narra en un cuadro de diálogo; una sola cosa a la vez en pergamino; diapositiva proyectada en una pizarra y ampliable (texto real de cátedra mientras faltan las imágenes); mascota en la mesa que da pistas al tocarla; escena con 4 pinturas (amanecer, mediodía, atardecer, noche) fundidas por hora. Fondo provisional: miniaturas de Canva desenfocadas hasta tener la versión HD.
 
+- **Torre interactiva y explicaciones desde cero (4 oct)**: objetos tocables en la pintura como en el refugio (sabio → explica desde cero, libro → glosario, pizarra → diapositivas, ventana → cambia la hora, frascos → datos curiosos de las diapositivas; mascota → pista). En móvil también hay una fila compacta de objetos, porque la pintura no cabe entera. Cada misión parte con 5 bases "desde cero" con dibujos de Lewis, cada bloque tiene "Explícame más simple" y cada pregunta acertada muestra por qué cada alternativa es correcta o no.
+
 ## Pendiente
 
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
