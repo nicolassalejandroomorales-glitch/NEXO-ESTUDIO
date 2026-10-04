@@ -120,6 +120,7 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   (`tools/grimoire-audio/`). Ver `docs/update-01-6-paginas/SPEC.md`.
 - UPDATE 01.7: páginas llenas de dibujos, sonido suave e intro épica una vez por sesión. Ver `docs/update-01-7-grimorio-epico/SPEC.md`.
 - **Clases borradas (4 oct 2026)**: se eliminaron los reproductores y el contenido de las clases (`amine-lesson.*`, `organic-studio.*`, `organic-pep1-3.js`, `organic-biomolecules.js`). Abrir cualquier tema muestra "Disponible próximamente". El catálogo de temas (`organic-manifest.js`, `data.js`) sigue. Siguen sin tocar: ejercicios generados desde el catálogo (`generatedExercises` en `app.js`) y el motor académico de Aminas (`dist/academic/*`); se decide caso a caso al rehacer cada clase.
+- **Clases nuevas (4 oct 2026, hechas en la nube y unidas a master)**: aula inmersiva "torre del alquimista" en `dist/classes/` (`player.js`, `org-01.js`, `tower-art.js`, `classroom.css`), Aminas completo para la PEP 1 (misiones 2 a 8, 63 actividades verificadas), diapositivas reales del PPT y glosario. Crear otra clase: `node tools/new-class.cjs` (guía en `docs/clases-estructura/COMO_CREAR_UNA_CLASE.md`). Prueba: `node tools/classroom-test.cjs`. Reemplaza lo de "Clases borradas" de arriba.
 - Pendiente del producto (lo más importante): **una clase completa que se sienta increíble** (Orgánica II → PEP 1 → Aminas → Basicidad),
   con corrección real y actividades variadas. Ver `docs/contexto/RESUMEN_OBJETIVOS_NEXO.md`.
 - Arreglado: `tools/static-server.cjs` ya declara el MIME de `.svg`.

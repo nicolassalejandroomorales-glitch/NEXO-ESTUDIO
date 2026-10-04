@@ -193,7 +193,37 @@ Cada actividad lleva: tipo, enunciado, respuesta esperada, distractores con su `
 - Mascota → **reacciona y da pistas cuando tú las pides**; usar pista queda registrado y ese intento no cuenta como "sin ayuda".
 - Grabaciones → **sí, transcribir**. Bloqueado por ahora: la red del entorno en la nube rechaza `drive.usercontent.google.com` (bajar el audio) y `huggingface.co` (modelo de voz a texto). Se retoma cuando se permitan esos dominios.
 
+## Avance
+
+- **Paso 1 hecho (4 oct)**: reproductor del aula (`dist/classes/player.js`, `classroom.css`), catálogo (`classes/catalog.js`, va en el arranque) y borrador de la Misión 1 de Aminas (`classes/org-01.js`). Caminos, 7 etapas, rescate con repaso, pistas de la mascota y panel de fuente funcionando. Fondo provisional: la sala de Aprender. Prueba: `tools/classroom-test.cjs`.
+- Se borraron los restos de la clase vieja (lámina del índice y funciones sin uso).
+
+## Rediseño del aula (4 oct, tras revisión de Niquito)
+
+Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, la barra con todos los pasos arriba molesta y quiere que **la app lo guíe sola**. Decisiones:
+
+- **Escena: torre del alquimista** donde aprendes de un **sabio**. Pintura base generada con la IA de imágenes de Canva (permiso dado; diseño propio), y encima, por código, animaciones de velas y frascos, la mascota en la mesa y los diálogos del sabio. Se eligen entre 3 opciones.
+- **Sin barra de pasos.** Se muestra una sola cosa a la vez; el sabio habla en burbujas y avanza la clase. Solo queda un hilo discreto de progreso.
+- **Las fases como escenas:** 1) el reto del sabio (diagnóstico), 2) la lección con la **diapositiva proyectada** en la pizarra o espejo, 3) el experimento en la mesa (ejemplo resuelto con predicción), 4) las pruebas del aprendiz (práctica: frascos que se enturbian si fallas), 5) el rescate (vuelve a la diapositiva que falta), 6) el encargo final (transferencia estilo PEP), 7) cierre con el sabio y la mascota.
+- **Diapositivas reales visibles:** el PDF de cátedra convertido en imágenes, proyectado en la escena y ampliable. Requiere permitir en la red del entorno `drive.usercontent.google.com` (y `drive.google.com`) y compartir el PDF con enlace.
+- Bajar la pintura de Canva en alta resolución requiere permitir `export-download.canva.com` en la red del entorno.
+
+- **Torre guiada hecha (4 oct)**: el reproductor se rehízo como torre del alquimista. Sin barra de pasos: la clase es una secuencia de momentos (`beats()` en `player.js`) que el sabio narra en un cuadro de diálogo; una sola cosa a la vez en pergamino; diapositiva proyectada en una pizarra y ampliable (texto real de cátedra mientras faltan las imágenes); mascota en la mesa que da pistas al tocarla; escena con 4 pinturas (amanecer, mediodía, atardecer, noche) fundidas por hora. Fondo provisional: miniaturas de Canva desenfocadas hasta tener la versión HD.
+
+- **Torre interactiva y explicaciones desde cero (4 oct)**: objetos tocables en la pintura como en el refugio (sabio → explica desde cero, libro → glosario, pizarra → diapositivas, ventana → cambia la hora, frascos → datos curiosos de las diapositivas; mascota → pista). En móvil también hay una fila compacta de objetos, porque la pintura no cabe entera. Cada misión parte con 5 bases "desde cero" con dibujos de Lewis, cada bloque tiene "Explícame más simple" y cada pregunta acertada muestra por qué cada alternativa es correcta o no.
+
+- **Clase completa de Aminas para la PEP 1 (4 oct)**: 8 misiones (el par libre, nombrar, propiedades y sales, basicidad I y II, síntesis, reacciones, espectroscopía) con 63 actividades. Tipos nuevos: ordenar, clasificar en calderos, unir pares y tocar en la molécula. Pinturas HD entregadas por Niquito; el mediodía se crea por script (`tools/classroom-art/build_tower.py`), que también recorta el brillo de cada objeto tocable.
+
+- **Diapositivas reales, sabio entero, glosario en capas y camino al 7 (4 oct)**, tras la segunda revisión de Niquito:
+  - Los PDF de cátedra se bajan con el **conector de Google Drive** (la red bloquea la descarga directa, pero el conector guarda el archivo y se decodifica). Aminas: 50 diapositivas en `dist/assets/classes/org-01/slides/`. Aromáticos I y II quedan en `art-source/pdfs/` (no se suben a Git) para la próxima clase.
+  - El sabio ya no queda tapado: el diálogo parte a la derecha del sabio en escritorio y, en el celular, la pintura se corre para mostrarlo.
+  - Glosario en tres capas: en simple, definición de prueba y "más simple todavía" (analogía), con los términos de la misión en curso primero. Los 53 bloques de explicación tienen "Explícame más simple" (la prueba lo exige).
+  - Avance con porcentaje arriba (de la misión, o de toda la clase en el mapa) y **meta de la clase**: los puntos de la PEP que prepara (Aminas: P3 1 pt, P4 3 pts, P6 2 pts = 6 de 15). Un punto cuenta al acertar sin ayuda la transferencia de las misiones que lo preparan.
+  - Revisión química: la diapositiva 17 dice "1 de cada 1.000.000 queda neutra" (trietilamina + ácido acético). La constante del equilibrio es 10⁶; con cantidades iguales de ácido y amina, la fracción neutra real es cercana a 1 de cada 1.000. La clase usa la frase de la diapositiva y explica que K = 10⁶.
+
 ## Pendiente
 
+- Clase de Aromáticos (9 de 15 puntos de la PEP 1), con sus PDF ya descargados.
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
-- Diseño del aula (boceto antes de pintar).
+- Moléculas dibujadas en las actividades de tocar la molécula.
+- Conectar las respuestas con el motor de evidencia y el repaso espaciado (FSRS).
