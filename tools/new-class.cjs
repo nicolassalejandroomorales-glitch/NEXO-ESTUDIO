@@ -40,7 +40,15 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
     misconceptions: {
       'error-ejemplo': { label: 'REEMPLAZAR: nombre corto del error', why: 'REEMPLAZAR: por qué está mal, en simple.', prereq: { title: 'REEMPLAZAR: qué repasar', mission: 'm1', block: 'b1' } }
     },
-    glossary: [['REEMPLAZAR: término', 'REEMPLAZAR: definición corta']],
+    // Meta: los puntos de la prueba que esta clase prepara (de la pauta). Deben sumar "total" junto con "rest".
+    goal: {
+      total: 15, text: 'REEMPLAZAR: Asegurar los X puntos de ${title} de la ${evaluation}',
+      questions: [{ id: 'P1', label: 'REEMPLAZAR: qué pide la pregunta', points: 15, missions: ['m1'] }],
+      rest: []   // por ejemplo: [{ label: 'Otro tema (P2)', points: 5, note: 'clase en preparación' }]
+    },
+    // Glosario en tres capas: en simple, definición de prueba y "más simple todavía" (una analogía).
+    glossary: [{ term: 'REEMPLAZAR: término', mission: 'm1', def: 'REEMPLAZAR: definición exacta, como en la prueba',
+      simple: 'REEMPLAZAR: lo mismo en palabras simples', simpler: 'REEMPLAZAR: una analogía de la vida diaria' }],
     curiosities: [{ text: 'REEMPLAZAR: dato curioso sacado de las diapositivas.', slide: 1 }],
     slideImages: {},   // se llena solo con tools/classroom-art/slides.py
     slides: { 1: { title: 'REEMPLAZAR: título de la diapositiva 1', bullets: ['REEMPLAZAR: texto de la diapositiva'] } },

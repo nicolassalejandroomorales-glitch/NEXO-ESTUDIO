@@ -214,7 +214,16 @@ Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, 
 
 - **Clase completa de Aminas para la PEP 1 (4 oct)**: 8 misiones (el par libre, nombrar, propiedades y sales, basicidad I y II, síntesis, reacciones, espectroscopía) con 63 actividades. Tipos nuevos: ordenar, clasificar en calderos, unir pares y tocar en la molécula. Pinturas HD entregadas por Niquito; el mediodía se crea por script (`tools/classroom-art/build_tower.py`), que también recorta el brillo de cada objeto tocable.
 
+- **Diapositivas reales, sabio entero, glosario en capas y camino al 7 (4 oct)**, tras la segunda revisión de Niquito:
+  - Los PDF de cátedra se bajan con el **conector de Google Drive** (la red bloquea la descarga directa, pero el conector guarda el archivo y se decodifica). Aminas: 50 diapositivas en `dist/assets/classes/org-01/slides/`. Aromáticos I y II quedan en `art-source/pdfs/` (no se suben a Git) para la próxima clase.
+  - El sabio ya no queda tapado: el diálogo parte a la derecha del sabio en escritorio y, en el celular, la pintura se corre para mostrarlo.
+  - Glosario en tres capas: en simple, definición de prueba y "más simple todavía" (analogía), con los términos de la misión en curso primero. Los 53 bloques de explicación tienen "Explícame más simple" (la prueba lo exige).
+  - Avance con porcentaje arriba (de la misión, o de toda la clase en el mapa) y **meta de la clase**: los puntos de la PEP que prepara (Aminas: P3 1 pt, P4 3 pts, P6 2 pts = 6 de 15). Un punto cuenta al acertar sin ayuda la transferencia de las misiones que lo preparan.
+  - Revisión química: la diapositiva 17 dice "1 de cada 1.000.000 queda neutra" (trietilamina + ácido acético). La constante del equilibrio es 10⁶; con cantidades iguales de ácido y amina, la fracción neutra real es cercana a 1 de cada 1.000. La clase usa la frase de la diapositiva y explica que K = 10⁶.
+
 ## Pendiente
 
+- Clase de Aromáticos (9 de 15 puntos de la PEP 1), con sus PDF ya descargados.
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.
-- Diseño del aula (boceto antes de pintar).
+- Moléculas dibujadas en las actividades de tocar la molécula.
+- Conectar las respuestas con el motor de evidencia y el repaso espaciado (FSRS).

@@ -43,6 +43,34 @@
   }
 
   const missionById = (cls, id) => cls.missions.find(m => m.id === id);
+  const pts = n => (Math.round(n * 10) / 10).toLocaleString('es-CL');
+
+  /* Meta de la clase (cls.goal): cuántos puntos de la prueba ya demostraste. Un punto cuenta cuando aciertas
+     sin ayuda el caso estilo prueba (transferencia) de las misiones que preparan esa pregunta. */
+  function goalOf(cls, s) {
+    const g = cls.goal;
+    if (!g) return null;
+    const qs = g.questions.map(q => {
+      const items = cls.missions.filter(m => q.missions.includes(m.id)).flatMap(m => m.stages.transfer || []);
+      const ok = items.filter(item => s.answers[item.id]?.correct && !s.answers[item.id].hint).length;
+      return { ...q, items, ok, earned: items.length ? q.points * ok / items.length : 0 };
+    });
+    const earned = qs.reduce((sum, q) => sum + q.earned, 0), max = qs.reduce((sum, q) => sum + q.points, 0);
+    const worth = mId => qs.reduce((sum, q) => {
+      const mine = (missionById(cls, mId)?.stages.transfer || []).filter(item => q.items.includes(item)).length;
+      return sum + (q.items.length ? q.points * mine / q.items.length : 0);
+    }, 0);
+    const won = mId => (missionById(cls, mId)?.stages.transfer || []).length
+      ? worth(mId) * (missionById(cls, mId).stages.transfer.filter(item => s.answers[item.id]?.correct && !s.answers[item.id].hint).length / missionById(cls, mId).stages.transfer.length) : 0;
+    return { ...g, qs, earned, max, worth, won };
+  }
+
+  function goalMeter(goal) {
+    const seg = (n, cls, label) => `<span class="cr-goal-seg ${cls}" style="flex:${n}" title="${esc(label)}"></span>`;
+    return `<div class="cr-goal-meter" role="img" aria-label="Llevas ${pts(goal.earned)} de ${goal.total} puntos demostrados">
+      ${goal.earned ? seg(goal.earned, 'is-won', 'Demostrado') : ''}${goal.max - goal.earned > 0 ? seg(goal.max - goal.earned, 'is-open', 'Por demostrar en esta clase') : ''}
+      ${(goal.rest || []).map(r => seg(r.points, 'is-later', r.label)).join('')}</div>`;
+  }
   const allItems = (cls, mId) => cls.missions.filter(m => !mId || m.id === mId)
     .flatMap(m => ['diagnostic', 'practice', 'challenge', 'transfer'].flatMap(stage => (m.stages[stage] || []).map(item => ({ item, stage, mission: m }))));
 
@@ -132,7 +160,7 @@
   function slideMarkup(cls, n, { large = false } = {}) {
     const img = cls.slideImages?.[n];
     const slide = cls.slides?.[n];
-    if (img) return `<img class="cr-slide-img" src="${esc(img)}" alt="Diapositiva ${esc(n)} de la clase de cátedra">`;
+    if (img) return `<img class="cr-slide-img" src="${esc(img)}" alt="Diapositiva ${esc(n)}${slide ? `: ${esc(slide.title)}` : ''}" loading="lazy">${large && slide ? `<details class="cr-slide-notes"><summary>Lo que dice, en texto</summary><ul>${slide.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul></details>` : ''}`;
     if (!slide) return `<div class="cr-slide-text"><p>Diapositiva ${esc(n)}</p></div>`;
     return `<div class="cr-slide-text ${large ? 'is-large' : ''}"><h3>${esc(slide.title)}</h3><ul>${slide.bullets.map(b => `<li>${esc(b)}</li>`).join('')}</ul></div>`;
   }
@@ -264,16 +292,22 @@
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
       center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).map(([id, p]) =>
         `<button class="cr-path" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span><b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
-        <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>`;
+        <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>
+        ${cls.goal ? `<p class="cr-soon cr-goal-line">Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>` : ''}`;
       return { sage, center };
     }
     if (b.kind === 'pick') {
       sage.text = 'Elige una misión. Te recomiendo ir en orden: cada una usa lo que aprendiste en la anterior.';
-      center = `<ol class="cr-mission-map">${cls.missions.map((m, i) => {
+      const goal = goalOf(cls, s);
+      center = `${goal ? `<button class="cr-goal-card" data-cr="goal"><span><b>Tu camino al 7</b><small>${esc(goal.text)}</small></span>
+        <span class="cr-goal-num"><b>${pts(goal.earned)}</b>/${goal.total} pts</span>${goalMeter(goal)}</button>` : ''}
+        <ol class="cr-mission-map">${cls.missions.map((m, i) => {
         const items = allItems(cls, m.id), done = items.filter(({ item }) => s.answers[item.id]).length;
+        const worth = goal ? goal.worth(m.id) : 0;
         return `<li><button class="cr-mission-card ${done === items.length && items.length ? 'is-done' : ''}" data-cr="mission" data-mission="${m.id}">
           <span class="cr-mission-n">${i + 1}</span><span class="cr-mission-txt"><b>${esc(m.title)}</b><small>${esc(m.subtitle)}</small></span>
-          <span class="cr-mission-meta">≈ ${m.minutes} min${m.pep ? ` · ${esc(m.pep)}` : ''}<br>${done}/${items.length} ${done === items.length && items.length ? '✓' : ''}</span></button></li>`;
+          <span class="cr-mission-meta"><span>≈ ${m.minutes} min${m.pep ? ` · ${esc(m.pep)}` : ''}</span><span>${done}/${items.length} respondidas${done === items.length && items.length ? ' ✓' : ''}</span>
+          ${worth ? `<em class="cr-mission-pts">${pts(goal.won(m.id))}/${pts(worth)} pts PEP</em>` : '<em class="cr-mission-pts is-base">base</em>'}</span></button></li>`;
       }).join('')}</ol>`;
       return { sage, center };
     }
@@ -361,6 +395,11 @@
     sage.actions = `${next ? `<button class="cr-btn cr-primary" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
     center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Lo que demostraste</p>
       <dl class="cr-summary"><div><dt>Sin ayuda</dt><dd>${solo}</dd></div><div><dt>Con pista</dt><dd>${withHint}</dd></div><div><dt>Errores corregidos</dt><dd>${fixed}/${wrong.length}</dd></div></dl>
+      ${(() => { const goal = goalOf(cls, s); if (!goal) return '';
+        const here = s.path === 'misiones' ? goal.worth(s.mission) : goal.max, got = s.path === 'misiones' ? goal.won(s.mission) : goal.earned;
+        return `<div class="cr-goal-close"><p class="cr-eyebrow">Camino al 7</p>${goalMeter(goal)}
+          <p>${here ? `${s.path === 'misiones' ? 'Esta misión' : 'Esta clase'} vale <b>${pts(here)} pts</b> de la PEP y demostraste <b>${pts(got)}</b>.` : 'Esta misión es <b>base</b>: no da puntos directos, pero sin ella no se puede responder lo que sí los da.'}
+          En total llevas <b>${pts(goal.earned)} de ${goal.total}</b>.</p><button class="cr-link" data-cr="goal">Ver qué me falta para el 7</button></div>`; })()}
       <p class="cr-note">Todavía no es dominio: cuenta como <b>retenido</b> cuando lo recuerdas sin ayuda 24 horas o más después.</p></div>`;
     return { sage, center };
   }
@@ -385,7 +424,29 @@
       body = (m.stages.fundamentals || []).map(f => `<section class="cr-zero"><h3>${esc(f.title.replace(/^Desde cero: /, ''))}</h3>${f.svg ? `<div class="cr-figure">${f.svg}</div>` : ''}<p>${md(f.body)}</p>${f.deeper ? `<p>${md(f.deeper)}</p>` : ''}${f.rows ? `<dl class="cr-rows">${f.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}</section>`).join('');
     } else if (s.panel === 'glossary') {
       title = 'Glosario del sabio';
-      body = `<dl class="cr-glossary">${(cls.glossary || []).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>`;
+      const entries = (cls.glossary || []).map((g, i) => Array.isArray(g) ? { term: g[0], def: g[1], i } : { ...g, i });
+      const entry = g => {
+        const key = `gl-${g.i}`, open = s.revealed[key];
+        return `<div class="cr-term"><dt>${esc(g.term)}</dt>
+          <dd class="cr-term-simple">${md(g.simple || g.def)}</dd>
+          ${g.simple ? `<dd class="cr-term-def"><span>Definición de prueba</span> ${md(g.def)}</dd>` : ''}
+          ${g.simpler ? `<dd>${open ? `<p class="cr-term-simpler"><span>Más simple todavía</span> ${md(g.simpler)}</p>` : ''}
+            <button class="cr-btn cr-small" data-cr="deeper" data-key="${key}" aria-expanded="${Boolean(open)}">${open ? 'Ocultar' : 'Explícamelo más simple'}</button></dd>` : ''}</div>`;
+      };
+      const mine = entries.filter(g => g.mission && g.mission === b?.m?.id), rest = entries.filter(g => !mine.includes(g));
+      body = `${mine.length ? `<p class="cr-eyebrow">De esta misión</p><dl class="cr-glossary">${mine.map(entry).join('')}</dl><p class="cr-eyebrow">Todo el glosario</p>` : ''}
+        <dl class="cr-glossary">${rest.map(entry).join('')}</dl>`;
+    } else if (s.panel === 'goal') {
+      const goal = goalOf(cls, s);
+      title = 'Tu camino al 7';
+      body = goal ? `<p class="cr-goal-intro">Un <b>7</b> es tener los <b>${goal.total} puntos</b> de la ${esc(cls.evaluation)}. Esta clase te prepara para <b>${goal.max}</b>. Cada punto cuenta cuando lo <b>demuestras</b>: aciertas sin ayuda el caso estilo prueba de las misiones que lo preparan.</p>
+        <div class="cr-goal-big"><b>${pts(goal.earned)}</b><span>de ${goal.total} pts demostrados</span></div>${goalMeter(goal)}
+        <p class="cr-goal-legend"><i class="is-won"></i> demostrado <i class="is-open"></i> por demostrar en ${esc(cls.title)} <i class="is-later"></i> otras clases</p>
+        <ul class="cr-goal-list">${goal.qs.map(q => `<li><div><b>${esc(q.id)} · ${esc(q.label)}</b><span>${pts(q.earned)} / ${pts(q.points)} pts</span></div>
+          <div class="cr-goal-bar"><span style="width:${q.points ? Math.round(q.earned / q.points * 100) : 0}%"></span></div>
+          <div class="cr-row">${q.missions.map(mId => { const m = missionById(cls, mId); return m ? `<button class="cr-btn cr-small" data-cr="mission" data-mission="${m.id}">${esc(m.title)} ▸</button>` : ''; }).join('')}</div></li>`).join('')}
+          ${(goal.rest || []).map(r => `<li class="is-later"><div><b>${esc(r.label)}</b><span>${pts(r.points)} pts · ${esc(r.note || '')}</span></div></li>`).join('')}</ul>
+        <p class="cr-note">Las misiones marcadas como <b>base</b> no dan puntos directos, pero sin ellas no se puede responder lo que sí los da. Y ojo: demostrarlo hoy no es dominarlo. Cuenta como <b>retenido</b> cuando lo repites sin ayuda 24 horas o más después.</p>` : '';
     } else if (s.panel === 'curio') {
       const list = cls.curiosities || [], c = list[(s.curio || 0) % Math.max(1, list.length)];
       title = 'Lo que dicen los frascos';
@@ -405,15 +466,22 @@
     const b = list[s.beat];
     const { sage, center } = moment(cls, api, s, b);
     const hintable = b.kind === 'question' && (b.stage === 'practice' || b.stage === 'challenge') && !s.answers[b.item.id] && !s.hints[b.item.id];
-    const progress = Math.round((s.beat / Math.max(1, list.length - 1)) * 100);
+    let progress = Math.round((s.beat / Math.max(1, list.length - 1)) * 100);
+    const goal = goalOf(cls, s);
+    // En el mapa y la bienvenida, el % es de toda la clase (actividades respondidas); dentro de una misión, de esa misión.
+    if (b.kind === 'pick' || b.kind === 'path') { const all = allItems(cls); progress = Math.round(all.filter(({ item }) => s.answers[item.id]).length / Math.max(1, all.length) * 100); }
+    const where = !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'misiones' && missionById(cls, s.mission)
+      ? `Misión ${cls.missions.findIndex(m => m.id === s.mission) + 1}` : s.path === 'misiones' ? 'la clase' : PATHS[s.path].name;
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
     api.app.innerHTML = `<section class="classroom ${entering ? 'is-entering' : ''}" aria-label="Torre del alquimista: ${esc(cls.title)}">
       ${scene(cls, s, b)}
       <header class="cr-top">
         <button class="cr-btn cr-small cr-ghost" data-cr="exit">← Salir</button>
-        <div class="cr-thread" role="progressbar" aria-label="Avance de la clase" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
-        <button class="cr-btn cr-small cr-ghost" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
+        <div class="cr-progress"><div class="cr-thread" role="progressbar" aria-label="Avance de ${esc(where)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
+          <span class="cr-progress-label">${esc(where)} · <b>${progress} %</b></span></div>
+        ${goal ? `<button class="cr-btn cr-small cr-ghost cr-goal-chip" data-cr="goal" aria-label="Tu camino al 7: ${pts(goal.earned)} de ${goal.total} puntos"><span aria-hidden="true">★</span> <span class="cr-goal-chip-txt">Camino al 7 · </span><b>${pts(goal.earned)}</b>/${goal.total}</button>` : ''}
+        <button class="cr-btn cr-small cr-ghost cr-slides-btn" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
       </header>
       <nav class="cr-objects" aria-label="Objetos de la torre">${[['sage', 'Sabio', 'Desde cero'], ['book', 'Libro', 'Glosario'], ['board', 'Pizarra', 'Diapositivas'], ['window', 'Ventana', 'Hora'], ['flasks', 'Frascos', 'Dato curioso']]
         .map(([id, name, what]) => `<button class="cr-object" data-cr="spot" data-spot="${id}" aria-label="${esc(SPOT_LABEL[id])}"><b>${name}</b><span>${what}</span></button>`).join('')}</nav>
@@ -472,7 +540,8 @@
       api.track?.('class_started', { class_id: id, path: s.path });
       return rerender(id, api);
     }
-    if (action === 'mission') { s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
+    if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
     if (action === 'restart') { s.path = null; s.mission = null; s.beat = 0; s.mascotMood = 'idle'; return rerender(id, api); }
     if (action.startsWith('act-')) return onActivity(action, button, cls, s, b, id, api);
     if (action === 'next') { if (beatDone(s, b)) { s.beat += 1; s.mascotMood = 'idle'; } return rerender(id, api); }

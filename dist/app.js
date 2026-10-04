@@ -918,8 +918,8 @@
     const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
-      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=7'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=7')),
-        window.NexoLoader.script(`./classes/${file}?v=5`)])
+      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=8'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=8')),
+        window.NexoLoader.script(`./classes/${file}?v=6`)])
         .then(() => window.NexoLoader.script(`./classes/slides/${id}.js?v=1`).catch(() => null)) // diapositivas reales, si ya se convirtieron
         .then(() => true);
     });

@@ -51,7 +51,18 @@ for (const [id, file] of Object.entries(catalog)) {
   const lessons = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m1.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {} }).filter(b => b.kind === 'lesson');
   assert.ok(lessons.some(b => b.zero) && lessons.findIndex(b => b.zero) < lessons.findIndex(b => !b.zero), 'Las bases desde cero van antes de la materia');
   for (const blk of [...(m1.stages.fundamentals || []), ...m1.stages.explain]) assert.ok(blk.body && blk.title, `${blk.id}: bloque sin texto`);
-  for (const [term, def] of cls.glossary || []) assert.ok(term && def, 'glosario incompleto');
+  // Siempre hay una forma más simple: cada término y cada bloque de explicación traen su versión simple.
+  for (const g of cls.glossary || []) assert.ok(g.term && g.def && g.simple && g.simpler, `glosario: "${g.term || g[0]}" necesita term, def, simple y simpler`);
+  for (const m of cls.missions) for (const blk of [...(m.stages.fundamentals || []), ...m.stages.explain]) assert.ok(blk.deeper, `${blk.id}: falta "deeper" (Explícame más simple)`);
+  // Meta de la clase: cada pregunta de la prueba apunta a misiones que tienen caso estilo prueba.
+  if (cls.goal) {
+    const sum = cls.goal.questions.reduce((a, q) => a + q.points, 0) + (cls.goal.rest || []).reduce((a, r) => a + r.points, 0);
+    assert.strictEqual(sum, cls.goal.total, `meta: los puntos (${sum}) deben sumar el total de la prueba (${cls.goal.total})`);
+    for (const q of cls.goal.questions) for (const mId of q.missions) {
+      const m = cls.missions.find(x => x.id === mId);
+      assert.ok(m && (m.stages.transfer || []).length, `meta ${q.id}: la misión ${mId} no existe o no tiene transferencia`);
+    }
+  }
   for (const b of m1.stages.explain) if (b.slide) assert.ok(cls.slides?.[b.slide] || cls.slideImages?.[b.slide], `${b.id}: la diapositiva ${b.slide} no tiene texto ni imagen`);
 }
 console.log(`Aula: ${Object.keys(catalog).length} clase(s), ${items} actividades con solución verificada, errores con explicación y repaso; momentos y caminos OK.`);

@@ -31,6 +31,31 @@ Clase (por ejemplo Aminas, PEP 1)
 
 El **rescate** y el **cierre** no se escriben: el aula los arma solos con tus errores.
 
+### La meta de la clase: el camino al 7
+
+Cada clase declara qué puntos de la prueba prepara (`goal`, sacado de la pauta). Un 7 es tener todos los puntos;
+un punto cuenta como **demostrado** cuando aciertas sin ayuda el caso estilo prueba (transferencia) de las misiones que lo preparan.
+
+```js
+goal: {
+  total: 15, text: 'Asegurar los 6 puntos de Aminas de la PEP 1',
+  questions: [{ id: 'P3', label: 'Ordenar por basicidad', points: 1, missions: ['m4', 'm5'] }, …],
+  rest: [{ label: 'Aromáticos (P1, P2 y P5)', points: 9, note: 'clase en preparación' }]   // lo que dan otras clases
+}
+```
+
+Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por misión o **base**) y en el cierre.
+
+### Siempre hay una forma más simple
+
+- Cada bloque de `fundamentals` y `explain` trae `deeper`: la versión paso a paso del botón **Explícame más simple**.
+- Cada término del glosario trae tres capas:
+  ```js
+  { term: 'Par libre', mission: 'm1', def: 'definición exacta, como en la prueba',
+    simple: 'lo mismo en palabras simples', simpler: 'una analogía de la vida diaria' }
+  ```
+  El libro muestra primero los términos de la misión en curso.
+
 ## Tipos de actividad
 
 | Tipo | Qué hace el estudiante | Cuándo usarlo |
@@ -49,11 +74,11 @@ El **rescate** y el **cierre** no se escriben: el aula los arma solos con tus er
    ```
 2. **Juntar el material:** diapositivas de cátedra (Drive › 2S QYF 2026), la pauta de la prueba anterior y tus apuntes.
 3. **Escribir el contenido:** reemplaza cada `REEMPLAZAR`. Una misión por grupo de diapositivas. Los ejercicios de transferencia deben copiar el formato de la prueba real.
-4. **Diapositivas reales** (si tienes el PDF):
+4. **Diapositivas reales**: Claude baja el PDF de cátedra desde tu Drive (conector de Google Drive) a `art-source/pdfs/` (no se sube a Git) y lo convierte:
    ```
    python3 tools/classroom-art/slides.py RUTA/AL/ARCHIVO.pdf org-04
    ```
-5. **Revisar:** `node tools/classroom-test.cjs` comprueba que cada actividad tenga una sola respuesta correcta, que cada error tenga su explicación y su repaso, y que los caminos funcionen.
+5. **Revisar:** `node tools/classroom-test.cjs` comprueba que cada actividad tenga una sola respuesta correcta, que cada error tenga su explicación y su repaso, que todo tenga su versión más simple, que la meta sume el total de la prueba y que los caminos funcionen.
 6. **Publicar en el grimorio:**
    ```
    node tools/new-class.cjs org-04 "Aromáticos" "PEP 1" --catalogo   (o agrega la línea a mano en catalog.js)
