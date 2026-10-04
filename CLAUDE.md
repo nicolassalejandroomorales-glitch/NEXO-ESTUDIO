@@ -102,6 +102,8 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
 
 - No tocar Supabase, SQL, migraciones, OAuth ni nada de cloud. No publicar en el Site.
 - Excepción autorizada (3 oct 2026): **clima real con Open-Meteo** (sin clave, ubicación fija Santiago, máx. cada 30 min, sin red = despejado). Ver `docs/mascota/SPEC.md`. Ningún otro servicio externo sin permiso.
+- **No generar imágenes con Canva** (ni otra IA de imágenes) sin que Niquito lo pida en ese momento (4 oct 2026: se agotó el crédito y no quiere más).
+  Los conceptos ya generados de las mascotas están en `docs/mascota/conceptos/`.
 - No borrar archivos del usuario. No reescribir la app desde cero.
 - No copiar arte de otros artistas ni objetos o personajes de series conocidas (por ejemplo, el báculo de Rudeus de Mushoku Tensei): solo diseños propios.
 
@@ -122,8 +124,9 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   con corrección real y actividades variadas. Ver `docs/contexto/RESUMEN_OBJETIVOS_NEXO.md`.
 - Arreglado: `tools/static-server.cjs` ya declara el MIME de `.svg`.
 - **Mascota** (4 oct 2026, chat propio, `docs/mascota/SPEC.md`): se borraron cerdito/gato/perro, cosméticos, tienda vieja y Rive; átomos a cero una vez.
-  Vienen **3 mascotas nuevas: velociraptor, capibara y zorro**, estilo **tierno de cuento**, dibujadas en **SVG por partes y animadas por código (GSAP)**,
-  no con Rive. Tienda y Mascota muestran "Disponible próximamente".
+  Vienen **3 mascotas nuevas: velociraptor, capibara y zorro**, estilo **tierno de cuento**, hechas en **Rive** con la **Rive CLI oficial**
+  (instalada en `%USERPROFILE%\.rive\bin\rive.exe`, v1.3.0; RML = texto que compila a `.riv`). Un generador en `tools/` escribe el RML.
+  **Sin scripts Luau** (los `.riv` con scripts necesitan firma/cuenta; sin scripts funcionan local). Tienda y Mascota muestran "Disponible próximamente".
 - **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. SPEC borrador en `docs/juegos/SPEC.md` (esperando decisiones de Niquito). Principio: los juegos deben alimentar
   el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
 - **Campaña "Camino a la PEP 1"** (4 oct 2026): `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`; `?todo=1` abre todos los jefes).
