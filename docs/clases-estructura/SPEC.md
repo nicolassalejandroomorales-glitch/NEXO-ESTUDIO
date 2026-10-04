@@ -208,6 +208,8 @@ Niquito revisó el paso 1 y no le gustó: faltaba un fondo inmersivo de verdad, 
 - **Diapositivas reales visibles:** el PDF de cátedra convertido en imágenes, proyectado en la escena y ampliable. Requiere permitir en la red del entorno `drive.usercontent.google.com` (y `drive.google.com`) y compartir el PDF con enlace.
 - Bajar la pintura de Canva en alta resolución requiere permitir `export-download.canva.com` en la red del entorno.
 
+- **Torre guiada hecha (4 oct)**: el reproductor se rehízo como torre del alquimista. Sin barra de pasos: la clase es una secuencia de momentos (`beats()` en `player.js`) que el sabio narra en un cuadro de diálogo; una sola cosa a la vez en pergamino; diapositiva proyectada en una pizarra y ampliable (texto real de cátedra mientras faltan las imágenes); mascota en la mesa que da pistas al tocarla; escena con 4 pinturas (amanecer, mediodía, atardecer, noche) fundidas por hora. Fondo provisional: miniaturas de Canva desenfocadas hasta tener la versión HD.
+
 ## Pendiente
 
 - Habilitar los dominios para transcribir, o transcribir fuera de la nube.

@@ -27,10 +27,18 @@ for (const [id, file] of Object.entries(catalog)) {
     }
     assert.ok(blocks.size, `${m.id}: sin explicación`);
   }
-  const plan = s => context.window.NexoClassroom.plan(cls, { skipExplain: {}, ...s }).map(st => st.stage).join(',');
-  assert.equal(plan({ path: 'misiones', mission: cls.missions[0].id }), 'diagnostic,explain,worked,practice,rescue,transfer,close');
-  assert.ok(plan({ path: 'expedicion' }).endsWith('close') && plan({ path: 'expedicion' }).includes('challenge') === cls.missions.some(m => (m.stages.challenge || []).length));
-  assert.ok(plan({ path: 'prueba' }).startsWith('diagnostic') && !plan({ path: 'prueba' }).includes('explain'), 'Prueba encima no debe pasar por Explicar');
-  assert.equal(plan({ path: 'misiones', mission: cls.missions[0].id, skipExplain: { [cls.missions[0].id]: true } }), 'diagnostic,practice,rescue,transfer,close');
+  const kinds = st => context.window.NexoClassroom.beats(cls, { answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, ...st }).map(b => b.kind);
+  const m1 = cls.missions[0];
+  const mis = kinds({ path: 'misiones', mission: m1.id });
+  assert.equal(mis[0], 'path'); assert.equal(mis.at(-1), 'close');
+  assert.ok(mis.includes('lesson') && mis.includes('step') && mis.includes('question'), 'Misiones debe tener lección, experimento y preguntas');
+  assert.ok(!mis.includes('rescue'), 'Sin errores no hay rescate');
+  const wrongId = m1.stages.diagnostic[0].id, wrongChoice = m1.stages.diagnostic[0].options.findIndex(o => !o.correct);
+  assert.ok(kinds({ path: 'misiones', mission: m1.id, answers: { [wrongId]: { choice: wrongChoice, correct: false } } }).includes('rescue'), 'Un error debe abrir el rescate');
+  const allRight = Object.fromEntries(m1.stages.diagnostic.map(i => [i.id, { choice: i.options.findIndex(o => o.correct), correct: true }]));
+  assert.ok(kinds({ path: 'misiones', mission: m1.id, answers: allRight }).includes('offer'), 'Diagnóstico perfecto ofrece saltar la lección');
+  assert.ok(!kinds({ path: 'misiones', mission: m1.id, answers: allRight, skipExplain: { [m1.id]: true } }).includes('lesson'), 'Saltar la lección la quita');
+  assert.ok(!kinds({ path: 'prueba' }).includes('lesson'), 'Prueba encima no pasa por la lección');
+  for (const b of m1.stages.explain) if (b.slide) assert.ok(cls.slides?.[b.slide] || cls.slideImages?.[b.slide], `${b.id}: la diapositiva ${b.slide} no tiene texto ni imagen`);
 }
-console.log(`Aula: ${Object.keys(catalog).length} clase(s), ${items} preguntas con una correcta, errores con explicación y repaso; caminos OK.`);
+console.log(`Aula: ${Object.keys(catalog).length} clase(s), ${items} preguntas con una correcta, errores con explicación y repaso; momentos y caminos OK.`);

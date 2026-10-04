@@ -60,6 +60,16 @@
       [SRC]: { title: 'Clase de cátedra · Aminas', author: 'Dr. Javier Echeverría', detail: 'Química Orgánica II, USACH, 2025-2S', authority: 'Material oficial del curso' }
     },
     misconceptions,
+    /* Texto de las diapositivas de cátedra que usa la clase (se proyecta mientras no estén las imágenes).
+       Cuando existan, las imágenes van en assets/classes/org-01/slides/NN.webp y se listan en slideImages. */
+    slideImages: {},
+    slides: {
+      2: { title: 'Aminas · Introducción', bullets: ['Aminas son derivados orgánicos del amoníaco donde uno de los H unidos al N es reemplazado por uno o más grupos alquilo o arilo (R).', 'Clasificación: primarias, secundarias o terciarias, dependiendo del número de grupos unidos al N.'] },
+      5: { title: 'Aminas · Reactividad', bullets: ['El N de una amina posee un par electrónico solitario o libre: una región de alta densidad de electrones (mapa de potencial electrostático de la trimetilamina).', 'El par solitario es responsable de la mayoría de las reacciones de las aminas.', 'El par electrónico libre puede funcionar como una base o como un nucleófilo.'] },
+      11: { title: 'Aminas · Geometría', bullets: ['El N de una amina se hibrida típicamente sp³ y el par solitario ocupa un orbital sp³.', 'El N exhibe geometría piramidal trigonal, con ángulos de enlace de unos 108°.', 'Aminas con tres grupos alquilo diferentes son quirales.', 'La inversión piramidal ocurre con bastante rapidez y produce una mezcla racémica de enantiómeros.'] },
+      12: { title: 'Aminas · Solubilidad y puntos de ebullición', bullets: ['El punto de ebullición aumenta cuando aumenta la capacidad de formar enlaces de H.', 'Las aminas primarias tienen típicamente puntos de ebullición más altos; las terciarias, más bajos.'] },
+      16: { title: 'Aminas · Sales', bullets: ['Medicamentos y aminas bioactivas se almacenan y usan principalmente como sus sales.', 'Las sales de amina son menos propensas a la oxidación y son solubles en agua.', 'La sal de clorhidrato es preferible para compuestos de medicamentos.'] }
+    },
     missions: [
       {
         id: 'm1',
