@@ -1,0 +1,205 @@
+/* Mascotas alquímicas (prototipo de diseño, docs/mascota/SPEC.md · Fase 4): matraz, átomo y slime.
+   Cada SVG trae sus partes con clase (m-root, m-body, m-face, m-eye, m-liquid, m-bubbles, m-foot-l/r…) para animarlas con CSS.
+   Detalle: volumen con luz (luz/medio/sombra + reflejo cálido de la ventana), materiales, detalles con historia y sombra de contacto. */
+(() => {
+  'use strict';
+  const INK = '#3b2418';
+  let n = 0;
+  const S = (w, c = INK) => `stroke="${c}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;
+  const defsCommon = id => `
+    <filter id="${id}b1" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.4"/></filter>
+    <filter id="${id}b3" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+    <filter id="${id}b8" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>
+    <filter id="${id}grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="1.2" numOctaves="2" seed="7" result="t"/>
+      <feColorMatrix in="t" type="matrix" values="0 0 0 0 .3  0 0 0 0 .2  0 0 0 0 .12  0 0 0 .2 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+    <filter id="${id}ink" x="-10%" y="-10%" width="120%" height="120%"><feMorphology in="SourceAlpha" operator="dilate" radius="2.4" result="d"/>
+      <feFlood flood-color="${INK}"/><feComposite in2="d" operator="in" result="o"/><feMerge><feMergeNode in="o"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="${id}iris" cx=".45" cy=".3" r=".75"><stop offset="0" stop-color="#6b4a32"/><stop offset=".55" stop-color="#24150c"/><stop offset="1" stop-color="#0c0704"/></radialGradient>
+    <radialGradient id="${id}bub" cx=".33" cy=".28" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".3" stop-color="#fff" stop-opacity=".22"/><stop offset=".85" stop-color="#fff" stop-opacity=".06"/><stop offset="1" stop-color="#fff" stop-opacity=".5"/></radialGradient>`;
+  const sparkle = (x, y, s, col = '#fff3c8', op = 1, cls = '') => `<path class="${cls}" d="M${x} ${y - s} Q${x + s * .15} ${y - s * .15} ${x + s} ${y} Q${x + s * .15} ${y + s * .15} ${x} ${y + s} Q${x - s * .15} ${y + s * .15} ${x - s} ${y} Q${x - s * .15} ${y - s * .15} ${x} ${y - s} Z" fill="${col}" opacity="${op}"/>`;
+  const bubble = (id, x, y, r, blur) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}bub)" stroke="#fff" stroke-opacity=".6" stroke-width="1.1"${blur ? ` filter="url(#${id}b1)"` : ''}/>`;
+
+  // Cara: ojos de varias capas (iris con degradado, reflejo de la ventana, dos brillos, párpado) + mejillas difuminadas + boca.
+  function face(id, x, y, gap, r, { mouth = 'smile', blush = '#f48f86', tongue = '#e0675c' } = {}) {
+    const eye = ex => `<g class="m-eye" style="transform-origin:${ex}px ${y}px">` +
+      `<ellipse cx="${ex}" cy="${y}" rx="${r * .82}" ry="${r}" fill="url(#${id}iris)" ${S(1.6, '#1a0f08')}/>` +
+      `<path d="M${ex - r * .55} ${y + r * .35} C${ex - r * .3} ${y + r * .85} ${ex + r * .35} ${y + r * .85} ${ex + r * .6} ${y + r * .3}" fill="none" stroke="#a07850" stroke-width="${r * .22}" stroke-linecap="round" opacity=".5"/>` +
+      `<rect x="${ex + r * .05}" y="${y - r * .72}" width="${r * .5}" height="${r * .55}" rx="${r * .12}" fill="#fff" opacity=".95" transform="rotate(12 ${ex + r * .3} ${y - r * .45})"/>` +
+      `<circle cx="${ex - r * .3}" cy="${y + r * .38}" r="${r * .13}" fill="#fff" opacity=".9"/>` +
+      `<path d="M${ex - r * .9} ${y - r * .55} C${ex - r * .45} ${y - r * 1.18} ${ex + r * .45} ${y - r * 1.18} ${ex + r * .9} ${y - r * .55}" fill="none" ${S(2.1)}/></g>`;
+    const m = mouth === 'open'
+      ? `<path d="M${x - r * .62} ${y + r * .95} C${x - r * .48} ${y + r * 1.9} ${x + r * .48} ${y + r * 1.9} ${x + r * .62} ${y + r * .95} C${x + r * .2} ${y + r * 1.1} ${x - r * .2} ${y + r * 1.1} ${x - r * .62} ${y + r * .95} Z" fill="#6e211c" ${S(2.2)}/>` +
+        `<ellipse cx="${x}" cy="${y + r * 1.55}" rx="${r * .34}" ry="${r * .17}" fill="${tongue}"/>`
+      : `<path d="M${x - r * .55} ${y + r * 1.0} C${x - r * .25} ${y + r * 1.5} ${x + r * .25} ${y + r * 1.5} ${x + r * .55} ${y + r * 1.0}" fill="none" ${S(2.6)}/>`;
+    return `<g class="m-face"><g filter="url(#${id}b1)"><ellipse cx="${x - gap - r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/>` +
+      `<ellipse cx="${x + gap + r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/></g>` +
+      `<path d="M${x - gap - r * 1.3} ${y + r * 1.2} l2 -3 M${x - gap - r * .9} ${y + r * 1.25} l2 -3 M${x + gap + r * .7} ${y + r * 1.25} l2 -3 M${x + gap + r * 1.1} ${y + r * 1.2} l2 -3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>` +
+      eye(x - gap) + eye(x + gap) + m + '</g>';
+  }
+
+  // ——— MATRAZ ———
+  function matraz() {
+    const id = 'mz' + (++n) + '_';
+    const G = 'M128 76 L172 76 L172 114 C200 152 232 210 236 238 C240 262 226 274 204 274 L96 274 C74 274 60 262 64 238 C68 210 100 152 128 114 Z';
+    const marks = [150, 172, 194, 216, 238].map((y, k) => `<path d="M${196 + (y - 150) * .32} ${y} l-10 0" stroke="#fff" stroke-width="1.6" opacity=".7"/>` +
+      (k % 2 ? '' : `<text x="${174 + (y - 150) * .32}" y="${y + 3}" font-size="7" font-family="Georgia" fill="#fff" opacity=".7">${250 - k * 50}</text>`)).join('');
+    return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" class="m-svg m-matraz"><defs>${defsCommon(id)}
+      <clipPath id="${id}c"><path d="${G}"/></clipPath>
+      <linearGradient id="${id}glass" x1="0" x2="1"><stop offset="0" stop-color="#7fa9a7" stop-opacity=".95"/><stop offset=".16" stop-color="#e9f6f4" stop-opacity=".8"/><stop offset=".5" stop-color="#fff" stop-opacity=".55"/><stop offset=".84" stop-color="#b9d6d4" stop-opacity=".8"/><stop offset="1" stop-color="#6f9897" stop-opacity=".95"/></linearGradient>
+      <linearGradient id="${id}liq" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#86e6bd"/><stop offset=".3" stop-color="#45b688"/><stop offset=".75" stop-color="#25805f"/><stop offset="1" stop-color="#174f3c"/></linearGradient>
+      <radialGradient id="${id}glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#e2fff1" stop-opacity=".9"/><stop offset="1" stop-color="#e2fff1" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}cork" x1="0" x2="1"><stop offset="0" stop-color="#7d4f2e"/><stop offset=".35" stop-color="#cf9b6a"/><stop offset=".7" stop-color="#b07b4e"/><stop offset="1" stop-color="#5f3a22"/></linearGradient>
+      <linearGradient id="${id}wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b07e52"/><stop offset="1" stop-color="#6a4229"/></linearGradient></defs>
+      <g class="m-shadow"><ellipse cx="150" cy="287" rx="92" ry="11" fill="#5fe0a8" opacity=".32" filter="url(#${id}b3)"/><ellipse cx="132" cy="288" rx="20" ry="3" fill="#d9ffe9" opacity=".5" filter="url(#${id}b1)"/>
+        <ellipse cx="150" cy="284" rx="66" ry="6" fill="#140a05" opacity=".5" filter="url(#${id}b1)"/></g>
+      <g class="m-root" style="transform-origin:150px 284px">
+        <g class="m-foot-l" style="transform-origin:116px 276px"><ellipse cx="116" cy="277" rx="16" ry="8.5" fill="url(#${id}wood)" ${S(3)}/><ellipse cx="111" cy="273.5" rx="7" ry="2.6" fill="#d7a878" opacity=".8"/></g>
+        <g class="m-foot-r" style="transform-origin:184px 276px"><ellipse cx="184" cy="277" rx="16" ry="8.5" fill="url(#${id}wood)" ${S(3)}/><ellipse cx="179" cy="273.5" rx="7" ry="2.6" fill="#d7a878" opacity=".8"/></g>
+        <g class="m-body" style="transform-origin:150px 274px">
+          <path d="${G}" fill="#eef7f5" opacity=".75"/><path d="${G}" fill="url(#${id}glass)"/>
+          <g clip-path="url(#${id}c)">
+            <g class="m-liquid" style="transform-origin:150px 200px">
+              <path d="M30 196 C70 188 110 204 150 196 C190 188 230 204 270 196 L270 310 L30 310 Z" fill="url(#${id}liq)"/>
+              <ellipse cx="150" cy="246" rx="74" ry="36" fill="url(#${id}glow)"/>
+              <path d="M110 250 C130 226 168 238 160 256 C154 268 128 266 132 250" fill="none" stroke="#c9ffe6" stroke-width="3" opacity=".35"/>
+              <path d="M30 196 C70 188 110 204 150 196 C190 188 230 204 270 196 L270 205 C230 213 190 197 150 205 C110 213 70 197 30 205 Z" fill="#b5f3d7"/>
+              <path d="M84 199 C104 196 118 200 132 199" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".75"/>
+            </g>
+            <g class="m-bubbles">${bubble(id, 116, 240, 7)}${bubble(id, 178, 254, 5)}${bubble(id, 150, 224, 3.5)}${bubble(id, 198, 232, 3)}${bubble(id, 100, 258, 2.6, 1)}${bubble(id, 164, 214, 2.2)}${bubble(id, 136, 262, 4, 1)}
+              ${sparkle(130, 256, 3.2, '#efffF6', .9)}${sparkle(188, 216, 2.4, '#efffF6', .8)}<circle cx="170" cy="236" r="1.4" fill="#fff" opacity=".9"/><circle cx="122" cy="226" r="1.1" fill="#fff" opacity=".8"/></g>
+            <path d="${G}" fill="none" stroke="#0f3a2c" stroke-width="10" opacity=".25"/>
+            <path d="${G}" fill="none" stroke="#fff" stroke-width="7" opacity=".2" transform="translate(2 1)"/>
+            <ellipse cx="150" cy="271" rx="80" ry="9" fill="#fff" opacity=".24"/>
+            <path d="M204 194 C218 214 226 234 228 252" stroke="#ffd28a" stroke-width="7" stroke-linecap="round" opacity=".55" filter="url(#${id}b1)"/>
+            <rect width="300" height="300" filter="url(#${id}grain)" opacity=".55"/>
+          </g>
+          ${marks}
+          <g opacity=".85">${[[112, 150, 2.4], [106, 166, 1.6], [186, 142, 2], [192, 160, 1.4], [120, 134, 1.3]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" opacity=".35" ${S(.8, '#cfe6e4')}/><circle cx="${x - r * .3}" cy="${y - r * .35}" r="${r * .35}" fill="#fff"/>`).join('')}</g>
+          <path d="M98 160 C86 182 80 206 82 228" fill="none" stroke="#fff" stroke-width="8.5" stroke-linecap="round" opacity=".88"/>
+          <path d="M104 184 C101 192 99 200 99 208" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+          <path d="M136 84 L136 110" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".75"/>
+          <path d="${G}" fill="none" ${S(3.8)}/>
+          <rect x="122" y="70" width="56" height="10" rx="5" fill="#e3f1f0" fill-opacity=".85" ${S(3)}/><path d="M128 73 L150 73" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          <g class="m-cork" style="transform-origin:150px 76px">
+            <path d="M121 50 L124 78 C124 83 176 83 176 78 L179 50 Z" fill="url(#${id}cork)" ${S(3)}/>
+            <ellipse cx="150" cy="50" rx="29" ry="6.5" fill="#ddb07f" ${S(3)}/><ellipse cx="146" cy="49" rx="20" ry="2.8" fill="none" stroke="#b98a5c" stroke-width="1.4"/>
+            <path d="M130 58 L131 76 M158 57 L159 78 M168 59 L168 72" stroke="#6e4428" stroke-width="1.3" opacity=".7"/>
+            <circle cx="140" cy="64" r="1.6" fill="#6e4428" opacity=".6"/><circle cx="164" cy="66" r="1.3" fill="#6e4428" opacity=".6"/>
+            <g class="m-slot" data-slot="cabeza" data-scale="1" transform="translate(150 46) scale(1)"></g>
+          </g>
+          <path d="M126 101 C140 108 160 108 174 101" fill="none" stroke="#dcc28c" stroke-width="4.5"/><path d="M126 101 C140 108 160 108 174 101" fill="none" stroke="#9a7a46" stroke-width="4.5" stroke-dasharray="2 4"/>
+          <g class="m-tag" style="transform-origin:172px 103px">
+            <path d="M172 103 C180 110 184 118 186 126" fill="none" stroke="#c9ad74" stroke-width="2"/>
+            <g transform="rotate(14 178 124)"><path d="M178 124 L208 124 L214 134 L208 144 L178 144 Z" fill="#f2e2bd" ${S(2)}/><path d="M178 140 L208 140" stroke="#dcc79c" stroke-width="2"/>
+              <circle cx="208" cy="134" r="2.2" fill="#8a6a3a"/><g transform="translate(191 133)" fill="none" stroke="#7a3b22" stroke-width="1.6" stroke-linecap="round"><circle r="4"/><path d="M0 4 L0 9 M-3 7 L3 7 M-4 -7 C-3 -4 3 -4 4 -7"/></g></g>
+          </g>
+          ${face(id, 150, 152, 20, 11.5)}
+          <g class="m-slot" data-slot="cara" data-scale="1" transform="translate(150 150) scale(1)"></g><g class="m-slot" data-slot="cuello" data-scale="0.9" transform="translate(150 104) scale(0.9)"></g><g class="m-slot" data-slot="mano" data-scale="1" transform="translate(236 236) scale(1)"></g>
+        </g>
+        ${sparkle(228, 76, 9, '#fff2c4', 1, 'm-twinkle')}${sparkle(74, 104, 5, '#fff2c4', .85, 'm-twinkle')}
+      </g></svg>`;
+  }
+
+  // ——— ÁTOMO ———
+  function atomo() {
+    const id = 'at' + (++n) + '_';
+    // Núcleo: racimo de protones (cálidos) y neutrones (fríos); la carita va en el más grande, al frente.
+    const balls = [[118, 128, 24, 'p'], [180, 126, 24, 'n'], [112, 172, 23, 'n'], [186, 170, 23, 'p'], [150, 104, 24, 'p'], [150, 192, 23, 'n'], [150, 148, 44, 'p']];
+    const ball = ([x, y, r, t]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#${id}${t})"/>`;
+    const orbit = (rot, k) => {
+      const path = `M32 150 A118 40 0 1 0 268 150 A118 40 0 1 0 32 150`;
+      return `<g transform="rotate(${rot} 150 150)">
+        <ellipse cx="150" cy="150" rx="118" ry="40" fill="none" stroke="#7fd2ff" stroke-width="7" opacity=".28" filter="url(#${id}b3)"/>
+        <ellipse cx="150" cy="150" rx="118" ry="40" fill="none" ${S(3.2)}/>
+        <ellipse cx="150" cy="150" rx="118" ry="40" fill="none" stroke="#d6f2ff" stroke-width="2"/>
+        <g class="m-electron"><circle r="14" fill="#7fd2ff" opacity=".45" filter="url(#${id}b3)"/><circle r="8.5" fill="url(#${id}e)" ${S(2.6)}/><circle cx="-2.6" cy="-2.8" r="2.6" fill="#fff"/>
+          <animateMotion dur="${3.2 + k * .7}s" repeatCount="indefinite" begin="${-k * 1.1}s" path="${path}"/></g></g>`;
+    };
+    return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" class="m-svg m-atomo"><defs>${defsCommon(id)}
+      <radialGradient id="${id}p" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#ffd2a8"/><stop offset=".55" stop-color="#f28a52"/><stop offset="1" stop-color="#b94f2c"/></radialGradient>
+      <radialGradient id="${id}n" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#e2ecff"/><stop offset=".55" stop-color="#8fa9d8"/><stop offset="1" stop-color="#4f6699"/></radialGradient>
+      <radialGradient id="${id}e" cx=".35" cy=".3" r=".75"><stop offset="0" stop-color="#ffffff"/><stop offset=".45" stop-color="#8ee0ff"/><stop offset="1" stop-color="#2f8fd1"/></radialGradient>
+      <radialGradient id="${id}aura" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffd8a0" stop-opacity=".55"/><stop offset="1" stop-color="#ffd8a0" stop-opacity="0"/></radialGradient></defs>
+      <g class="m-shadow"><ellipse cx="150" cy="286" rx="52" ry="7" fill="#140a05" opacity=".35" filter="url(#${id}b3)"/></g>
+      <g class="m-root" style="transform-origin:150px 150px">
+        <circle cx="150" cy="150" r="96" fill="url(#${id}aura)"/>
+        <g class="m-orbits">${orbit(30, 0)}${orbit(-30, 1)}</g>
+        <g class="m-body" style="transform-origin:150px 150px">
+          <g filter="url(#${id}ink)">${balls.map(ball).join('')}</g>
+          ${balls.slice(0, 6).map(([x, y, r]) => `<ellipse cx="${x - r * .32}" cy="${y - r * .38}" rx="${r * .32}" ry="${r * .2}" fill="#fff" opacity=".55"/>`).join('')}
+          <path d="M120 120 C126 110 138 104 150 104" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" opacity=".55"/>
+          <circle cx="150" cy="148" r="44" fill="none" stroke="#8a3b20" stroke-width="2" opacity=".35"/>
+          <text x="186" y="112" font-family="Georgia" font-size="13" font-weight="bold" fill="#fff" opacity=".9">+</text><text x="106" y="182" font-family="Georgia" font-size="13" fill="#fff" opacity=".7">·</text>
+          ${face(id, 150, 146, 17, 10.5, { blush: '#ff8f7a' })}
+          <g class="m-slot" data-slot="cabeza" data-scale="1.05" transform="translate(150 92) scale(1.05)"></g><g class="m-slot" data-slot="cara" data-scale="0.9" transform="translate(150 144) scale(0.9)"></g><g class="m-slot" data-slot="cuello" data-scale="0.9" transform="translate(150 196) scale(0.9)"></g><g class="m-slot" data-slot="mano" data-scale="1" transform="translate(212 196) scale(1)"></g>
+        </g>
+        <g class="m-orbits">${orbit(90, 2)}</g>
+        ${sparkle(250, 70, 8, '#fff2c4', 1, 'm-twinkle')}${sparkle(52, 230, 5, '#cfefff', .9, 'm-twinkle')}${sparkle(246, 232, 4, '#fff2c4', .8, 'm-twinkle')}
+      </g></svg>`;
+  }
+
+  // ——— SLIME ———
+  function slime() {
+    const id = 'sl' + (++n) + '_';
+    const B = 'M150 96 C196 96 226 134 234 180 C240 214 250 238 262 254 C266 264 256 272 244 268 C234 264 228 270 222 276 L78 276 C64 276 50 268 52 254 C56 236 64 214 68 180 C76 134 104 96 150 96 Z';
+    return `<svg viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg" class="m-svg m-slime"><defs>${defsCommon(id)}
+      <clipPath id="${id}c"><path d="${B}"/></clipPath>
+      <radialGradient id="${id}g" cx=".4" cy=".3" r=".85"><stop offset="0" stop-color="#d4ffb0"/><stop offset=".35" stop-color="#97e06a"/><stop offset=".8" stop-color="#4ea53e"/><stop offset="1" stop-color="#2f7a2c"/></radialGradient>
+      <radialGradient id="${id}core" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#f2ffd9" stop-opacity=".8"/><stop offset="1" stop-color="#f2ffd9" stop-opacity="0"/></radialGradient>
+      <linearGradient id="${id}glass" x1="0" x2="1"><stop offset="0" stop-color="#9fbfbd" stop-opacity=".95"/><stop offset=".3" stop-color="#f1faf9" stop-opacity=".9"/><stop offset="1" stop-color="#8fb2b0" stop-opacity=".95"/></linearGradient>
+      <linearGradient id="${id}pot" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffb3d1"/><stop offset="1" stop-color="#d9478a"/></linearGradient>
+      <linearGradient id="${id}cork" x1="0" x2="1"><stop offset="0" stop-color="#7d4f2e"/><stop offset=".4" stop-color="#cf9b6a"/><stop offset="1" stop-color="#5f3a22"/></linearGradient></defs>
+      <g class="m-shadow"><ellipse cx="150" cy="284" rx="104" ry="11" fill="#7ee05a" opacity=".3" filter="url(#${id}b3)"/><ellipse cx="150" cy="281" rx="92" ry="7" fill="#140a05" opacity=".4" filter="url(#${id}b1)"/></g>
+      <g class="m-root" style="transform-origin:150px 280px">
+        <path d="M60 274 C40 274 30 282 44 286 C80 292 220 292 256 286 C270 282 262 274 240 274 Z" fill="#6cc64e" ${S(3)}/>
+        <ellipse cx="96" cy="282" rx="18" ry="2" fill="#e8ffd6" opacity=".7"/>
+        <g class="m-body" style="transform-origin:150px 276px">
+          <path d="${B}" fill="url(#${id}g)" ${S(4)}/>
+          <g clip-path="url(#${id}c)">
+            <ellipse cx="146" cy="196" rx="58" ry="52" fill="url(#${id}core)"/>
+            <path d="${B}" fill="none" stroke="#e8ffcf" stroke-width="10" opacity=".35" transform="translate(-3 -4)"/>
+            <path d="${B}" fill="none" stroke="#1f5a1f" stroke-width="12" opacity=".2" transform="translate(4 5)"/>
+            <g class="m-bubbles">${bubble(id, 196, 236, 6.5)}${bubble(id, 176, 256, 4)}${bubble(id, 108, 244, 5, 1)}${bubble(id, 210, 206, 3)}${bubble(id, 92, 214, 2.4, 1)}
+              <circle cx="128" cy="232" r="2.2" fill="#2f7a2c" opacity=".45"/><circle cx="168" cy="222" r="1.6" fill="#2f7a2c" opacity=".45"/><circle cx="190" cy="264" r="2" fill="#2f7a2c" opacity=".4"/>
+              ${sparkle(118, 262, 3, '#fbfff0', .85)}${sparkle(214, 248, 2.4, '#fbfff0', .8)}</g>
+            <rect width="300" height="300" filter="url(#${id}grain)" opacity=".45"/>
+          </g>
+          <ellipse cx="112" cy="136" rx="22" ry="14" fill="#fff" opacity=".6" transform="rotate(-28 112 136)"/><ellipse cx="96" cy="162" rx="5" ry="6.5" fill="#fff" opacity=".55"/>
+          <path d="M214 150 C222 166 228 184 230 200" stroke="#fff8d0" stroke-width="5" stroke-linecap="round" opacity=".55" filter="url(#${id}b1)"/>
+          <path d="M234 196 C240 206 244 214 242 224 C240 232 232 232 232 224 C232 216 236 208 234 196 Z" fill="#7fd257" ${S(2.4)}/><ellipse cx="236" cy="216" rx="1.6" ry="3" fill="#fff" opacity=".7"/>
+          <g class="m-hat" style="transform-origin:150px 100px">
+            <path d="M136 64 L164 64 L164 78 C176 82 180 92 178 100 L122 100 C120 92 124 82 136 78 Z" fill="url(#${id}glass)" ${S(3.2)}/>
+            <path d="M125 98 C128 90 134 86 140 86 L160 86 C166 86 172 90 175 98 Z" fill="url(#${id}pot)"/><path d="M128 91 L172 91" stroke="#ffd6e8" stroke-width="1.6"/>
+            <circle cx="146" cy="94" r="1.8" fill="#fff" opacity=".8"/><path d="M130 82 L132 96" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity=".8"/>
+            <path d="M133 50 L135 66 C135 69 165 69 165 66 L167 50 Z" fill="url(#${id}cork)" ${S(2.8)}/><ellipse cx="150" cy="50" rx="17" ry="4.2" fill="#ddb07f" ${S(2.6)}/>
+            <g class="m-slot" data-slot="cabeza" data-scale="0.9" transform="translate(150 48) scale(0.9)"></g>
+          </g>
+          ${face(id, 150, 182, 25, 13.5, { mouth: 'open' })}
+          <g class="m-slot" data-slot="cara" data-scale="1.15" transform="translate(150 180) scale(1.15)"></g><g class="m-slot" data-slot="cuello" data-scale="1.1" transform="translate(150 222) scale(1.1)"></g><g class="m-slot" data-slot="mano" data-scale="1" transform="translate(240 236) scale(1)"></g>
+        </g>
+        ${sparkle(236, 104, 8, '#fff2c4', 1, 'm-twinkle')}${sparkle(62, 132, 5, '#f2ffd9', .9, 'm-twinkle')}
+      </g></svg>`;
+  }
+
+  // Accesorios de prueba (diseños propios). Cada pieza se dibuja centrada en (0,0) de su ranura;
+  // la ranura ya trae la posición y la escala de cada mascota, y se mueve con la parte del cuerpo donde vive.
+  const ACCESORIOS = {
+    sombrero: { slot: 'cabeza', svg: `<path d="M-26 0 C-14 -6 14 -6 26 0 C22 6 -22 6 -26 0 Z" fill="#3c2f6e" ${S(3)}/>` +
+      `<path d="M-16 -2 C-12 -22 -2 -44 8 -54 C10 -40 14 -18 16 -2 Z" fill="#4b3a8a" ${S(3)}/>` +
+      '<path d="M-15 -6 C-5 -9 6 -9 15 -6" stroke="#e8b65a" stroke-width="4" fill="none"/><path d="M-2 -28 l2 -5 l2 5 l5 1 l-5 2 l-2 5 l-2 -5 l-5 -2 Z" fill="#ffe08a"/>' },
+    lentes: { slot: 'cara', svg: '<circle cx="-20" cy="0" r="12" fill="#cfe9ff" fill-opacity=".25" stroke="#8a5a22" stroke-width="3.2"/><circle cx="20" cy="0" r="12" fill="#cfe9ff" fill-opacity=".25" stroke="#8a5a22" stroke-width="3.2"/>' +
+      '<path d="M-8 -1 C-4 -5 4 -5 8 -1" stroke="#8a5a22" stroke-width="3" fill="none"/><path d="M-25 -6 L-21 -9" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' },
+    corbatin: { slot: 'cuello', svg: `<path d="M0 0 L-16 -9 L-16 9 Z M0 0 L16 -9 L16 9 Z" fill="#c2453a" ${S(2.6)}/><circle r="4.5" fill="#e0574a" ${S(2.4)}/>` }
+  };
+  function equip(svgRoot, id) {
+    const a = ACCESORIOS[id], slot = a && svgRoot.querySelector(`.m-slot[data-slot="${a.slot}"]`);
+    if (!slot) return false;
+    slot.innerHTML = a.svg;
+    return true;
+  }
+  function unequip(svgRoot, slotName) {
+    svgRoot.querySelectorAll(slotName ? `.m-slot[data-slot="${slotName}"]` : '.m-slot').forEach(s => { s.innerHTML = ''; });
+  }
+  window.Alquimicos = Object.freeze({ matraz, atomo, slime, equip, unequip, ACCESORIOS, SLOTS: ['cabeza', 'cara', 'cuello', 'mano'],
+    list: [['matraz', 'Matraz'], ['atomo', 'Átomo'], ['slime', 'Slime']] });
+})();

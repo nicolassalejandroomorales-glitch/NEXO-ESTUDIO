@@ -23,7 +23,55 @@ Antes de la vida en la sala se borra todo lo viejo para rehacerlo con el diseño
 **Quedó pendiente de la Fase 0**: CSS muerto del avatar/tienda en `styles.css`, `arcane.css` y `update01.css` (no estorba; limpiarlo al hacer la tienda nueva),
 y pruebas de navegador/nube que aún mencionan la mascota vieja (`e2e-test`, `cloud-e2e`, `cloud-test`, `database-test`, `optimize-room-art`).
 
-## Fase 1 — Diseño de las 3 mascotas en Rive (4 oct 2026)
+## Fase 4 — Mascota temática simple (4 oct 2026) ← DIRECCIÓN ACTUAL
+
+Ningún diseño de raptor convenció. Diagnóstico honesto: no había referencia clara de lo que gusta y el dibujo de animales por código tiene techo.
+**Niquito eligió una mascota temática de formas simples** (lo que sí se dibuja bien por código y encaja con Nexo/química).
+Galería: `http://127.0.0.1:8765/dev/mascota-alquimica.html` — A matraz, B balón de poción, C átomo, D slime alquímico, E espíritu de vela,
+F tubo de ensayo, G gota de mercurio, H cristal. Esperando su elección. Las especies raptor/capibara/zorro quedan en pausa.
+- **Diagnóstico de Niquito (clave)**: se veían **planas** (sin detalles ni profundidad). Regla de diseño desde ahora: cada mascota lleva
+  volumen con luz (luz/medio/sombra + luz de borde cálida de la ventana), materiales creíbles (vidrio con grosor y reflejos, líquido con superficie
+  y burbujas, madera con veta, cera, bronce), detalles con historia (etiqueta con símbolo alquímico, cordel, sello de cera), grano suave y
+  sombra de contacto + luz proyectada para integrarse a la pintura del refugio. Prueba: `/dev/mascota-detallada.html` (matraz, balón, vela).
+- **Elegidas (4 oct 2026): las 3 → átomo, matraz y slime** (el slime del primer diseño). Detalle v2 en `dist/dev/alquimicos.js`
+  (graduaciones y gotas de condensación en el vidrio, núcleo de protones/neutrones con órbitas que brillan, slime translúcido con núcleo claro,
+  partículas y gota que cae). Cada SVG trae partes con clase (`m-root`, `m-body`, `m-eye`, `m-liquid`, `m-bubbles`, `m-foot-l/r`, `m-hat`…).
+- **Demo en la sala**: `/dev/mascota-sala.html` — suelo caminable (puntos `desk`, `nearDesk`, `rug`, `shelf`, `chair`), escala por profundidad,
+  salto en arco al escritorio, animaciones CSS por tipo (matraz camina meciéndose y la poción se balancea; átomo flota con electrones en órbita;
+  slime avanza a saltitos aplastándose). Botón "Ver puntos del suelo" para calibrar.
+- Cómo interactuar con un fondo PNG: suelo caminable + escala por profundidad + puntos de interés (anclas de `home-scene.js`) + recortes del
+  mismo PNG encima de la mascota para que pase "detrás" (técnica de las enredaderas). Falta implementar los recortes (oclusión).
+
+## Fase 3 — Diseñar primero, animar después (4 oct 2026) — reemplazada por la Fase 4
+
+Niquito tampoco quedó conforme con la v5 cartoon ("las proporciones no están correctas"). **Decisión: Rive y animaciones en pausa
+hasta aprobar un diseño.** Se trabaja una especie a la vez, partiendo por el velociraptor.
+- Galería de opciones: `http://127.0.0.1:8765/dev/raptor-disenos.html` (8 diseños A–H, solo dibujo, con vista sobre el escritorio del refugio).
+  Cada diseño se arma con formas básicas en 3 capas y **un contorno unificado por capa** (filtro SVG): las piezas se funden en un solo dibujo.
+- Flujo: Niquito elige (o mezcla) → se refina esa opción → recién ahí se pasa a Rive con sus animaciones (el generador y el rig de fideo ya existen).
+- Proporción cabeza/cuerpo y forma base (redonda = tierna, triangular = dinámica) son las palancas principales del diseño.
+
+## Fase 2 — Estilo cartoon "rubber hose" (4 oct 2026) — en pausa (ver Fase 3)
+
+Niquito vio la v4 (animales realistas en Rive) y **no le convenció**: quiere algo **más cartoon, tipo Cuphead** (dibujos de los años 30).
+- **Las mismas 3 especies**, ahora como **personajes de pie**: tronco tipo frijol, **brazos y piernas de fideo** (sin codos, se doblan como manguera),
+  **guantes blancos**, **zapatos grandes**, **ojos "pie-cut"** (negros con una cuña recortada), bocas exageradas. Diseño propio: no copiar personajes de Cuphead.
+- **Color vintage de película** (cálido y algo apagado; el grano de película va como capa CSS en la app).
+- **Un solo cuerpo de cartoon compartido** (aquí sí corresponde: en el rubber hose todos se construyen igual) → mismas animaciones para las 3;
+  cambian cabeza, cola y colores. Generador: `tools/mascots/cartoon.cjs`.
+- **Brazos y piernas de fideo en Rive**: una curva con trazo grueso (tinta + color) cuyos vértices se animan; guante/zapato en la punta siguen la curva.
+- **Interactividad** (todas aprobadas): mirar el cursor, reaccionar al tocarla, celebrar el estudio (`accion` nueva), bailar al ritmo (idle con rebote).
+- Más adelante: "hervor" de línea (2-3 versiones del contorno alternando, efecto dibujo a mano).
+
+**Hecho v5 (4 oct 2026, esperando opinión de Niquito)**: `tools/mascots/cartoon.cjs` (cuerpo, guantes, zapatos, ojos pie-cut, 3 bocas en el Solo
+`Expresion`: Sonrisa/Contento/Oh) + `raptor.cjs`/`capibara.cjs`/`zorro.cjs` (solo cabeza, cola y colores). El generador soporta extremidades
+de fideo (`noodle`: vértices animados + guante/zapato en la punta) y `scale`. Acciones: `0` Idle = **baile al ritmo** (100 bpm, estirar/aplastar),
+`1` Caminar (pavoneo), `2` Alcanzar (brazo de goma que se estira hasta la estantería), `3` **Celebrar** (salto con brazos arriba).
+Artboard 400×380 (80 px de aire arriba). Capturas en `capturas/cartoon/`.
+**Falta de la Fase 2**: mirar el cursor y reaccionar al tocarla (listeners de Rive), hervor de línea, grano de película (CSS), limpiar los
+conceptos/capturas del estilo animal si ya no sirven.
+
+## Fase 1 — Diseño de las 3 mascotas en Rive (4 oct 2026) — reemplazada por la Fase 2
 
 - **Especies**: velociraptor, capibara, zorro. Estilo **tierno de cuento** (cabeza grande, redondos, ojos expresivos, sombreado cálido).
 - **Herramienta**: Rive CLI oficial 1.3.0 (`rive.exe`), formato RML (texto → `.riv`). Verificación con `rive <dir> --verify` y capturas con `--screenshot`.
