@@ -409,6 +409,35 @@
   const TRIETHYL = { atoms: [...DIETHYL.atoms, A('e1', 'C', 150, 50), A('e2', 'C', 200, 20)], bonds: [...DIETHYL.bonds, B('n', 'e1'), B('e1', 'e2')] };
   const BROMO = chain([A('br', 'Br', 140, 75)], [B('c2', 'br')]);
 
+  /* Escenas de las misiones 4 y 5 */
+  const lido = ring(110, 140, 40, 'r');
+  const LIDOCAINE = { atoms: [...lido.atoms, A('m1', 'C', 130, 210), A('m2', 'C', 130, 70), A('na', 'N', 200, 140), A('co', 'C', 245, 115, 0, { hide: true }), A('o', 'O', 245, 62),
+    A('ch', 'C', 290, 140, 0, { hide: true }), A('nb', 'N', 335, 115), A('e1', 'C', 335, 62, 0, { hide: true }), A('e2', 'C', 380, 37), A('f1', 'C', 380, 140, 0, { hide: true }), A('f2', 'C', 410, 115)],
+    bonds: [...lido.bonds, B('r1', 'm1'), B('r5', 'm2'), B('r0', 'na'), B('na', 'co'), B('co', 'o', 2), B('co', 'ch'), B('ch', 'nb'), B('nb', 'e1'), B('e1', 'e2'), B('nb', 'f1'), B('f1', 'f2')] };
+  const PROTON = { scene: { atoms: [A('n', 'N', 110, 140), A('a1', 'C', 70, 115), A('a2', 'C', 30, 140), A('b1', 'C', 95, 190), A('b2', 'C', 55, 215), A('c1', 'C', 95, 85), A('c2', 'C', 55, 60),
+      A('h', 'H', 210, 140), A('o1', 'O', 260, 140), A('c', 'C', 300, 110), A('o2', 'O', 300, 55), A('me', 'C', 345, 140)],
+    bonds: [B('n', 'a1'), B('a1', 'a2'), B('n', 'b1'), B('b1', 'b2'), B('n', 'c1'), B('c1', 'c2'), B('h', 'o1'), B('o1', 'c'), B('c', 'o2', 2), B('c', 'me')] }, lonePairs: { n: 1, o1: 2, o2: 2 }, lpAngle: { n: 0 } };
+  const nic = ring(110, 150, 40, 'r'); nic.atoms[3] = { ...nic.atoms[3], el: 'N', hide: false };
+  const NICOTINE = { atoms: [...nic.atoms, A('p0', 'C', 175, 80, 0, { hide: true }), A('pn', 'N', 230, 60), A('pm', 'C', 245, 12), A('p2', 'C', 265, 100, 0, { hide: true }), A('p3', 'C', 245, 145, 0, { hide: true }), A('p4', 'C', 195, 130, 0, { hide: true })],
+    bonds: [...nic.bonds, B('r5', 'p0'), B('p0', 'pn'), B('pn', 'pm'), B('pn', 'p2'), B('p2', 'p3'), B('p3', 'p4'), B('p4', 'p0')] };
+  const an = ring(150, 140, 40, 'r');
+  const ANILINE = { atoms: [...an.atoms, A('n', 'N', 235, 140)], bonds: [...an.bonds, B('r0', 'n')] };
+  const showC = (atoms, id, q) => atoms.map(a => a.id === id ? { ...a, hide: false, q } : a);
+  const setBond = (bonds, x, y, o) => bonds.map(b => (b.a === x && b.b === y) || (b.a === y && b.b === x) ? { ...b, o } : b);
+  const ANIL_R1 = { scene: ANILINE, arrows: [['lp:n', 'b:6'], ['b:0', 'a:r1']], lonePairs: { n: 1 }, lpAngle: { n: 0 } };
+  const ANIL_R2 = { scene: { atoms: showC(ANILINE.atoms, 'r1', -1).map(a => a.id === 'n' ? { ...a, q: 1 } : a), bonds: setBond(setBond(ANILINE.bonds, 'r0', 'n', 2), 'r0', 'r1', 1) },
+    arrows: [['lp:r1', 'b:1'], ['b:2', 'a:r3']], lonePairs: { r1: 1 }, lpAngle: { r1: 90 } };
+  const ANIL_R3 = { scene: { atoms: showC(ANILINE.atoms, 'r3', -1).map(a => a.id === 'n' ? { ...a, q: 1 } : a),
+    bonds: setBond(setBond(setBond(setBond(ANILINE.bonds, 'r0', 'n', 2), 'r0', 'r1', 1), 'r1', 'r2', 2), 'r2', 'r3', 1) }, arrows: [], lonePairs: { r3: 1 }, lpAngle: { r3: 180 } };
+  const cy = ring(150, 140, 40, 'r');
+  const CYCLOHEXYLAMINE = { atoms: [...cy.atoms, A('n', 'N', 235, 140)], bonds: [...cy.bonds.map(b => ({ ...b, o: 1 })), B('r0', 'n')] };
+  const PENT = (cx, cy0, r) => [...Array(5)].map((_, i) => ({ x: cx + r * Math.cos(-Math.PI / 2 + i * 2 * Math.PI / 5), y: cy0 + r * Math.sin(-Math.PI / 2 + i * 2 * Math.PI / 5) }));
+  const pp = PENT(150, 135, 45);
+  const PYRROLE = { atoms: [A('n', 'N', pp[0].x, pp[0].y), ...pp.slice(1).map((p, i) => A(`c${i + 1}`, 'C', p.x, p.y, 0, { hide: true }))],
+    bonds: [B('n', 'c1'), B('c1', 'c2', 2), B('c2', 'c3'), B('c3', 'c4', 2), B('c4', 'n')] };
+  const py = ring(150, 140, 42, 'r'); py.atoms[0] = { ...py.atoms[0], el: 'N', hide: false };
+  const PYRIDINE = { atoms: py.atoms, bonds: py.bonds };
+
   /* Escenas de la misión 6 */
   const AMINOPHENOL = { atoms: [...benz.atoms, A('oh', 'O', 65, 140), A('n', 'N', 235, 140)], bonds: [...benz.bonds, B('r3', 'oh'), B('r0', 'n')] };
   const AZ1 = { scene: { atoms: [A('na', 'N', 30, 150, -1), A('nb', 'N', 75, 150, 1), A('nc', 'N', 120, 150, -1), A('c1', 'C', 205, 150), A('br', 'Br', 290, 150), A('c2', 'C', 205, 75), A('c3', 'C', 265, 45)],
@@ -529,10 +558,13 @@
       ]
     }
   },
-  /* ── Misión 4 ── */
+  /* ── Misión 4 (etapa 6: modelo de la clase viva) ── */
   {
-    id: 'm4', title: 'Basicidad I: medirla con el pKa', subtitle: 'Cómo se compara la basicidad usando el pKa del ion amonio y hacia dónde va un equilibrio ácido–base', minutes: 15, slides: '17–20', pep: 'base de la pregunta 3',
+    id: 'm4', title: 'Basicidad I: medirla con el pKa', subtitle: 'Cómo se compara la basicidad usando el pKa del ion amonio y hacia dónde va un equilibrio ácido–base', minutes: 25, slides: '17–20', pep: 'base de la pregunta 3',
     stages: {
+      hook: { title: 'El anestésico del dentista se vende como sal', scene: LIDOCAINE, smiles: 'CCN(CC)CC(=O)Nc1c(C)cccc1C',
+        sage: 'Aprendiz… la última vez que te pusieron anestesia, te inyectaron esta molécula.',
+        text: 'La **lidocaína** se vende como **clorhidrato**: una sal, soluble en agua. Tiene dos N, pero solo uno atrapa el H⁺ del HCl: el de la **amina terciaria** (el otro es una amida, misión 5). En tu cuerpo, a pH 7,4, una parte vuelve a la forma neutra, que es la que cruza la membrana del nervio. Quién se protona y cuánto lo decide el **pKa**.' },
       diagnostic: [
         q('m4-d1', 'Un pKa alto del ion amonio (R–NH₃⁺) significa que la amina es…', [{ text: 'Fuertemente básica', correct: true }, { text: 'Débilmente básica', misconception: 'pka-inverted' }, { text: 'No se puede saber con el pKa', note: 'Justamente así se mide la basicidad de una amina.' }], { explain: 'Si al ion amonio le cuesta soltar el H⁺ (pKa alto), es porque la amina lo retiene bien: es una base fuerte.', slide: 18 }),
         q('m4-d2', 'En una reacción ácido–base, el equilibrio favorece…', [{ text: 'La formación del ácido más débil', correct: true }, { text: 'La formación del ácido más fuerte', misconception: 'strong-side' }, { text: 'Siempre a los reactivos', note: 'Depende de los pKa de cada lado.' }], { explain: 'El equilibrio va hacia el lado del ácido más débil (pKa mayor).', slide: 17 })
@@ -543,41 +575,73 @@
         { id: 'f42', deeper: 'Imagina dos especies peleando por un H⁺. Se lo queda la que lo agarra más fuerte, y esa forma el **ácido más débil** (el que menos quiere soltarlo, de pKa más alto). Por eso el equilibrio siempre termina del lado del ácido con **pKa mayor**.', title: 'Desde cero: el lado débil gana', body: 'En HA + B ⇌ A⁻ + BH⁺ compiten dos ácidos: HA y BH⁺. El equilibrio se desplaza hacia el lado del **ácido más débil** (el de pKa mayor), que es el que menos quiere soltar su H⁺.' },
         { id: 'f43', deeper: 'Toda base tiene su «pareja ácida»: ella misma con un H⁺ más. Si la base es fuerte, su pareja ácida es débil, y al revés. En números, en agua: **pKa + pKb = 14**. Si el ion metilamonio tiene pKa 10,6, la metilamina tiene pKb 14 − 10,6 = **3,4**.', title: 'Desde cero: pares conjugados', body: 'Base + H⁺ → ácido conjugado. Para un par conjugado en agua a 25 °C: **Ka · Kb = Kw = 1,0 × 10⁻¹⁴**, es decir, **pKa + pKb = 14**.', rows: [['pKa del ion amonio', '10,6'], ['pKb de la amina', '14 − 10,6 = 3,4']] }
       ],
-      explain: [
-        { id: 'b41', deeper: 'Pregúntale al ion amonio: «¿te cuesta soltar tu H⁺?». Si su pKa es **alto** (10–11), le cuesta mucho: la amina lo agarra fuerte, es una base **fuerte**. Si el pKa es **bajo** (4,6 en la anilina), lo suelta fácil: la amina es una base **débil**.', title: 'La basicidad se mide con el pKa del ion amonio', slide: 18, body: 'En vez de dar el Kb de la amina, normalmente se da el **pKa de su ácido conjugado** (el ion amonio, a veces escrito pKaH). Mientras **más alto**, **más básica** la amina.',
-          rows: [['NH₄⁺ (amoníaco)', 'pKa 9,25'], ['CH₃NH₃⁺ (metilamina)', 'pKa 10,66'], ['C₆H₅NH₃⁺ (anilina)', 'pKa 4,6']] },
-        { id: 'b42', deeper: 'Compara los dos pKa: acético 4,76 contra trietilamonio 10,76. Son 6 unidades y cada una vale un factor 10: la constante del equilibrio es **10⁶**. El H⁺ se va con quien lo agarra más fuerte (la amina), así que el equilibrio queda muy desplazado hacia la sal. La diapositiva lo resume como «1 de cada 1.000.000 queda neutra».', title: 'Trietilamina + ácido acético', slide: 17, body: 'Los ácidos en juego: ácido acético (pKa 4,76) e ion trietilamonio (pKa 10,76). El equilibrio favorece al ácido más débil, el ion amonio: la amina queda **casi toda protonada**, solo 1 de cada 1.000.000 moléculas queda neutra.',
-          note: 'Por eso las aminas se protonan incluso con ácidos débiles: son bases más fuertes que alcoholes o éteres.' },
-        { id: 'b43', deeper: 'pKa y pKb miden lo mismo desde dos lados. Si te dan el pKb de la amina, réstalo de 14 y tienes el pKa del ion amonio: pKb 3,36 → pKa **10,64**. Así comparas todas las aminas en una sola escala.', title: 'Ka y Kb', slide: 20, body: 'Si te dan Kb (o pKb) de la amina, puedes pasar al pKa del ion amonio con **pKa + pKb = 14**. Vale para cualquier par ácido–base conjugado.' }
-      ],
-      worked: {
-        prompt: 'Metilamina + ácido acético. ¿Hacia dónde va el equilibrio y con qué fuerza?',
-        steps: [
-          { text: 'Identifica los dos ácidos: **CH₃COOH** (pKa 4,76) a la izquierda y **CH₃NH₃⁺** (pKa 10,66) a la derecha.' },
-          { text: 'El equilibrio favorece al ácido más débil: el **CH₃NH₃⁺** (pKa mayor). Va hacia los **productos**: la amina se protona.', ask: '¿Cuál de los dos ácidos es más débil?' },
-          { text: 'Cuánto: 10^(10,66 − 4,76) = 10^5,9 ≈ **8 × 10⁵**. La constante de equilibrio es enorme.', ask: '¿Cómo calculas la K del equilibrio con los pKa?' }
-        ]
-      },
-      practice: [
-        q('m4-p1', 'Amina A: pKa del ion amonio 10,7. Amina B: 4,6. ¿Cuál es más básica?', [{ text: 'A', correct: true }, { text: 'B', misconception: 'pka-inverted' }, { text: 'Igual de básicas', note: 'Hay 6 unidades de diferencia: un millón de veces.' }], { explain: 'Mayor pKa del ion amonio = base más fuerte. A podría ser una alquilamina; B se parece a la anilina.', slide: 18, hint: 'pKa alto del ion amonio = le cuesta soltar el H⁺.' }),
-        q('m4-p2', 'El pKa de un ion amonio es 10,6. ¿Cuál es el pKb de la amina?', [{ text: '3,4', correct: true }, { text: '10,6', note: 'Ese es el pKa del ácido conjugado, no el pKb.' }, { text: '24,6', misconception: 'sum14' }], { explain: 'pKa + pKb = 14 → pKb = 14 − 10,6 = 3,4.', slide: 20, hint: 'pKa + pKb = 14.' }),
-        order('m4-p3', 'Ordena de menor a mayor basicidad usando el pKa de su ion amonio.', [['an', 'Anilina (4,6)'], ['nh3', 'Amoníaco (9,25)'], ['me', 'Metilamina (10,66)']], ['an', 'nh3', 'me'],
-          { direction: 'De menor a mayor basicidad.', explain: 'Mayor pKa del ion amonio = más básica: anilina < amoníaco < metilamina.', misconception: 'pka-inverted', slide: 18, hint: 'Ordena por el número entre paréntesis.' })
-      ],
+      explain: [],
       transfer: [
         q('m4-t1', 'Trietilamina en presencia de ácido acético. ¿En qué forma está mayoritariamente?', [{ text: 'Protonada, como ion trietilamonio', correct: true }, { text: 'Mitad y mitad', note: 'Con 6 unidades de diferencia de pKa no hay empate.' }, { text: 'Casi toda neutra', misconception: 'strong-side' }], { explain: 'El ion amonio (pKa 10,76) es un ácido mucho más débil que el acético (4,76): el equilibrio está desplazado a la sal. Solo 1 de cada millón queda neutra.', slide: 17 }),
         q('m4-t2', 'Un ácido HA (pKa 5) reacciona con una amina cuyo ion amonio tiene pKa 9. El equilibrio está…', [{ text: 'Desplazado hacia la sal (productos)', correct: true }, { text: 'Desplazado hacia los reactivos', misconception: 'strong-side' }, { text: 'Exactamente en el medio', note: 'Hay 4 unidades de diferencia: K = 10⁴.' }], { explain: 'El ion amonio (pKa 9) es el ácido más débil: se favorece su formación, con K = 10^(9−5) = 10⁴.', slide: 17 }),
         write('m4-w1', 'Explícalo con tus palabras: ¿por qué la trietilamina queda casi toda protonada en ácido acético?',
-          'Compito los dos ácidos del equilibrio: el ácido acético (pKa 4,76) y el ion trietilamonio (pKa 10,76). El equilibrio favorece al ácido más débil, el de pKa mayor: el ion trietilamonio. Como la diferencia es de 6 unidades (K = 10⁶), casi toda la amina queda protonada.',
+          'Comparo los dos ácidos del equilibrio: el ácido acético (pKa 4,76) y el ion trietilamonio (pKa 10,76). El equilibrio favorece al ácido más débil, el de pKa mayor: el ion trietilamonio. Como la diferencia es de 6 unidades (K = 10⁶), casi toda la amina queda protonada.',
           ['Comparé los pKa de los dos ácidos (4,76 y 10,76)', 'Dije que el equilibrio favorece al ácido más débil (el de pKa mayor)', 'Concluí que la amina queda como ion trietilamonio'],
           { explain: 'El H⁺ termina donde lo agarran más fuerte: en el lado del ácido más débil.', slide: 17 })
       ]
-    }
+    },
+    parts: [
+      { id: 'r1', intro: 'Parte 1: **medir la basicidad con un número**. El pKa del ion amonio te dice qué tan fuerte agarra la amina su H⁺.',
+        pretest: q('m4-pre1', 'Una amina retiene muy bien el H⁺ que atrapa. ¿El pKa de su ion amonio será alto o bajo?', [{ text: 'Alto', correct: true }, { text: 'Bajo', note: 'Un pKa bajo es soltar el H⁺ con facilidad: lo contrario.' }, { text: 'No tiene relación', note: 'Justamente así se mide la basicidad.' }],
+          { explain: 'Le cuesta soltar el H⁺ → pKa alto → amina fuertemente básica.', slide: 18, concept: 'am.pka' }),
+        explain: [
+          { id: 'b41', deeper: 'Pregúntale al ion amonio: «¿te cuesta soltar tu H⁺?». Si su pKa es **alto** (10–11), le cuesta mucho: la amina lo agarra fuerte, es una base **fuerte**. Si el pKa es **bajo** (4,6 en la anilina), lo suelta fácil: la amina es una base **débil**.', title: 'La basicidad se mide con el pKa del ion amonio', slide: 18, body: 'En vez de dar el Kb de la amina, normalmente se da el **pKa de su ácido conjugado** (el ion amonio, a veces escrito pKaH). Mientras **más alto**, **más básica** la amina.',
+          rows: [['NH₄⁺ (amoníaco)', 'pKa 9,25'], ['CH₃NH₃⁺ (metilamina)', 'pKa 10,66'], ['C₆H₅NH₃⁺ (anilina)', 'pKa 4,6']] },
+          { id: 'b43', deeper: 'pKa y pKb miden lo mismo desde dos lados. Si te dan el pKb de la amina, réstalo de 14 y tienes el pKa del ion amonio: pKb 3,36 → pKa **10,64**. Así comparas todas las aminas en una sola escala.', title: 'Ka y Kb', slide: 20, body: 'Si te dan Kb (o pKb) de la amina, puedes pasar al pKa del ion amonio con **pKa + pKb = 14**. Vale para cualquier par ácido–base conjugado.' }
+        ],
+        practice: [
+          q('m4-p1', 'Amina A: pKa del ion amonio 10,7. Amina B: 4,6. ¿Cuál es más básica?', [{ text: 'A', correct: true }, { text: 'B', misconception: 'pka-inverted' }, { text: 'Igual de básicas', note: 'Hay 6 unidades de diferencia: un millón de veces.' }], { explain: 'Mayor pKa del ion amonio = base más fuerte. A podría ser una alquilamina; B se parece a la anilina.', slide: 18, hint: 'pKa alto del ion amonio = le cuesta soltar el H⁺.' , concept: 'am.pka' }),
+          q('m4-p2', 'El pKa de un ion amonio es 10,6. ¿Cuál es el pKb de la amina?', [{ text: '3,4', correct: true }, { text: '10,6', note: 'Ese es el pKa del ácido conjugado, no el pKb.' }, { text: '24,6', misconception: 'sum14' }], { explain: 'pKa + pKb = 14 → pKb = 14 − 10,6 = 3,4.', slide: 20, hint: 'pKa + pKb = 14.' , concept: 'am.pka' }),
+          order('m4-p3', 'Ordena de menor a mayor basicidad usando el pKa de su ion amonio.', [['an', 'Anilina (4,6)'], ['nh3', 'Amoníaco (9,25)'], ['me', 'Metilamina (10,66)']], ['an', 'nh3', 'me'],
+          { direction: 'De menor a mayor basicidad.', explain: 'Mayor pKa del ion amonio = más básica: anilina < amoníaco < metilamina.', misconception: 'pka-inverted', slide: 18, hint: 'Ordena por el número entre paréntesis.' , concept: 'am.pka' }),
+          { id: 'm4-a1', type: 'arrows', source: SRC, concept: 'am.pka', slide: 17, ...PROTON, answer: [['lp:n', 'a:h'], ['b:6', 'a:o1']],
+            prompt: 'Trietilamina + ácido acético. Dibuja las 2 flechas: la amina atrapa el H⁺ del ácido.',
+            notes: { 'lp:n>a:c': 'Eso sería atacar al C=O (como en la acilación). Con un ácido carboxílico gana lo más rápido: atrapar el H⁺ del O–H.', 'lp:n>a:o1': 'El N no ataca al O: busca el H que está unido al O.',
+              'b:6>a:h': 'El enlace O–H se rompe hacia el O, que se lleva los electrones: queda acetato, CH₃COO⁻.', 'lp:o1>a:h': 'El O ya está unido a ese H: el que ataca es el N de la amina.' },
+            explain: 'El par del N atrapa el H y el enlace O–H se rompe hacia el O: se forman el ion trietilamonio y el acetato.',
+            hint: 'Una flecha sale del par libre del N hacia el H. La otra rompe el enlace O–H.' }
+        ],
+        rule: { title: 'Regla del pKa', concept: 'am.pka', steps: ['Busca el pKa del **ion amonio** (pKaH), no el de la amina.', '**Mayor pKaH → base más fuerte.** Anilina 4,6 < amoníaco 9,25 < metilamina 10,66.', 'Si te dan pKb: **pKa = 14 − pKb**.'] } },
+      { id: 'r2', intro: 'Parte 2: **hacia dónde va el equilibrio**. Cuando mezclas una amina con un ácido, ¿quién se queda con el H⁺?',
+        pretest: q('m4-pre2', 'Mezclas una amina con ácido acético. ¿Qué crees que pasa?', [{ text: 'La amina se protona casi entera', correct: true }, { text: 'No pasa nada: el acético es un ácido débil', note: 'Débil comparado con el HCl, pero mucho más ácido que el ion amonio.' }, { text: 'Queda mitad y mitad', note: 'Los pKa son muy distintos: no hay empate.' }],
+          { explain: 'El H⁺ termina en la amina: el ion amonio es el ácido más débil.', slide: 17, concept: 'am.equilibrio' }),
+        explain: [
+          { id: 'b42', deeper: 'Compara los dos pKa: acético 4,76 contra trietilamonio 10,76. Son 6 unidades y cada una vale un factor 10: la constante del equilibrio es **10⁶**. El H⁺ se va con quien lo agarra más fuerte (la amina), así que el equilibrio queda muy desplazado hacia la sal. La diapositiva lo resume como «1 de cada 1.000.000 queda neutra».', title: 'Trietilamina + ácido acético', slide: 17, body: 'Los ácidos en juego: ácido acético (pKa 4,76) e ion trietilamonio (pKa 10,76). El equilibrio favorece al ácido más débil, el ion amonio: la amina queda **casi toda protonada**, solo 1 de cada 1.000.000 moléculas queda neutra.',
+          note: 'Por eso las aminas se protonan incluso con ácidos débiles: son bases más fuertes que alcoholes o éteres.' }
+        ],
+        practice: [
+          { id: 'm4-poe1', type: 'poe', source: SRC, concept: 'am.equilibrio', slide: 17,
+            prompt: 'Predice, observa y explica: metilamina (pKa del ion amonio 10,6) en distintos pH.',
+            predict: 'Si el pH baja de 12 a 7, ¿qué crees que le pasa a la metilamina?',
+            options: [{ text: 'Se protona casi entera: queda como CH₃NH₃⁺', correct: true }, { text: 'Se queda neutra', note: 'Por debajo de su pKa domina la forma con H⁺.' }, { text: 'Se descompone', note: 'Solo gana o pierde un H⁺: no se rompe.' }],
+            sim: { name: 'pH', unit: '', min: 2, max: 13, step: 0.5, start: 12, threshold: 10.6, look: 'ph', label: 'Mueve el pH y mira la amina.',
+              below: '**Protonada**: casi toda como CH₃NH₃⁺. Por debajo del pKa (10,6) domina la forma con H⁺. Así está en tu sangre (pH 7,4).', above: 'Sobre el pKa (10,6) domina la **amina neutra**, CH₃NH₂.' },
+            explain: 'Cuando el pH está por debajo del pKa del ion amonio, la amina está mayoritariamente protonada; por encima, neutra. A pH = pKa, mitad y mitad.',
+            hint: 'Compara el pH con el pKa del ion amonio: ¿cuál es mayor?' },
+          { id: 'm4-fx1', type: 'spot', source: SRC, concept: 'am.equilibrio', slide: 17,
+            prompt: 'Un aprendiz analizó trietilamina + ácido acético. Revisa su hoja: ¿en qué paso se equivocó?',
+            steps: ['Identifica los ácidos: CH₃COOH (pKa 4,76) y Et₃NH⁺ (pKa 10,76)', 'Compara: 4,76 es menor que 10,76', 'Concluye: gana el lado del ácido más fuerte, la izquierda', 'Dice que la amina queda casi toda neutra'], wrong: 2,
+            stepNotes: { 0: 'Bien: esos son los dos ácidos en juego.', 1: 'Bien comparado.', 3: 'Esa conclusión viene del error anterior.' },
+            fix: { question: '¿Qué debió concluir?', options: [{ text: 'Gana el lado del ácido más débil (pKa mayor): la derecha', correct: true }, { text: 'Gana el lado con más moléculas', note: 'No se cuentan moléculas: se comparan los pKa.' }, { text: 'Quedan mitad y mitad', note: '6 unidades de pKa son un millón a uno.' }] },
+            explain: 'El equilibrio favorece al ácido más débil, el ion trietilamonio (10,76): la amina queda casi toda protonada.', hint: '¿El equilibrio favorece al ácido fuerte o al débil?' },
+          q('m4-q5', 'HA (pKa 3) + una amina cuyo ion amonio tiene pKa 10. ¿Cuánto vale Keq?', [{ text: '10⁷', correct: true }, { text: '10⁻⁷', note: 'Va al revés: pKa del ácido producto (10) menos el del reactivo (3) = +7.' }, { text: '7', note: 'La diferencia es el exponente: Keq = 10 elevado a 7.' }],
+            { explain: 'Keq = 10^(10 − 3) = 10⁷: muy desplazado hacia la sal.', slide: 17, hint: 'Keq = 10 elevado a (pKa del ácido producto − pKa del ácido reactivo).', concept: 'am.equilibrio' })
+        ],
+        rule: { title: 'Regla del lado débil', concept: 'am.equilibrio', steps: ['Encuentra los **dos ácidos**: uno a cada lado de la flecha.', 'Gana el lado del ácido con **pKa mayor** (el más débil).', 'Cuánto: **Keq = 10^(pKa del ácido producto − pKa del ácido reactivo)**.'] } }
+    ]
   },
-  /* ── Misión 5 ── */
+  /* ── Misión 5 (etapa 6: modelo de la clase viva) ── */
   {
-    id: 'm5', title: 'Basicidad II: qué la sube y qué la baja', subtitle: 'Resonancia, sustituyentes, heterociclos e hibridación: la pregunta 3 de la PEP', minutes: 18, slides: '21–28', pep: 'pregunta 3 (1,0 pt)',
+    id: 'm5', title: 'Basicidad II: qué la sube y qué la baja', subtitle: 'Resonancia, sustituyentes, heterociclos e hibridación: la pregunta 3 de la PEP', minutes: 30, slides: '21–28', pep: 'pregunta 3 (1,0 pt)',
     stages: {
+      hook: { title: 'La nicotina tiene dos nitrógenos', scene: NICOTINE, smiles: 'CN1CCCC1c1cccnc1',
+        sage: 'Aprendiz… esta molécula tiene dos N. Solo uno se protona en tu sangre. ¿Cuál?',
+        text: 'La **nicotina** tiene un N en un anillo aromático (**piridina**, sp²) y otro en un anillo saturado (**pirrolidina**, sp³). El de la pirrolidina es mucho más básico (pKa de su ion amonio ≈ 8; el de la piridina ≈ 3): es el que se protona en la sangre. Al final de esta misión vas a ordenar por basicidad como en la **pregunta 3 de la PEP**.' },
       diagnostic: [
         q('m5-d1', '¿Cuál es más básica: ciclohexilamina o anilina?', [{ text: 'Ciclohexilamina', correct: true }, { text: 'Anilina', misconception: 'aromatic-more' }, { text: 'Igual, ambas son aminas primarias', note: 'Ser primarias no basta: importa si el par está deslocalizado.' }], { explain: 'En la anilina el par del N se deslocaliza en el anillo. Ciclohexilamina: pKa del ion amonio 10,6; anilina: 4,6.', slide: 23 }),
         q('m5-d2', '¿Cuál es más básica: piridina o pirrol?', [{ text: 'Piridina', correct: true }, { text: 'Pirrol', misconception: 'pyrrole-pair' }, { text: 'Igual, ambos son aromáticos con N', misconception: 'pyrrole-pair' }], { explain: 'El par de la piridina no participa en la aromaticidad; el del pirrol sí. La piridina es unas 10⁵ veces más básica.', slide: 26 })
@@ -589,39 +653,7 @@
           deeper: 'Pirrol: anillo de 5 con un N–H. Para llegar a 6 electrones π necesita los 2 del par libre del N. Si protonas ese N, el par se va al enlace con el H⁺ y el anillo deja de ser aromático. Piridina: anillo de 6 como el benceno; ya tiene 6 electrones π sin el par del N, que queda libre "afuera" en un orbital sp².' },
         { id: 'f53', deeper: 'Piensa en los electrones como una frazada que comparten los átomos. Un grupo **electronegativo** (O, Cl, NO₂) tira la frazada para su lado y deja al N con menos: le cuesta más atrapar un H⁺ (**menos básico**). Un **alquilo** empuja un poco de frazada hacia el N (**más básico**).', title: 'Desde cero: efecto inductivo', body: 'Átomos o grupos **electronegativos** (O, Cl, NO₂) atraen densidad electrónica a través de los enlaces σ y la sacan del N: bajan la basicidad. Los grupos alquilo **donan** un poco: la suben.' }
       ],
-      explain: [
-        { id: 'b51', deeper: 'En la anilina, el par libre del N no se queda en el N: se **reparte por el anillo** (resonancia). Repartido, está menos disponible para atrapar un H⁺. En la ciclohexilamina el par se queda en el N, listo para usarse. Por eso la anilina es **un millón de veces** menos básica (pKa 4,6 contra 10,6).', title: 'Resonancia: arilaminas débiles', slide: 25, body: 'En las arilaminas el par del N está deslocalizado por el anillo, así que el ion amonio es más ácido (pKa menor) que el de una alquilamina.', rows: [['Ciclohexilamina', 'pKa 10,6'], ['Anilina', 'pKa 4,6']] },
-        { id: 'b52', deeper: 'En una amida el N está pegado a un **C=O**, un gran «ladrón» de electrones. El par libre del N se va hacia el oxígeno por resonancia. Resultado: el N casi no tiene par disponible, así que **no atrapa H⁺** (no es básico) **ni ataca carbonos** (no es nucleófilo).', title: 'Amidas: el caso extremo', slide: 22, body: 'En una amida (R–CO–NH₂) el par del N se deslocaliza hacia el C=O. El N casi no tiene densidad electrónica: **no es básico ni nucleófilo**.' },
-        { id: 'b53', deeper: 'El anillo es un puente entre el sustituyente y el N. Si el sustituyente **da** electrones (–OCH₃), le llegan un poco al N y la amina es algo más básica. Si los **quita** con fuerza (–NO₂), le roba todavía más al N: la p-nitroanilina (pKa 1,0) es unas **4.000 veces** menos básica que la anilina.', title: 'Sustituyentes en el anillo', slide: 24, body: 'Un **donador** (–OCH₃) devuelve densidad al anillo y sube un poco la basicidad. Un **aceptor** (–NO₂) saca todavía más densidad del N y la baja mucho.',
-          rows: [['p-Metoxianilina', 'pKa 5,3'], ['Anilina', 'pKa 4,6'], ['p-Nitroanilina', 'pKa 1,0']] },
-        { id: 'b54', deeper: 'Los dos tienen el N en un anillo aromático, pero el par libre está en lugares distintos. En el **pirrol**, el par es parte de los 6 electrones aromáticos: si lo usara para atrapar un H⁺, el anillo dejaría de ser aromático, y no le conviene. En la **piridina**, el par apunta hacia afuera del anillo y no participa en la aromaticidad: puede atrapar un H⁺ sin perder nada.', title: 'Pirrol y piridina', slide: 26, body: 'En el **pirrol** el par libre es parte del sexteto aromático: protonarlo destruiría la aromaticidad, así que es una base extremadamente débil. En la **piridina** el par está en un orbital sp², fuera del sistema π: se puede protonar sin perder la aromaticidad.', note: 'La piridina es unas 100.000 veces más básica que el pirrol.' },
-        { id: 'b55', deeper: 'Más carácter **s** = electrones más cerca del núcleo = más «apretados». El N **sp³** (25 % s) los tiene sueltos y los presta fácil; el **sp²** (33 %) un poco menos; el **sp** (50 %) casi nada. Por eso: alquilamina (sp³) > piridina (sp²) > nitrilo (sp).', title: 'Hibridación y basicidad', slide: 27, body: 'Un orbital con más carácter s mantiene sus electrones más cerca del núcleo: están menos disponibles. Basicidad: **sp³ > sp² > sp**.',
-          rows: [['Alquilamina (N sp³)', 'pKa 10–11'], ['Piridina (N sp²)', 'pKa 5,2'], ['Acetonitrilo (N sp)', 'pKb 24: muy débil']] },
-        { id: 'b56', deeper: 'Hay dos efectos peleando. **1.** Cada alquilo empuja electrones al N: más grupos, más básica. **2.** En agua, el ion amonio se estabiliza con puentes de H usando los H del N: más grupos, menos H, menos estabilizado. La **secundaria** queda con el mejor balance; la terciaria dona más, pero casi no se estabiliza en agua.', title: 'En agua: 2° > 1° > 3°', slide: 25, body: 'Los alquilos donan densidad (suben la basicidad), pero en agua también importa cuánto se estabiliza el ion amonio con puentes de H. El balance deja a las secundarias arriba.',
-          rows: [['Dimetilamina', 'pKa 10,73'], ['Metilamina', 'pKa 10,66'], ['Trimetilamina', 'pKa 9,80']], note: 'Este orden viene de tu apunte y de tablas estándar; la diapositiva 25 da el rango 10–11 para alquilaminas.' }
-      ],
-      worked: {
-        prompt: 'Ordena de menor a mayor basicidad: anilina, ciclohexilamina y p-nitroanilina.',
-        steps: [
-          { text: 'Primero pregunta: **¿el par del N está libre o deslocalizado?** En la ciclohexilamina está libre (N sp³, sin anillo aromático): será la más básica.' },
-          { text: 'En la anilina y la p-nitroanilina el par se deslocaliza en el anillo: ambas son mucho menos básicas.', ask: '¿Qué tienen en común anilina y p-nitroanilina?' },
-          { text: 'El –NO₂ es un aceptor fuerte: saca todavía más densidad del N. La **p-nitroanilina** es la menos básica.', ask: '¿Qué hace el –NO₂ con la densidad del N?' },
-          { text: 'Orden: **p-nitroanilina (1,0) < anilina (4,6) < ciclohexilamina (10,6)**.' }
-        ]
-      },
-      practice: [
-        order('m5-p1', 'Ordena de menor a mayor basicidad.', [['nitro', 'p-Nitroanilina'], ['an', 'Anilina'], ['meo', 'p-Metoxianilina'], ['cy', 'Ciclohexilamina']], ['nitro', 'an', 'meo', 'cy'],
-          { direction: 'De menor a mayor basicidad.', explain: 'p-Nitroanilina (1,0) < anilina (4,6) < p-metoxianilina (5,3) < ciclohexilamina (10,6).', misconception: 'subst-effect', slide: 24, hint: 'Primero separa la que no tiene anillo; después mira donador y aceptor.' }),
-        pick('m5-p2', 'La nicotina tiene dos nitrógenos. Toca el más básico.', [[{ t: 'N del anillo de seis (aromático)', target: 'pyr' }], [{ t: 'N–CH₃ del anillo de cinco (saturado)', target: 'pyrr' }]],
-          { pyr: { label: 'N de la piridina', misconception: 'hybrid-s' }, pyrr: { label: 'N de la pirrolidina' } }, 'pyrr',
-          { explain: 'El N de la pirrolidina es sp³ con su par libre localizado (su ion amonio tiene pKa ≈ 8). El de la piridina es sp²: su par está más retenido (pKa ≈ 3 en la nicotina). Justo lo que pregunta la PEP: "¿cuál N es más básico?"', slide: 27, captions: ['Nicotina'], hint: '¿Cuál de los dos N es como el de una amina común, y cuál como el de la piridina?' }),
-        pick('m5-p3', 'En H₂N–CH₂–CH₂–NH–CO–CH₃, toca el nitrógeno más básico.', [[{ t: 'H₂N', target: 'amine' }, { t: '–CH₂–CH₂–' }, { t: 'NH', target: 'amide' }, { t: '–CO–CH₃' }]],
-          { amine: { label: 'El NH₂ (amina)' }, amide: { label: 'El NH de la amida', misconception: 'amide-basic' } }, 'amine',
-          { explain: 'El NH₂ es una amina alifática con su par libre disponible. El NH pegado al C=O es una amida: su par está deslocalizado y no es básico.', slide: 22, captions: ['N-(2-aminoetil)acetamida'], hint: '¿Cuál N está pegado a un C=O?' }),
-        classify('m5-p4', '¿Este factor sube o baja la basicidad del N?', [['up', 'Sube la basicidad'], ['down', 'Baja la basicidad']],
-          [['res', 'Par libre deslocalizado en un anillo aromático', 'down'], ['no2', 'Grupo –NO₂ en el anillo', 'down'], ['sp', 'N con hibridación sp', 'down'], ['ome', 'Grupo –OCH₃ en para', 'up'], ['alk', 'Grupo alquilo unido al N (frente al NH₃)', 'up'], ['amide', 'N unido a un C=O (amida)', 'down']],
-          { explain: 'Todo lo que deja el par menos disponible (resonancia, aceptores, más carácter s, amidas) baja la basicidad; los donadores la suben.', misconception: 'subst-effect', slide: 24, hint: 'Pregúntate: ¿el par queda más libre o más retenido?' })
-      ],
+      explain: [],
       challenge: [
         order('m5-c1', 'Desafío: ordena de menor a mayor basicidad.', [['cn', 'Acetonitrilo (N sp)'], ['py', 'Piridina (N sp²)'], ['et3n', 'Trietilamina (N sp³)']], ['cn', 'py', 'et3n'],
           { direction: 'De menor a mayor basicidad.', explain: 'Más carácter s, menos básico: sp (acetonitrilo, pKb 24) < sp² (piridina, 5,2) < sp³ (trietilamina, 10,75).', misconception: 'hybrid-s', slide: 27, hint: 'Más carácter s retiene más los electrones.' })
@@ -635,7 +667,81 @@
           ['Dije que el par libre de la anilina se reparte en el anillo (resonancia)', 'Dije que así está menos disponible para captar un H⁺', 'Comparé con la ciclohexilamina, donde el par queda en el N'],
           { explain: 'Un par repartido es un par menos disponible.', slide: 23 })
       ]
-    }
+    },
+    parts: [
+      { id: 'r1', intro: 'Parte 1: **cuando el par se reparte**. La resonancia le quita al N su par disponible.',
+        pretest: q('m5-pre1', 'La anilina tiene su NH₂ pegado a un benceno. Comparada con la ciclohexilamina, ¿crees que es más o menos básica?', [{ text: 'Menos básica', correct: true }, { text: 'Más básica', note: 'El anillo no le regala electrones al N: se los lleva.' }, { text: 'Igual', note: 'Ser 1° no basta: importa dónde está el par.' }],
+          { explain: 'El par del N de la anilina se reparte por el anillo: está menos disponible.', slide: 23, concept: 'am.resonancia' }),
+        explain: [
+          { id: 'b51', deeper: 'En la anilina, el par libre del N no se queda en el N: se **reparte por el anillo** (resonancia). Repartido, está menos disponible para atrapar un H⁺. En la ciclohexilamina el par se queda en el N, listo para usarse. Por eso la anilina es **un millón de veces** menos básica (pKa 4,6 contra 10,6).', title: 'Resonancia: arilaminas débiles', slide: 25, body: 'En las arilaminas el par del N está deslocalizado por el anillo, así que el ion amonio es más ácido (pKa menor) que el de una alquilamina.', rows: [['Ciclohexilamina', 'pKa 10,6'], ['Anilina', 'pKa 4,6']] },
+          { id: 'b51m', title: 'El par de la anilina, paso a paso', slide: 23, body: 'Mira cómo el par del N se mete en el anillo.',
+            deeper: 'El par libre del N empuja hacia el anillo y forma un doble enlace C=N; para no pasarse de enlaces, un doble enlace del anillo mueve sus electrones hacia un carbono vecino, que queda con carga −. Ese "−" puede seguir moviéndose hasta la posición para. El par ya no está solo en el N: está repartido. Para atrapar un H⁺ habría que juntarlo otra vez, y eso cuesta.',
+            frames: [
+              { ...ANIL_R1, caption: '**Paso 1.** El par libre del N forma un doble enlace con el anillo; los electrones de un C=C del anillo se van al carbono **orto**.' },
+              { ...ANIL_R2, caption: '**Paso 2.** Ahora el N tiene carga + y el carbono orto carga −. Ese par puede moverse otra vez, hacia la posición **para**.' },
+              { ...ANIL_R3, caption: '**Resultado.** El par del N está repartido por el anillo (orto y para). Menos disponible para el H⁺: la anilina es un millón de veces menos básica que la ciclohexilamina.' }
+            ] },
+          { id: 'b52', deeper: 'En una amida el N está pegado a un **C=O**, un gran «ladrón» de electrones. El par libre del N se va hacia el oxígeno por resonancia. Resultado: el N casi no tiene par disponible, así que **no atrapa H⁺** (no es básico) **ni ataca carbonos** (no es nucleófilo).', title: 'Amidas: el caso extremo', slide: 22, body: 'En una amida (R–CO–NH₂) el par del N se deslocaliza hacia el C=O. El N casi no tiene densidad electrónica: **no es básico ni nucleófilo**.' },
+          { id: 'b53', deeper: 'El anillo es un puente entre el sustituyente y el N. Si el sustituyente **da** electrones (–OCH₃), le llegan un poco al N y la amina es algo más básica. Si los **quita** con fuerza (–NO₂), le roba todavía más al N: la p-nitroanilina (pKa 1,0) es unas **4.000 veces** menos básica que la anilina.', title: 'Sustituyentes en el anillo', slide: 24, body: 'Un **donador** (–OCH₃) devuelve densidad al anillo y sube un poco la basicidad. Un **aceptor** (–NO₂) saca todavía más densidad del N y la baja mucho.',
+          rows: [['p-Metoxianilina', 'pKa 5,3'], ['Anilina', 'pKa 4,6'], ['p-Nitroanilina', 'pKa 1,0']] }
+        ],
+        practice: [
+          q('m5-tw1', 'Casos gemelos: las dos son aminas primarias con un anillo de 6. ¿Cuál es más básica?', [{ text: 'B, la ciclohexilamina: su par no se reparte', correct: true }, { text: 'A, la anilina: el anillo le da electrones', misconception: 'aromatic-more' }, { text: 'Iguales: ambas son 1°', note: 'Ser 1° no basta: importa si el par está deslocalizado.' }],
+            { figures: [{ scene: ANILINE, lonePairs: { n: 1 }, lpAngle: { n: 0 }, caption: 'A: anilina' }, { scene: CYCLOHEXYLAMINE, lonePairs: { n: 1 }, lpAngle: { n: 0 }, caption: 'B: ciclohexilamina' }],
+              explain: 'Lo único que cambia es si el anillo es aromático. En la anilina el par entra al anillo (pKaH 4,6); en la ciclohexilamina queda en el N (10,6).', slide: 23, hint: '¿En cuál puede repartirse el par del N?', concept: 'am.resonancia' }),
+          order('m5-p1', 'Ordena de menor a mayor basicidad.', [['nitro', 'p-Nitroanilina'], ['an', 'Anilina'], ['meo', 'p-Metoxianilina'], ['cy', 'Ciclohexilamina']], ['nitro', 'an', 'meo', 'cy'],
+          { direction: 'De menor a mayor basicidad.', explain: 'p-Nitroanilina (1,0) < anilina (4,6) < p-metoxianilina (5,3) < ciclohexilamina (10,6).', misconception: 'subst-effect', slide: 24, hint: 'Primero separa la que no tiene anillo; después mira donador y aceptor.' , concept: 'am.resonancia' }),
+          pick('m5-p3', 'En H₂N–CH₂–CH₂–NH–CO–CH₃, toca el nitrógeno más básico.', [[{ t: 'H₂N', target: 'amine' }, { t: '–CH₂–CH₂–' }, { t: 'NH', target: 'amide' }, { t: '–CO–CH₃' }]],
+          { amine: { label: 'El NH₂ (amina)' }, amide: { label: 'El NH de la amida', misconception: 'amide-basic' } }, 'amine',
+          { explain: 'El NH₂ es una amina alifática con su par libre disponible. El NH pegado al C=O es una amida: su par está deslocalizado y no es básico.', slide: 22, captions: ['N-(2-aminoetil)acetamida'], hint: '¿Cuál N está pegado a un C=O?' , concept: 'am.resonancia' })
+        ],
+        rule: { title: 'Regla de la resonancia', concept: 'am.resonancia', steps: ['¿El par del N puede repartirse en un **anillo aromático** o hacia un **C=O**?', 'Si sí → **menos básica**: alquilamina ≫ arilamina ≫ amida.', 'En el anillo: **donadores** (–OCH₃) suben un poco; **aceptores** (–NO₂) bajan mucho.'] } },
+      { id: 'r2', intro: 'Parte 2: **nitrógenos en anillos**. Pirrol, piridina y la hibridación del N.',
+        pretest: q('m5-pre2', 'Pirrol y piridina tienen un N en un anillo aromático. ¿Crees que son igual de básicos?', [{ text: 'No: la piridina es mucho más básica', correct: true }, { text: 'Sí, ambos tienen un N con par', note: 'El par del pirrol está ocupado en la aromaticidad.' }, { text: 'No: el pirrol es más básico', note: 'Al revés: protonar el pirrol rompería su aromaticidad.' }],
+          { explain: 'El par del pirrol es parte de los 6 electrones π; el de la piridina queda afuera.', slide: 26, concept: 'am.heterociclos' }),
+        explain: [
+          { id: 'b54', deeper: 'Los dos tienen el N en un anillo aromático, pero el par libre está en lugares distintos. En el **pirrol**, el par es parte de los 6 electrones aromáticos: si lo usara para atrapar un H⁺, el anillo dejaría de ser aromático, y no le conviene. En la **piridina**, el par apunta hacia afuera del anillo y no participa en la aromaticidad: puede atrapar un H⁺ sin perder nada.', title: 'Pirrol y piridina', slide: 26, body: 'En el **pirrol** el par libre es parte del sexteto aromático: protonarlo destruiría la aromaticidad, así que es una base extremadamente débil. En la **piridina** el par está en un orbital sp², fuera del sistema π: se puede protonar sin perder la aromaticidad.', note: 'La piridina es unas 100.000 veces más básica que el pirrol.' },
+          { id: 'b55', deeper: 'Más carácter **s** = electrones más cerca del núcleo = más «apretados». El N **sp³** (25 % s) los tiene sueltos y los presta fácil; el **sp²** (33 %) un poco menos; el **sp** (50 %) casi nada. Por eso: alquilamina (sp³) > piridina (sp²) > nitrilo (sp).', title: 'Hibridación y basicidad', slide: 27, body: 'Un orbital con más carácter s mantiene sus electrones más cerca del núcleo: están menos disponibles. Basicidad: **sp³ > sp² > sp**.',
+          rows: [['Alquilamina (N sp³)', 'pKa 10–11'], ['Piridina (N sp²)', 'pKa 5,2'], ['Acetonitrilo (N sp)', 'pKb 24: muy débil']] }
+        ],
+        practice: [
+          q('m5-tw2', 'Casos gemelos: dos anillos aromáticos con un N. ¿Cuál es más básico?', [{ text: 'B, la piridina: su par queda fuera de los 6 π', correct: true }, { text: 'A, el pirrol: tiene N–H', misconception: 'pyrrole-pair' }, { text: 'Iguales: ambos son aromáticos con N', misconception: 'pyrrole-pair' }],
+            { figures: [{ scene: PYRROLE, lonePairs: { n: 1 }, lpAngle: { n: -90 }, caption: 'A: pirrol' }, { scene: PYRIDINE, lonePairs: { r0: 1 }, lpAngle: { r0: 0 }, caption: 'B: piridina' }],
+              explain: 'En el pirrol los 2 electrones del N completan el sexteto aromático. En la piridina el sexteto ya está completo y el par apunta hacia afuera, en un orbital sp².', slide: 26, hint: 'Cuenta los electrones π de cada anillo sin el par del N.', concept: 'am.heterociclos' }),
+          pick('m5-p2', 'La nicotina tiene dos nitrógenos. Toca el más básico.', [[{ t: 'N del anillo de seis (aromático)', target: 'pyr' }], [{ t: 'N–CH₃ del anillo de cinco (saturado)', target: 'pyrr' }]],
+          { pyr: { label: 'N de la piridina', misconception: 'hybrid-s' }, pyrr: { label: 'N de la pirrolidina' } }, 'pyrr',
+          { explain: 'El N de la pirrolidina es sp³ con su par libre localizado (su ion amonio tiene pKa ≈ 8). El de la piridina es sp²: su par está más retenido (pKa ≈ 3 en la nicotina). Justo lo que pregunta la PEP: "¿cuál N es más básico?"', slide: 27, captions: ['Nicotina'], hint: '¿Cuál de los dos N es como el de una amina común, y cuál como el de la piridina?' , concept: 'am.heterociclos' }),
+          { id: 'm5-fx1', type: 'spot', source: SRC, concept: 'am.heterociclos', slide: 26,
+            prompt: 'Un aprendiz ordenó pirrol, piridina y piperidina por basicidad. Revisa su hoja: ¿en qué paso se equivocó?',
+            steps: ['Pirrol: su N tiene par libre, así que es bastante básico', 'Piridina: N sp² con el par afuera del anillo', 'Piperidina: N sp³, como una amina común', 'Orden: piridina < pirrol < piperidina'], wrong: 0,
+            stepNotes: { 1: 'Bien: ese par está disponible, aunque más retenido que en un sp³.', 2: 'Bien: es la más básica de las tres.', 3: 'Ese orden sale del error del primer paso.' },
+            fix: { question: '¿Qué debió decir del pirrol?', options: [{ text: 'Su par es parte de los 6 electrones π: casi no es básico', correct: true }, { text: 'Su N es sp³', note: 'En el pirrol el N es sp²: su par está en un orbital p del anillo.' }, { text: 'Es el más básico porque tiene N–H', note: 'Tener N–H no da basicidad: lo que importa es el par.' }] },
+            explain: 'Orden correcto: pirrol < piridina < piperidina.', hint: '¿El par del pirrol está libre o forma parte de la aromaticidad?' },
+          classify('m5-p4', '¿Este factor sube o baja la basicidad del N?', [['up', 'Sube la basicidad'], ['down', 'Baja la basicidad']],
+          [['res', 'Par libre deslocalizado en un anillo aromático', 'down'], ['no2', 'Grupo –NO₂ en el anillo', 'down'], ['sp', 'N con hibridación sp', 'down'], ['ome', 'Grupo –OCH₃ en para', 'up'], ['alk', 'Grupo alquilo unido al N (frente al NH₃)', 'up'], ['amide', 'N unido a un C=O (amida)', 'down']],
+          { explain: 'Todo lo que deja el par menos disponible (resonancia, aceptores, más carácter s, amidas) baja la basicidad; los donadores la suben.', misconception: 'subst-effect', slide: 24, hint: 'Pregúntate: ¿el par queda más libre o más retenido?' , concept: 'am.orden' })
+        ],
+        rule: { title: 'Regla del par en el anillo', concept: 'am.heterociclos', steps: ['Si el par del N es parte de los **6 π** (pirrol) → casi **no básico**.', 'Si queda **afuera en sp²** (piridina) → básico, pero menos que un sp³.', 'Hibridación: **sp³ > sp² > sp**.'] } },
+      { id: 'r3', intro: 'Parte 3: **el agua cambia el orden**. ¿Más grupos alquilo siempre es más básico?',
+        pretest: q('m5-pre3', 'Los grupos alquilo donan electrones al N. ¿Crees que en agua la trimetilamina es la más básica de las metilaminas?', [{ text: 'No: en agua la dimetilamina gana', correct: true }, { text: 'Sí: tiene más grupos donadores', note: 'Eso vale en fase gaseosa. En agua importa también cómo se solvata el ion.' }],
+          { explain: 'En agua: dimetilamina > metilamina > trimetilamina.', slide: 25, concept: 'am.orden' }),
+        explain: [
+          { id: 'b56', deeper: 'Hay dos efectos peleando. **1.** Cada alquilo empuja electrones al N: más grupos, más básica. **2.** En agua, el ion amonio se estabiliza con puentes de H usando los H del N: más grupos, menos H, menos estabilizado. La **secundaria** queda con el mejor balance; la terciaria dona más, pero casi no se estabiliza en agua.', title: 'En agua: 2° > 1° > 3°', slide: 25, body: 'Los alquilos donan densidad (suben la basicidad), pero en agua también importa cuánto se estabiliza el ion amonio con puentes de H. El balance deja a las secundarias arriba.',
+          rows: [['Dimetilamina', 'pKa 10,73'], ['Metilamina', 'pKa 10,66'], ['Trimetilamina', 'pKa 9,80']], note: 'Este orden viene de tu apunte y de tablas estándar; la diapositiva 25 da el rango 10–11 para alquilaminas.' }
+        ],
+        practice: [
+          order('m5-o3', 'En agua: ordena de menor a mayor basicidad.', [['nh3', 'Amoníaco (9,25)'], ['tri', 'Trimetilamina (9,80)'], ['mono', 'Metilamina (10,66)'], ['di', 'Dimetilamina (10,73)']], ['nh3', 'tri', 'mono', 'di'],
+            { direction: 'De menor a mayor basicidad.', explain: 'NH₃ < trimetilamina < metilamina < dimetilamina: la 2° tiene el mejor balance entre donación y solvatación.', slide: 25, hint: 'Ordena por el pKa del ion amonio (entre paréntesis).', concept: 'am.orden' }),
+          q('m5-q3', '¿Por qué la trimetilamina queda detrás de la metilamina en agua?', [{ text: 'Su ion amonio tiene un solo N–H y se estabiliza peor con el agua', correct: true }, { text: 'Los metilos atraen electrones', note: 'Los alquilos donan electrones; el problema es la solvatación.' }, { text: 'Es plana', note: 'Es piramidal, como todas las aminas simples.' }],
+            { explain: 'El ion trimetilamonio tiene un solo N–H para formar puentes de H con el agua: se solvata peor y su amina es menos básica en agua.', slide: 25, hint: 'Piensa en los puentes de H entre el ion amonio y el agua.', concept: 'am.orden' }),
+          write('m5-w2', 'Explícalo con tus palabras: ¿por qué en agua la dimetilamina es más básica que la trimetilamina?',
+            'Los grupos metilo donan electrones al N y eso sube la basicidad, pero en agua también importa cómo se estabiliza el ion amonio con puentes de hidrógeno. El ion dimetilamonio tiene dos N–H y se solvata bien; el trimetilamonio tiene uno solo y se solvata peor. Por eso, en agua, la dimetilamina gana.',
+            ['Dije que los alquilos donan electrones (suben la basicidad)', 'Dije que en agua el ion amonio se estabiliza con puentes de H en sus N–H', 'Concluí que el ion de la terciaria se solvata peor'],
+            { explain: 'Donación + solvatación: la 2° tiene el mejor balance.', slide: 25, hint: 'Hay dos efectos: uno sube y otro baja. ¿Cuál pierde la terciaria?', concept: 'am.orden',
+              keywords: [{ label: 'Donan electrones', any: ['donan', 'dona', 'inductiv', 'empujan'] }, { label: 'Puentes de H / solvatación', any: ['puente', 'solvat', 'agua', 'estabiliz'] }, { label: 'Menos N–H en la 3°', any: ['un solo', 'menos h', 'menos n-h', 'menos n–h', 'solo un h', 'un n-h', 'un n–h'] }] })
+        ],
+        rule: { title: 'Regla del agua', concept: 'am.orden', steps: ['En agua: **2° > 1° > 3° > NH₃** (dimetil 10,73 > metil 10,66 > trimetil 9,80 > NH₃ 9,25).', 'Los alquilos **donan** (suben), pero el ion de la 3° se **solvata peor** (baja).', 'Si la PEP dice "en solución acuosa", usa este orden.'] } }
+    ]
   },
   /* ── Misión 6 (etapa 6: al modelo de la clase viva, como la misión 7) ── */
   {
@@ -1312,7 +1418,7 @@
     f21: 'am.nombres', f22: 'am.nombres-aril', b21: 'am.nombres', b22: 'am.nombres-aril', b23: 'am.nombres-aril', b24: 'am.nombres', b25: 'am.nombres',
     f31: 'am.fisicas', f32: 'am.fisicas', b31: 'am.fisicas', b32: 'am.fisicas', b33: 'am.fisicas', b34: 'am.sales',
     f41: 'base.acido-base', f42: 'am.equilibrio', f43: 'am.pka', b41: 'am.pka', b42: 'am.equilibrio', b43: 'am.pka',
-    f51: 'am.resonancia', f52: 'am.heterociclos', f53: 'am.resonancia', b51: 'am.resonancia', b52: 'am.resonancia', b53: 'am.resonancia', b54: 'am.heterociclos', b55: 'am.heterociclos', b56: 'am.orden',
+    f51: 'am.resonancia', f52: 'am.heterociclos', f53: 'am.resonancia', b51: 'am.resonancia', b51m: 'am.resonancia', b52: 'am.resonancia', b53: 'am.resonancia', b54: 'am.heterociclos', b55: 'am.heterociclos', b56: 'am.orden',
     f61: 'base.sn-e', f62: 'am.reduccion', b61: 'am.alquilacion', b62: 'am.alquilacion', b62m: 'am.alquilacion', b63: 'am.alquilacion', b64: 'am.reduccion', b64m: 'am.reduccion', b65: 'am.reduccion',
     f69: 'base.lewis', f70: 'am.acilacion', f71: 'base.sn-e', f72: 'base.sn-e', b71: 'am.acilacion', b71m: 'am.acilacion', b73: 'am.diazonio', b74: 'am.diazonio', b72: 'am.hofmann', b72m: 'am.hofmann',
     f81: 'am.espectro', f82: 'am.espectro', b81: 'am.espectro', b82: 'am.espectro', b83: 'am.espectro'

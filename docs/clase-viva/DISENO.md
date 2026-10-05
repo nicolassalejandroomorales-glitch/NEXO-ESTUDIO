@@ -254,7 +254,11 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
 - **Etapa 6 en curso (5 oct):** **misión 6 (Síntesis) rehecha** al modelo de la misión 7: caso del p-aminofenol (paracetamol), 3 recetas
   (alquilar sin descontrol: azida y Gabriel · aminación reductiva · reducir amidas y nitroarenos), cada una con "adivina antes", mecanismo con
   flechas (azida y aminación reductiva), práctica variada (flechas, caldero, aprendiz, dibujo con aviso de "te quedaste en la imina", gemelos,
-  clasificar) y receta guardada; cierre con pregunta escrita para el compañero y encargo estilo PEP en papel. Faltan las misiones 1–5 y 8.
+  clasificar) y receta guardada; cierre con pregunta escrita para el compañero y encargo estilo PEP en papel. **Misiones 4 y 5 (basicidad, pregunta 3 de la PEP) rehechas (6 oct):**
+  m4 con caso de la lidocaína (clorhidrato), 2 partes (medir con el pKa · hacia dónde va el equilibrio), flechas de la protonación, simulación de pH
+  y aprendiz que confunde el lado débil; m5 con caso de la nicotina, 3 partes (resonancia · anillos con N · el agua cambia el orden), mecanismo de
+  resonancia de la anilina y gemelos con el par dibujado. Como no son reacciones, cada parte guarda una **regla del sabio** (lista de chequeo) en el
+  recetario. Faltan las misiones 1, 2, 3 y 8.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

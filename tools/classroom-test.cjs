@@ -29,6 +29,8 @@ for (const [id, file] of Object.entries(catalog)) {
           if (from.startsWith('b:')) assert.ok(item.scene.bonds[Number(from.slice(2))], `${item.id}: el enlace ${from} no existe`);
           assert.ok(to.startsWith('a:') ? item.scene.atoms.some(a => a.id === to.slice(2)) : item.scene.bonds[Number(to.slice(2))], `${item.id}: el destino ${to} no existe`); } }
       if (item.figures) for (const f of item.figures) assert.ok(f.scene?.atoms?.length && f.caption, `${item.id}: cada dibujo de los gemelos necesita escena y rótulo`);
+      // Todo par libre dibujado tiene que estar en un átomo que exista (si no, la pantalla se rompe al dibujar).
+      for (const def of [item, ...(item.figures || [])]) if (def.lonePairs) for (const k of Object.keys(def.lonePairs)) assert.ok((def.scene || {}).atoms?.some(a => a.id === k), `${item.id}: par libre en "${k}", átomo que no existe en el dibujo`);
       if (type === 'arrows') for (const [from, to] of item.given || []) assert.ok(/^(lp|b):/.test(from) && !item.answer.some(([a, b]) => a === from && b === to), `${item.id}: flecha dada inválida o repetida en la respuesta`);
       if (type === 'poe') { assert.equal(item.options.filter(o => o.correct).length, 1, `${item.id}: la predicción necesita una sola correcta`); assert.ok(item.sim && item.sim.min < item.sim.threshold && item.sim.threshold < item.sim.max && item.sim.below && item.sim.above, `${item.id}: simulación incompleta`); }
       if (type === 'recipe') { for (const r of item.answer) assert.ok(item.ingredients.some(x => x.id === r), `${item.id}: ingrediente ${r} no existe`); assert.ok(item.ingredients.length > item.answer.length, `${item.id}: el caldero necesita ingredientes de más (distractores)`);
@@ -81,9 +83,10 @@ for (const [id, file] of Object.entries(catalog)) {
   for (const m of cls.missions) for (const blk of context.window.NexoClassroom.blocksOf(m)) assert.ok(blk.deeper && blk.title && blk.body, `${blk.id}: falta título, texto o "deeper" (Explícame más simple)`);
   // Misiones por recetas: cada parte tiene lección, práctica variada y su receta; los mecanismos tienen cuadros.
   for (const m of cls.missions) for (const p of m.parts || []) {
-    assert.ok(p.intro && (p.explain || []).length && (p.practice || []).length >= 3 && p.recipe?.title, `${m.id}/${p.id}: la receta necesita intro, lección, 3+ actividades y receta guardada`);
+    assert.ok(p.intro && (p.explain || []).length && (p.practice || []).length >= 3 && (p.recipe?.title || (p.rule?.title && p.rule.steps?.length >= 2 && cls.concepts.some(c => c.id === p.rule.concept))), `${m.id}/${p.id}: la parte necesita intro, lección, 3+ actividades y receta o regla guardada (con su concepto)`);
     assert.ok(new Set(p.practice.map(i => i.type || 'choice')).size >= 3, `${m.id}/${p.id}: al menos 3 tipos de actividad distintos`);
     for (const blk of p.explain) if (blk.frames) for (const f of blk.frames) assert.ok(f.scene?.atoms?.length && f.caption, `${blk.id}: cada cuadro del mecanismo necesita escena y texto`);
+    for (const blk of p.explain) for (const f of blk.frames || []) for (const k of Object.keys(f.lonePairs || {})) assert.ok(f.scene.atoms.some(a => a.id === k), `${blk.id}: par libre en "${k}", átomo que no existe`);
     for (const blk of p.explain) if (blk.frames) assert.ok(blk.frames.some(f => (f.arrows || []).length), `${blk.id}: un mecanismo sin ninguna flecha no muestra cómo se mueven los electrones`);
     for (const blk of p.explain) for (const f of blk.frames || []) for (const [from, to] of f.arrows || []) { const ok = k => k.startsWith('b:') ? f.scene.bonds[Number(k.slice(2))] : f.scene.atoms.some(x => x.id === k.slice(k.indexOf(':') + 1)); assert.ok(ok(from) && ok(to), `${blk.id}: flecha ${from} → ${to} apunta a algo que no existe`); if (from.startsWith('lp:')) assert.ok(f.lonePairs?.[from.slice(3)], `${blk.id}: ${from} sin par libre dibujado`); }
   }
@@ -178,12 +181,11 @@ for (const [id, file] of Object.entries(catalog)) {
       assert.ok(d.sources.length >= 2 && d.sources.every(x => x.url || cls.slides[x.slide]), `${c}: la clase a fondo necesita al menos 2 fuentes válidas`);
     }
   }
-  const m7 = cls.missions.find(m => m.parts);
-  if (m7) {
+  for (const m7 of cls.missions.filter(m => m.parts)) {
     const ks = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m7.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, conf: {}, confWhy: {} });
-    assert.equal(ks.filter(b => b.kind === 'hook').length, 1, 'La misión con recetas parte con el caso de farmacia');
+    assert.equal(ks.filter(b => b.kind === 'hook').length, 1, `${m7.id}: la misión parte con el caso de farmacia`);
     assert.equal(ks.filter(b => b.stage === 'pretest').length, m7.parts.filter(p => p.pretest).length, 'Cada receta con "adivina antes" lo muestra');
-    assert.equal(ks.filter(b => b.kind === 'lesson' && b.block.kind === 'recipe').length, m7.parts.length, 'Cada receta termina guardándose en el grimorio');
+    assert.equal(ks.filter(b => b.kind === 'lesson' && (b.block.kind === 'recipe' || b.block.kind === 'rule')).length, m7.parts.length, `${m7.id}: cada parte termina guardando su receta o regla en el grimorio`);
     const wrongPre = { [m7.parts[0].pretest.id]: { choice: 1, correct: false } };
     assert.ok(!context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m7.id, answers: wrongPre, hints: {}, retries: {}, revealed: {}, skipExplain: {} }).some(b => b.kind === 'rescue'), 'Equivocarse en "adivina antes" no abre el rescate');
   }

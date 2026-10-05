@@ -237,6 +237,7 @@
         }
         (p.practice || []).forEach((item, i, list) => ask(item, m, 'practice', i + 1, list.length));
         if (p.recipe) out.push({ kind: 'lesson', block: { ...p.recipe, kind: 'recipe', id: `${p.id}-recipe` }, m });
+        else if (p.rule) out.push({ kind: 'lesson', block: { ...p.rule, kind: 'rule', id: `${p.id}-rule` }, m }); // misiones sin reacciones: una regla
       });
       if ((m.stages.practice || []).length) { say('Ahora tú. Si te trabas, toca a tu compañero en la mesa: te dará una pista.', m); questions(m, 'practice'); }
       const practice = itemsOf(m).filter(x => x.stage === 'practice').map(x => x.item);
@@ -412,7 +413,7 @@
         <path d="M27 90 h66 l12 28 a10 10 0 0 1 -9 14 h-72 a10 10 0 0 1 -9 -14 z" class="cr-flask-liquid"/>
         ${[...Array(9)].map((_, i) => `<circle class="cr-flask-bubble" cx="${30 + (i * 37) % 60}" cy="125" r="${2 + (i % 3)}" style="animation-delay:${(i * .27).toFixed(2)}s"/>`).join('')}</svg>`;
       return `<div class="cr-poe">${predict}
-        <div class="cr-sim ${above ? 'is-above' : ''}" data-sim="${esc(item.id)}" data-threshold="${sim.threshold}">
+        <div class="cr-sim ${above ? 'is-above' : ''} ${sim.look ? `is-${esc(sim.look)}` : ''}" data-sim="${esc(item.id)}" data-threshold="${sim.threshold}">
           <p class="cr-act-help"><b>2. Observa.</b> ${md(sim.label)}</p>
           <div class="cr-sim-body">${flask}<div class="cr-sim-ctrl">
             <label for="sim-${esc(item.id)}">${esc(sim.name)}: <b data-sim-val>${val} ${esc(sim.unit)}</b></label>
@@ -658,6 +659,13 @@
         ${h.scene ? `<div class="cr-figure">${window.NexoMolEditor?.sceneMarkup(h, { label: h.title }) || ''}</div>` : ''}<p>${md(h.text)}</p></div>`;
       return { sage, center };
     }
+    if (b.kind === 'lesson' && b.block.kind === 'rule') {
+      const r = b.block;
+      sage.text = `**${r.title}** quedó guardada en tu grimorio, en el recetario. Úsala como lista de chequeo en la prueba.`; sage.mood = 'proud'; sage.actions = cont();
+      center = `<div class="cr-parchment cr-recipe-card cr-rule-card"><p class="cr-eyebrow">Regla guardada en tu grimorio</p><h3>${esc(r.title)}</h3>
+        <ol class="cr-rule">${r.steps.map(t => `<li>${md(t)}</li>`).join('')}</ol>${r.note ? `<p class="cr-note">${md(r.note)}</p>` : ''}</div>`;
+      return { sage, center };
+    }
     if (b.kind === 'lesson' && b.block.kind === 'recipe') {
       const r = b.block;
       sage.text = `**${r.title}** quedó guardada en tu grimorio. Volverá a probarte mañana: si la recuerdas, será tuya.`; sage.mood = 'proud'; sage.actions = cont();
@@ -869,7 +877,17 @@
             <div><dt>Condición</dt><dd>${hide(r.condition)}</dd></div><div><dt>Resultado</dt><dd>${md(r.result)}</dd></div></dl>
           ${r.note && st !== 'seen' ? `<p class="cr-note">${md(r.note)}</p>` : ''}
           <button class="cr-link" data-cr="slides" data-slide="${r.slide}">Diapositiva ${r.slide}</button></article>`;
-      }).join('')}</div>`;
+      }).join('')}</div>${rulesMarkup(cls, api)}`;
+  }
+  // Reglas del sabio (misiones sin reacciones): se ven cuando ya trabajaste su concepto en esa misión.
+  function rulesMarkup(cls, api) {
+    const rules = cls.missions.flatMap(m => (m.parts || []).filter(p => p.rule).map(p => ({ ...p.rule, mission: m })));
+    if (!rules.length) return '';
+    const E = EV(), store = E?.storeFor(api.getState(), cls.id);
+    const seen = r => !E || store.records.some(x => x.missionId === r.mission.id && x.conceptId === r.concept);
+    return `<h3 class="cr-rules-h">Reglas del sabio</h3><div class="cr-recipes">${rules.map(r => seen(r)
+      ? `<article class="cr-rcard is-learned"><p class="cr-eyebrow">Regla</p><h3>${esc(r.title)}</h3><ol class="cr-rule">${r.steps.map(t => `<li>${md(t)}</li>`).join('')}</ol></article>`
+      : `<article class="cr-rcard is-hidden"><p class="cr-eyebrow">Por descubrir</p><h3>???</h3><p>Aparece en la Misión ${cls.missions.indexOf(r.mission) + 1}.</p></article>`).join('')}</div>`;
   }
 
   function panel(cls, s, b, api) {

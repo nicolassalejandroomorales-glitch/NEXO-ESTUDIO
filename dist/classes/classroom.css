@@ -735,3 +735,11 @@ body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour
 .cr-deepclass h3 { margin: 0 0 4px; font-family: Georgia, 'Times New Roman', serif; color: var(--gold-deep); }
 .cr-deepclass p { margin: 0; line-height: 1.6; }
 .cr-deep-challenge { border: 1px solid var(--parch-edge); }
+
+/* Reglas del sabio (misiones sin reacciones) y simulación de pH */
+.cr-rule { margin: 0; padding-left: 22px; display: grid; gap: 8px; color: var(--ink); line-height: 1.55; }
+.cr-rules-h { margin: 18px 0 8px; font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
+.cr-sim.is-ph .cr-flask-liquid { fill: #d97aa8; }
+.cr-sim.is-ph.is-above .cr-flask-liquid { fill: #7f9ad9; }
+.cr-sim.is-ph .cr-flask-bubble { animation: none !important; opacity: 0; }
+.cr-sim.is-ph, .cr-sim.is-ph.is-above { background: #f3eef6; border-color: #cdbfd9; }
