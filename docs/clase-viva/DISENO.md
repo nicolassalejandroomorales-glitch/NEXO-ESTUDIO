@@ -212,7 +212,7 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 6 | Las otras misiones de Aminas al modelo nuevo | **Hecha** (esperando tu prueba) | Opus 5.5 |
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | **Hecha** (esperando tu prueba) | Sonnet 5.5 |
 | 8 | Entrenar con generadores de 5 niveles (en toda la app), laboratorio libre, bestiario, hoja de la noche anterior. La voz queda para después | **Hecha** (esperando tu prueba) · `docs/etapa-8-entrenar/SPEC.md` | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
-| 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | **Siguiente** (la plantilla ya está al día con la etapa 7) | Sonnet 5.5 |
+| 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | **Hecha** · `docs/etapa-9-replicar/SPEC.md` | Sonnet 5.5 |
 | 10 | **Arte al final:** torre por capas, árbol vivo y personajes cartoon, diseñados con calma | En diseño (bocetos) | Opus 5.5 |
 
 Orden cambiado el 4 oct a pedido de Niquito: el arte se diseña al final, cuando todo lo funcional esté listo.
@@ -270,6 +270,10 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
 - **Etapa 7 hecha (6 oct):** ver `docs/etapa-7-prueba/SPEC.md`. Caminos nuevos **Tengo X minutos** (plan por bloques), **Ronda del alba**
   (repaso diario mezclado, con los conceptos vencidos primero) y **Simulacro PEP** (mini o completo, con reloj, sin pistas ni formulario,
   corrección con la pauta, puntaje parcial y nota estimada). Escritas **en papel** con foto opcional que no se guarda. Retomar donde quedaste y botón ☰ Caminos.
+- **Etapa 9 hecha (5 oct):** ver `docs/etapa-9-replicar/SPEC.md`. La plantilla `tools/new-class.cjs` ahora crea también los ejercicios
+  infinitos (`<id>-gen.js`: generador desde tabla, generador desde banco, laboratorio y bestiario), el ramo para la cuenta regresiva, una misión
+  base y errores con desvío. La prueba del aula separa lo general de lo propio de Aminas, y `npm test` le pasa la prueba completa a una clase
+  recién creada. Guía con lista antes de publicar.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

@@ -22,5 +22,17 @@ for (const { item } of NX.itemsOf(cls.missions[0])) {
 assert.ok(cls.concepts.every(c => cls.mini[c.id]), 'Cada concepto de la plantilla trae su mini clase');
 assert.ok(NX.diagnosisPlan(cls, { answers: {} }).next, 'El diagnóstico de la plantilla arranca');
 assert.ok(cls.formulas[0].calc.run({ x: 3 }).includes('6'), 'La calculadora de la plantilla funciona');
+// Ejercicios infinitos de la plantilla: se cargan y arman preguntas en los 5 niveles.
+assert.ok(fs.existsSync(path.join(out, 'xx-01-gen.js')), 'La plantilla también crea el archivo de ejercicios infinitos');
+vm.runInContext(fs.readFileSync(path.join(out, 'xx-01-gen.js'), 'utf8'), context);
+for (let lv = 1; lv <= 5; lv++) assert.ok(NX.genItem(cls, `gen:comparar:${lv}:s1`)?.prompt, `La plantilla arma un ejercicio de nivel ${lv}`);
+assert.ok(NX.beats(cls, { ...st, path: 'base', mission: cls.base[0].id }).some(b => b.kind === 'close'), 'El repaso desde cero de la plantilla se recorre');
+// Prueba de fuego: la plantilla, puesta en el catálogo junto a Aminas, pasa la prueba completa del aula (tools/classroom-test.cjs).
+const classes = path.join(out, 'classes'); fs.mkdirSync(classes);
+for (const f of fs.readdirSync(dir)) if (f.endsWith('.js')) fs.copyFileSync(path.join(dir, f), path.join(classes, f));
+for (const f of ['xx-01.js', 'xx-01-gen.js']) fs.copyFileSync(path.join(out, f), path.join(classes, f));
+const cat = path.join(classes, 'catalog.js');
+fs.writeFileSync(cat, fs.readFileSync(cat, 'utf8').replace(/\n\}\);\s*$/, ",\n  'xx-01': 'xx-01.js'\n});\n"));
+execFileSync(process.execPath, [path.join(__dirname, 'classroom-test.cjs')], { stdio: 'pipe', env: { ...process.env, NEXO_CLASSES_DIR: classes } });
 fs.rmSync(out, { recursive: true, force: true });
-console.log('Plantilla de clases: una clase nueva sale con caso, adivina antes, partes, regla, diagnóstico, formulario y mini clase, y el aula la recorre.');
+console.log('Plantilla de clases: una clase nueva sale con caso, adivina antes, partes, regla, repaso desde cero, diagnóstico, formulario, mini clase y ejercicios infinitos, y pasa la prueba completa del aula.');
