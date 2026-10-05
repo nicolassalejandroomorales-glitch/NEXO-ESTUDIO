@@ -24,16 +24,16 @@
   // El arte generado (tools/classroom-art/build_tower.py) es la fuente de verdad cuando está cargado.
   const ART = window.NexoTowerArt;
   if (ART) { Object.assign(TOWER, ART.scenes); Object.assign(HOTSPOTS, ART.hotspots); } else HOTSPOTS.day = HOTSPOTS.dusk;
-  const SPOT_LABEL = { sage: 'Pedirle al sabio que explique desde cero', book: 'Abrir el glosario del sabio', board: 'Ver las diapositivas de la clase',
+  const SPOT_LABEL = { sage: 'Pedirle al sabio que explique desde cero', book: 'Abrir tu grimorio: glosario, formulario y recetario', board: 'Ver las diapositivas de la clase',
     window: 'Cambiar la hora de la torre', flasks: 'Mezclar los frascos: dato curioso' };
   const HOURS = [7, 12.5, 18.6, 22];
-  const SPOT_NAME = { sage: 'Sabio · desde cero', book: 'Libro · glosario', board: 'Pizarra · diapositivas', window: 'Ventana · hora', flasks: 'Frascos · datos curiosos' };
+  const SPOT_NAME = { sage: 'Sabio · desde cero', book: 'Libro · grimorio', board: 'Pizarra · diapositivas', window: 'Ventana · hora', flasks: 'Frascos · datos curiosos' };
   /* Recorrido de la primera vez (docs/etapa-4b-intuitivo/SPEC.md): una línea por parte, iluminando cada una. */
   const TOUR = [
     { target: null, title: 'Bienvenido a la torre', text: 'Te muestro en 30 segundos dónde está cada cosa. Puedes saltarlo cuando quieras.' },
     { target: '.cr-dialog', title: 'El sabio te habla aquí', text: 'Lee lo que dice abajo. El botón verde siempre te lleva al paso siguiente.' },
     { target: '.cr-mascot', title: 'Tu compañero', text: 'En la práctica, tócalo y te da una pista. Esa respuesta cuenta como "con pista".' },
-    { target: '.cr-objects, .cr-spot', title: 'Los objetos de la torre', text: 'Sabio: te explica desde cero. Libro: glosario. Pizarra: diapositivas de la clase. Ventana: la hora. Frascos: datos curiosos.', place: 'top' },
+    { target: '.cr-objects, .cr-spot', title: 'Los objetos de la torre', text: 'Sabio: te explica desde cero. Libro: tu grimorio (glosario, formulario y recetas). Pizarra: diapositivas de la clase. Ventana: la hora. Frascos: datos curiosos.', place: 'top' },
     { target: '.cr-goal-chip', title: 'Tu camino al 7', text: 'Los puntos de la PEP que ya demostraste. Se ganan acertando sin ayuda los casos estilo prueba.' },
     { target: '.cr-help-btn', title: '¿Te perdiste?', text: 'Este botón explica cada parte cuando quieras y repite este recorrido.' },
     { target: '.cr-path[data-path="diagnostico"]', title: 'Empieza por aquí', text: 'Si es tu primera vez, el diagnóstico te dice en 5 minutos por qué misión partir.' }
@@ -42,7 +42,7 @@
     ['El sabio (abajo)', 'Te explica y te guía. El botón verde avanza; "Explícame más simple" lo dice con otras palabras.'],
     ['Tu compañero', 'En la práctica te da una pista si lo tocas. Lo que respondes con pista cuenta como "con pista", no "sin ayuda".'],
     ['La barra de confianza', 'Antes de responder marcas qué tan seguro estás. No baja tu nota: sirve para saber si de verdad lo sabes o adivinaste.'],
-    ['Los objetos de la torre', 'Sabio: desde cero · Libro: glosario · Pizarra: diapositivas · Ventana: hora del día · Frascos: datos curiosos.'],
+    ['Los objetos de la torre', 'Sabio: desde cero · Libro: grimorio (glosario, formulario y recetario) · Pizarra: diapositivas · Ventana: hora del día · Frascos: datos curiosos.'],
     ['Camino al 7', 'Los puntos de la PEP que ya demostraste acertando sin ayuda los casos estilo prueba.'],
     ['Las hojas', 'Cada concepto es una hoja: brote (guiado) → verde (lo hiciste solo) → flor (lo recordaste días después).'],
     ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Misiones: una idea por visita. Expedición: todo seguido. Prueba encima: directo a la PEP.']
@@ -520,7 +520,7 @@
         ${Object.entries(EV()?.WHY || {}).map(([k, label]) => `<button class="cr-chip cr-why-chip ${why === k ? 'is-selected' : ''}" data-cr="conf-why" data-why="${k}" data-item="${esc(item.id)}" aria-pressed="${why === k}">${label}</button>`).join('')}</div>` : ''}
     </div>`;
   }
-  function confidenceResult(cls, item, rec) {
+  function confidenceResult(cls, item, rec, closedBook = false) {
     if (!rec || rec.confidence === null || rec.confidence === undefined) return '';
     const c = rec.confidence, kind = rec.kind;
     const text = {
@@ -532,7 +532,9 @@
     }[kind] || '';
     let route = '';
     if (!rec.correct || kind === 'fragil') {
-      if (rec.why === 'regla') route = `<button class="cr-btn cr-small" data-cr="spot" data-spot="sage">Repasar la regla desde cero</button>`;
+      const card = closedBook ? null : (cls.formulas || []).find(f => f.concepts.includes(item.concept));
+      if (rec.why === 'regla') route = card ? `<button class="cr-btn cr-small" data-cr="grimoire" data-tab="formulas" data-card="${esc(card.id)}">Abrir el formulario: ${esc(card.title)}</button>`
+        : `<button class="cr-btn cr-small" data-cr="spot" data-spot="sage">Repasar la regla desde cero</button>`;
       if (rec.why === 'pregunta') route = `<p class="cr-conf-route"><b>Dicho de otra forma:</b> ${md(item.plain || item.hint || item.explain)}</p>`;
       if (rec.why === 'adivino') route = `<p class="cr-conf-route">Adivinar está bien aquí: lo contamos como algo por aprender, no como sabido.</p>`;
     }
@@ -739,7 +741,7 @@
         <fieldset class="cr-gate" ${!pre && !record && s.conf[item.id] === undefined ? 'disabled aria-describedby="gate-note"' : ''}>
           ${!pre && !record && s.conf[item.id] === undefined ? '<p class="cr-gate-note" id="gate-note">Primero marca tu confianza en la barra.</p>' : ''}
           ${activityMarkup(cls, s, item)}</fieldset>
-        ${pre ? '' : confidenceResult(cls, item, record)}
+        ${pre ? '' : confidenceResult(cls, item, record, s.path === 'prueba')}
         ${!pre && showWhy(record) ? whyOthers(cls, item) : ''}
         ${item.slide ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
       return { sage, center };
@@ -786,6 +788,56 @@
     return { sage, center };
   }
 
+  /* ───────── El grimorio: glosario, formulario y recetario (docs/etapa-5-grimorio/SPEC.md) ───────── */
+  const grimoireTabs = s => `<div class="cr-tabs" role="tablist" aria-label="Secciones del grimorio">${[['glossary', 'Glosario'], ['formulas', 'Formulario'], ['recipes', 'Recetario']]
+    .map(([id, name]) => `<button class="cr-tab ${(s.gtab || 'glossary') === id ? 'is-on' : ''}" role="tab" aria-selected="${(s.gtab || 'glossary') === id}" data-cr="grimoire" data-tab="${id}">${name}</button>`).join('')}</div>`;
+  const sup = html => html.replace(/\^\(([^)]*)\)/g, '<sup>$1</sup>').replace(/\^([^\s,()<]+)/g, '<sup>$1</sup>');
+  function formulasMarkup(cls, s) {
+    if (s.path === 'prueba') return '<p class="cr-note">El formulario está <b>cerrado</b> en este camino, como en la PEP. Ábrelo cuando estudies en Misiones o Expedición.</p>';
+    const cards = cls.formulas || [];
+    return `<p class="cr-act-help">Toca una fórmula para abrirla. Cada una trae un ejemplo resuelto y sus fuentes${cards.some(f => f.calc) ? '; algunas, una calculadora para probar' : ''}.</p>
+      <div class="cr-formulas">${cards.map(f => {
+        const open = s.card === f.id, deepKey = `fdeep-${f.id}`, deep = s.revealed[deepKey];
+        const vals = s.work[`calc:${f.id}`] ||= Object.fromEntries((f.calc?.inputs || []).map(i => [i.id, i.value]));
+        return `<article class="cr-fcard ${open ? 'is-open' : ''}" id="card-${esc(f.id)}">
+          <button class="cr-fhead" data-cr="fcard" data-card="${esc(f.id)}" aria-expanded="${open}"><b>${esc(f.title)}</b><span class="cr-formula-big">${sup(esc(f.formula))}</span></button>
+          ${open ? `<div class="cr-fbody">
+            <table class="cr-vars"><thead><tr><th>Símbolo</th><th>Qué es</th><th>Unidad</th></tr></thead><tbody>${f.vars.map(([k, v, u]) => `<tr><td><b>${esc(k)}</b></td><td>${md(v)}</td><td>${esc(u)}</td></tr>`).join('')}</tbody></table>
+            <dl class="cr-fdl"><div><dt>Para qué sirve</dt><dd>${md(f.what)}</dd></div><div><dt>Cuándo se usa</dt><dd>${md(f.when)}</dd></div><div><dt>Ejemplo resuelto</dt><dd>${sup(md(f.example))}</dd></div></dl>
+            ${f.calc ? `<div class="cr-calc" data-calc="${esc(f.id)}"><p class="cr-eyebrow">Pruébalo</p><div class="cr-calc-in">${f.calc.inputs.map(i => `<label>${esc(i.label)}<input type="number" inputmode="decimal" step="${i.step}" value="${esc(vals[i.id])}" data-cr-calc="${esc(f.id)}" data-key="${esc(i.id)}"></label>`).join('')}</div>
+              <p class="cr-calc-out" aria-live="polite" data-calc-out>${md(f.calc.run(vals))}</p></div>` : ''}
+            <button class="cr-btn cr-small" data-cr="deeper" data-key="${deepKey}" aria-expanded="${Boolean(deep)}">${deep ? 'Ocultar' : 'A fondo: por qué funciona'}</button>
+            ${deep ? `<div class="cr-deeper"><p>${md(f.deeper)}</p></div>` : ''}
+            <p class="cr-fsrc"><b>Fuentes:</b> ${f.sources.map(x => x.slide ? `<button class="cr-link" data-cr="slides" data-slide="${x.slide}">${esc(x.label)}</button>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join(' · ')}</p>
+          </div>` : ''}</article>`;
+      }).join('')}</div>`;
+  }
+  // Estado de una receta según tu evidencia: sin ver → vista → aprendida → dominada.
+  function recipeState(cls, api, r) {
+    const E = EV(); if (!E) return 'seen';
+    const store = E.storeFor(api.getState(), cls.id), recs = store.records.filter(x => x.conceptId === r.concept);
+    if (!recs.length) return 'hidden';
+    if (E.leaf(store, r.concept).key && (E.LEAVES[E.leaf(store, r.concept).key]?.rank || 0) >= 3) return 'mastered';
+    // Se completa al acertar dentro de su misión (el diagnóstico solo la deja "vista").
+    return recs.some(x => x.correct && !x.retry && x.missionId === r.mission) ? 'learned' : 'seen';
+  }
+  function recipesMarkup(cls, s, api) {
+    const list = (cls.recipes || []).map(r => ({ r, st: recipeState(cls, api, r) }));
+    const full = list.filter(x => x.st === 'learned' || x.st === 'mastered').length;
+    const n = id => cls.missions.findIndex(m => m.id === id) + 1;
+    return `<p class="cr-act-help">Cada reacción que dominas se vuelve una poción. <b>${full} de ${list.length}</b> completas. Se completan solas cuando respondes bien en las misiones.</p>
+      <div class="cr-recipes">${list.map(({ r, st }) => {
+        if (st === 'hidden') return `<article class="cr-rcard is-hidden"><p class="cr-eyebrow">Por descubrir</p><h3>???</h3><p>Aparece en la Misión ${n(r.mission)}.</p></article>`;
+        const hide = v => st === 'seen' ? '<span class="cr-unknown">???</span>' : md(v);
+        return `<article class="cr-rcard is-${st}">${st === 'mastered' ? '<span class="cr-seal" title="Dominada">✦</span>' : ''}
+          <p class="cr-eyebrow">${{ seen: 'Vista · acierta una vez para completarla', learned: 'Aprendida', mastered: 'Dominada' }[st]}</p><h3>${esc(r.title)}</h3>
+          <dl class="cr-recipe"><div><dt>Ingrediente base</dt><dd>${md(r.base)}</dd></div><div><dt>Ingredientes mágicos</dt><dd>${hide(r.reagents)}</dd></div>
+            <div><dt>Condición</dt><dd>${hide(r.condition)}</dd></div><div><dt>Resultado</dt><dd>${md(r.result)}</dd></div></dl>
+          ${r.note && st !== 'seen' ? `<p class="cr-note">${md(r.note)}</p>` : ''}
+          <button class="cr-link" data-cr="slides" data-slide="${r.slide}">Diapositiva ${r.slide}</button></article>`;
+      }).join('')}</div>`;
+  }
+
   function panel(cls, s, b, api) {
     if (s.slideOpen) {
       const numbers = Object.keys({ ...cls.slides, ...cls.slideImages }).map(Number).sort((x, y) => x - y);
@@ -808,8 +860,14 @@
     } else if (s.panel === 'zero') {
       title = 'El sabio explica desde cero';
       body = (m.stages.fundamentals || []).map(f => `<section class="cr-zero"><h3>${esc(f.title.replace(/^Desde cero: /, ''))}</h3>${f.svg ? `<div class="cr-figure">${f.svg}</div>` : ''}<p>${md(f.body)}</p>${f.deeper ? `<p>${md(f.deeper)}</p>` : ''}${f.rows ? `<dl class="cr-rows">${f.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}</section>`).join('');
+    } else if (s.panel === 'glossary' && s.gtab === 'formulas') {
+      title = 'Tu grimorio';
+      body = grimoireTabs(s) + formulasMarkup(cls, s);
+    } else if (s.panel === 'glossary' && s.gtab === 'recipes') {
+      title = 'Tu grimorio';
+      body = grimoireTabs(s) + recipesMarkup(cls, s, api);
     } else if (s.panel === 'glossary') {
-      title = 'Glosario del sabio';
+      title = 'Tu grimorio';
       const entries = (cls.glossary || []).map((g, i) => Array.isArray(g) ? { term: g[0], def: g[1], i } : { ...g, i });
       const entry = g => {
         const key = `gl-${g.i}`, open = s.revealed[key];
@@ -820,7 +878,7 @@
             <button class="cr-btn cr-small" data-cr="deeper" data-key="${key}" aria-expanded="${Boolean(open)}">${open ? 'Ocultar' : 'Explícamelo más simple'}</button></dd>` : ''}</div>`;
       };
       const mine = entries.filter(g => g.mission && g.mission === b?.m?.id), rest = entries.filter(g => !mine.includes(g));
-      body = `${mine.length ? `<p class="cr-eyebrow">De esta misión</p><dl class="cr-glossary">${mine.map(entry).join('')}</dl><p class="cr-eyebrow">Todo el glosario</p>` : ''}
+      body = grimoireTabs(s) + `${mine.length ? `<p class="cr-eyebrow">De esta misión</p><dl class="cr-glossary">${mine.map(entry).join('')}</dl><p class="cr-eyebrow">Todo el glosario</p>` : ''}
         <dl class="cr-glossary">${rest.map(entry).join('')}</dl>`;
     } else if (s.panel === 'goal') {
       const goal = goalOf(cls, s);
@@ -888,7 +946,7 @@
         <button class="cr-btn cr-small cr-ghost cr-help-btn" data-cr="help" aria-label="¿Cómo funciona la torre?" title="¿Cómo funciona?">?</button>
         <button class="cr-btn cr-small cr-ghost cr-slides-btn" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
       </header>
-      <nav class="cr-objects" aria-label="Objetos de la torre">${[['sage', 'Sabio', 'Desde cero'], ['book', 'Libro', 'Glosario'], ['board', 'Pizarra', 'Diapositivas'], ['window', 'Ventana', 'Hora'], ['flasks', 'Frascos', 'Dato curioso']]
+      <nav class="cr-objects" aria-label="Objetos de la torre">${[['sage', 'Sabio', 'Desde cero'], ['book', 'Libro', 'Grimorio'], ['board', 'Pizarra', 'Diapositivas'], ['window', 'Ventana', 'Hora'], ['flasks', 'Frascos', 'Dato curioso']]
         .map(([id, name, what]) => `<button class="cr-object" data-cr="spot" data-spot="${id}" aria-label="${esc(SPOT_LABEL[id])}"><b>${name}</b><span>${what}</span></button>`).join('')}</nav>
       <main class="cr-center" aria-live="polite">${center}</main>
       <section class="cr-dialog" data-mood="${esc(sage.mood)}" aria-label="El sabio">
@@ -909,6 +967,7 @@
     api.hydrate();
     const root = api.app.querySelector('.classroom');
     if (step) placeTour(root, step);
+    if (s.panel === 'glossary' && s.card) root.querySelector('.cr-fcard.is-open')?.scrollIntoView({ block: 'nearest' });
     root.addEventListener('click', event => onClick(event, id, api));
     // La barra de confianza se marca al soltarla (también si la dejas en 50 %) o con las flechas del teclado.
     const commit = event => {
@@ -934,6 +993,13 @@
       item: itemId => findItem(cls, itemId), commit: () => rerender(id, api) });
     root.addEventListener('pointerup', commit);
     root.addEventListener('input', event => {
+      const calc = event.target.closest('[data-cr-calc]');
+      if (calc) {
+        const f = (cls.formulas || []).find(x => x.id === calc.dataset.crCalc), vals = s.work[`calc:${f.id}`];
+        const v = parseFloat(String(calc.value).replace(',', '.'));
+        if (Number.isFinite(v)) { vals[calc.dataset.key] = v; calc.closest('[data-calc]').querySelector('[data-calc-out]').innerHTML = md(f.calc.run(vals)); }
+        return;
+      }
       const range = event.target.closest('[data-cr-conf]');
       if (range) { range.style.setProperty('--v', `${range.value}%`); const b = range.previousElementSibling?.querySelector('b'); if (b) b.textContent = `${range.value} %`; return; }
       const sim = event.target.closest('[data-cr-sim]');
@@ -992,7 +1058,7 @@
       s.tips.spot = true;
       if (spot === 'board') { s.slideOpen = String((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1); }
       else if (spot === 'sage') { s.panel = 'zero'; }
-      else if (spot === 'book') { s.panel = 'glossary'; }
+      else if (spot === 'book') { s.panel = 'glossary'; s.gtab = s.gtab || 'glossary'; }
       else if (spot === 'flasks') { s.panel = 'curio'; s.curio = (s.curio ?? -1) + 1; s.mascotMood = 'happy'; }
       else if (spot === 'window') {
         s.hourIdx = ((s.hourIdx ?? -1) + 1) % HOURS.length;
@@ -1017,6 +1083,8 @@
     if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
     if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'grimoire') { s.slideOpen = null; s.panel = 'glossary'; s.gtab = button.dataset.tab; if (button.dataset.card) s.card = button.dataset.card; return rerender(id, api); }
+    if (action === 'fcard') { s.card = s.card === button.dataset.card ? null : button.dataset.card; return rerender(id, api); }
     if (action === 'help') { s.slideOpen = null; s.panel = 'help'; s.tour = null; return rerender(id, api); }
     if (action === 'tip') { s.tips[button.dataset.tip] = true; return rerender(id, api); }
     if (action === 'tour') {

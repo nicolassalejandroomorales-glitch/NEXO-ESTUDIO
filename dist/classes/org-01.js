@@ -1086,6 +1086,94 @@
     { level: 3, item: dx('dx-diaz', 'am.diazonio', 'Para pasar de anilina a clorobenceno se usa…', [{ text: 'NaNO₂/HCl en frío y después CuCl', correct: true }, { text: 'CuCl directamente', note: 'Primero hay que convertir el –NH₂ en un buen grupo saliente (sal de diazonio).' }, { text: 'HCl concentrado y calor', note: 'Eso solo protona la amina: forma una sal, no clorobenceno.' }], { explain: 'Diazotación y después Sandmeyer con CuCl.', slide: 40 }) }
   ] };
 
+  /* ── Etapa 5: el grimorio (docs/etapa-5-grimorio/SPEC.md) ── */
+  /* Formulario: fuentes en orden cátedra → McMurry (LibreTexts). Cada calculadora devuelve texto con **negritas**. */
+  const LT = 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)';
+  const num = (x, d = 2) => Number(x).toLocaleString('es-CL', { maximumFractionDigits: d });
+  const sci = x => { if (!isFinite(x) || x <= 0) return '—'; const e = Math.floor(Math.log10(x)); return `${num(x / 10 ** e, 1)} × 10^${e}`.replace(/\^(-?\d+)/, (_, n) => n.split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'['0123456789'.indexOf(c)] || '⁻').join('')); };
+  cls.formulas = [
+    { id: 'f-pka', title: 'pKa', formula: 'pKa = −log Ka', concepts: ['am.pka', 'base.acido-base'],
+      vars: [['Ka', 'Constante de acidez: [A⁻][H₃O⁺] / [HA]. Mide cuánto se disocia el ácido', 'sin unidad (en la práctica)'], ['pKa', 'El mismo dato en escala logarítmica', 'sin unidad']],
+      what: 'Comparar qué tan fácil suelta su H⁺ un ácido. **Menor pKa, ácido más fuerte.**',
+      when: 'Siempre que compares ácidos. En aminas se usa el pKa del **ion amonio** (su ácido conjugado) para medir basicidad.',
+      example: 'Ion metilamonio: Ka ≈ 2,5 × 10⁻¹¹ → pKa = −log(2,5 × 10⁻¹¹) ≈ **10,6**.',
+      deeper: 'El logaritmo comprime números enormes: cada unidad de pKa es un factor **10** en Ka. Un ácido de pKa 4 suelta su H⁺ 10 000 veces más que uno de pKa 8. Por eso basta restar pKa para comparar.',
+      sources: [{ label: 'Cátedra · diap. 18 y 20', slide: 20 }, { label: 'McMurry (LibreTexts) · 2.8 Acid and Base Strength', url: `${LT}/02:_Polar_Covalent_Bonds_Acids_and_Bases/2.08:_Acid_and_Base_Strength` }],
+      calc: { inputs: [{ id: 'pka', label: 'pKa', value: 10.6, step: 0.1 }], run: v => `Ka = **${sci(10 ** -v.pka)}**` } },
+    { id: 'f-pkb', title: 'pKa + pKb = 14', formula: 'Ka · Kb = Kw  →  pKa + pKb = 14', concepts: ['am.pka'],
+      vars: [['Ka', 'Del ácido conjugado (el ion amonio)', 'sin unidad'], ['Kb', 'De la base (la amina)', 'sin unidad'], ['Kw', 'Producto iónico del agua: 1,0 × 10⁻¹⁴ a 25 °C', 'sin unidad']],
+      what: 'Pasar del pKb de una amina al pKa de su ion amonio (o al revés).',
+      when: 'Cuando te dan **Kb o pKb** y quieres comparar con pKa. Vale para cualquier par ácido–base conjugado, en agua a 25 °C.',
+      example: 'Una amina con pKb = 3,4 → pKa del ion amonio = 14 − 3,4 = **10,6**.',
+      deeper: 'Si el ion amonio suelta poco su H⁺ (pKa alto), es porque la amina lo retiene bien: es una base fuerte (pKb bajo). Los dos números son caras de la misma moneda y suman 14 porque Ka·Kb = Kw.',
+      sources: [{ label: 'Cátedra · diap. 20', slide: 20 }, { label: 'McMurry (LibreTexts) · 24.3 Basicity of Amines', url: `${LT}/24:_Amines_and_Heterocycles/24.03:_Basicity_of_Amines` }],
+      calc: { inputs: [{ id: 'pkb', label: 'pKb de la amina', value: 3.4, step: 0.1 }], run: v => `pKa del ion amonio = **${num(14 - v.pkb)}**` } },
+    { id: 'f-keq', title: 'Hacia dónde va el equilibrio', formula: 'Keq = 10^ΔpKa   (ΔpKa = pKa del ácido producto − pKa del ácido reactivo)', concepts: ['am.equilibrio', 'base.acido-base', 'am.sales'],
+      vars: [['pKa del ácido reactivo', 'El ácido que está a la izquierda (el que entrega el H⁺)', 'sin unidad'], ['pKa del ácido producto', 'El ácido que se forma a la derecha (por ejemplo, el ion amonio)', 'sin unidad'], ['Keq', 'Constante de equilibrio', 'sin unidad']],
+      what: 'Saber hacia qué lado va una reacción ácido–base y **cuánto**. El equilibrio favorece el lado del **ácido más débil** (pKa mayor).',
+      when: 'Al mezclar una amina con un ácido (sales, extracción) o comparar dos bases.',
+      example: 'Ácido acético (pKa 4,76) + trietilamina → ion trietilamonio (pKa 10,76). Keq = 10^(10,76 − 4,76) = **10⁶**: por cada amina libre hay un millón protonadas (diap. 17).',
+      deeper: 'Si Keq > 1 gana la derecha. La resta de pKa te da directo cuántas potencias de 10 gana un lado: 6 unidades es un millón a uno. Si el ácido producto fuera más fuerte (pKa menor), la resta sería negativa y ganaría la izquierda.',
+      sources: [{ label: 'Cátedra · diap. 17', slide: 17 }, { label: 'McMurry (LibreTexts) · 2.9 Predicting Acid–Base Reactions from pKa Values', url: `${LT}/02:_Polar_Covalent_Bonds_Acids_and_Bases/2.09:_Predicting_Acid-Base_Reactions_from_pKa_Values` }],
+      calc: { inputs: [{ id: 'r', label: 'pKa del ácido reactivo', value: 4.76, step: 0.01 }, { id: 'p', label: 'pKa del ácido producto', value: 10.76, step: 0.01 }],
+        run: v => { const d = v.p - v.r; return `Keq = **${sci(10 ** d)}** → ${d > 0 ? 'gana la **derecha** (productos)' : d < 0 ? 'gana la **izquierda** (reactivos)' : 'quedan **parejos**'}.`; } } },
+    { id: 'f-hh', title: 'Henderson-Hasselbalch', formula: 'pH = pKa + log([B] / [BH⁺])', concepts: ['am.sales', 'am.equilibrio'],
+      vars: [['pH', 'Acidez del medio', 'sin unidad'], ['pKa', 'Del ion amonio BH⁺', 'sin unidad'], ['[B]', 'Concentración de amina libre (neutra)', 'mol/L'], ['[BH⁺]', 'Concentración de amina protonada (ion amonio)', 'mol/L']],
+      what: 'Saber qué **fracción** de una amina está protonada a un pH dado: % protonada = 100 / (1 + 10^(pH − pKa)).',
+      when: 'Extracción ácido–base (la sal se va al agua), y fármacos: a pH 7,4 casi todas las alquilaminas están como ion amonio. **No sale en las diapositivas**: es la herramienta que hay detrás de la misión 3.',
+      example: 'Metilamina (pKa 10,6) en sangre (pH 7,4): 100 / (1 + 10^(7,4 − 10,6)) ≈ **99,9 % protonada**.',
+      deeper: 'Cuando pH = pKa, la mitad está protonada. Cada unidad de pH por debajo del pKa multiplica por 10 la proporción protonada. Por eso con HCl diluido una amina pasa casi entera al agua como sal, y con NaOH vuelve a la capa orgánica.',
+      sources: [{ label: 'McMurry (LibreTexts) · 24.6 Biological Amines and the Henderson-Hasselbalch Equation', url: `${LT}/24:_Amines_and_Heterocycles/24.06:_Biological_Amines_and_the_Henderson-Hasselbalch_Equation` }, { label: 'Cátedra · diap. 14 (fármacos) y 16 (sales)', slide: 14 }],
+      calc: { inputs: [{ id: 'ph', label: 'pH', value: 7.4, step: 0.1 }, { id: 'pka', label: 'pKa del ion amonio', value: 10.6, step: 0.1 }],
+        run: v => `Protonada: **${num(100 / (1 + 10 ** (v.ph - v.pka)), 2)} %** · libre: ${num(100 - 100 / (1 + 10 ** (v.ph - v.pka)), 2)} %` } },
+    { id: 'f-cf', title: 'Carga formal', formula: 'CF = V − (N + E)', concepts: ['base.carga', 'am.par-libre', 'am.clasificacion'],
+      vars: [['V', 'Electrones de valencia del átomo libre (C 4, N 5, O 6)', 'electrones'], ['N', 'Electrones no enlazantes (2 por cada par libre)', 'electrones'], ['E', 'Número de enlaces (uno por enlace; un doble cuenta 2)', 'enlaces']],
+      what: 'Saber qué átomo lleva la carga en un ion: por ejemplo, el + del ion amonio.',
+      when: 'Al dibujar Lewis, sales de amonio, mecanismos e intermediarios (iminio, diazonio, carbocationes).',
+      example: 'N del ion amonio NH₄⁺: 5 − (0 + 4) = **+1**. N del amoníaco: 5 − (2 + 3) = **0**.',
+      deeper: 'Cada enlace es "mitad tuyo": te toca 1 electrón por enlace; los pares libres son enteros tuyos. Si te tocan menos electrones de los que traías, quedas positivo.',
+      sources: [{ label: 'Cátedra · diap. 5 y 15', slide: 15 }, { label: 'LibreTexts · Formal Charge', url: 'https://chem.libretexts.org/Bookshelves/Physical_and_Theoretical_Chemistry_Textbook_Maps/Supplemental_Modules_(Physical_and_Theoretical_Chemistry)/Physical_Properties_of_Matter/Atomic_and_Molecular_Properties/Formal_Charges/Formal_Charge' }],
+      calc: { inputs: [{ id: 'v', label: 'V (valencia)', value: 5, step: 1 }, { id: 'n', label: 'N (e⁻ no enlazantes)', value: 0, step: 2 }, { id: 'e', label: 'E (enlaces)', value: 4, step: 1 }],
+        run: v => { const q = v.v - (v.n + v.e); return `Carga formal = **${q > 0 ? '+' : q < 0 ? '−' : ''}${Math.abs(q)}**`; } } },
+    { id: 'f-nrule', title: 'Regla del nitrógeno', formula: 'M impar  ⇔  número impar de N', concepts: ['am.espectro'],
+      vars: [['M', 'Masa nominal del ion molecular (m/z del M⁺)', 'u']],
+      what: 'Sospechar una amina (o un número impar de N) mirando el espectro de masas.',
+      when: 'Espectrometría de masas: si el ion molecular tiene masa **impar**, la molécula tiene 1, 3, 5… átomos de N.',
+      example: 'Butilamina, C₄H₁₁N: M = 73, impar → un N. Butano, C₄H₁₀: M = 58, par.',
+      deeper: 'El N tiene masa par (14) pero hace 3 enlaces: obliga a un número impar de H, y ese H extra deja la masa impar. Con 0 o 2 N, la masa vuelve a ser par.',
+      sources: [{ label: 'Cátedra · diap. 47', slide: 47 }, { label: 'McMurry (LibreTexts) · 24.11 Spectroscopy of Amines', url: `${LT}/24:_Amines_and_Heterocycles/24.11:_Spectroscopy_of_Amines` }],
+      calc: { inputs: [{ id: 'm', label: 'Masa del ion molecular', value: 73, step: 1 }], run: v => (Math.round(v.m) % 2 ? 'Masa **impar** → número **impar** de N (1, 3…)' : 'Masa **par** → **0 o un número par** de N') } },
+    { id: 'f-ir', title: 'Picos N–H en el IR', formula: '1° → 2 picos · 2° → 1 pico · 3° → ninguno  (3350–3500 cm⁻¹)', concepts: ['am.espectro', 'am.clasificacion'],
+      vars: [['cm⁻¹', 'Número de onda de la absorción', 'cm⁻¹']],
+      what: 'Distinguir aminas 1°, 2° y 3° con un espectro IR.',
+      when: 'Identificar una amina desconocida. Las señales N–H son menos intensas que las O–H.',
+      example: 'Propilamina (1°): dos picos. Etilmetilamina (2°): uno. Trimetilamina (3°): ninguno; se detecta con HCl (aparece N–H⁺ entre 2200 y 3000 cm⁻¹).',
+      deeper: 'Una amina 1° tiene dos enlaces N–H que vibran juntos de dos maneras (simétrica y asimétrica): dos picos. La 2° tiene un solo N–H: un pico. La 3° no tiene N–H.',
+      sources: [{ label: 'Cátedra · diap. 44', slide: 44 }, { label: 'McMurry (LibreTexts) · 24.11 Spectroscopy of Amines', url: `${LT}/24:_Amines_and_Heterocycles/24.11:_Spectroscopy_of_Amines` }] },
+    { id: 'f-huckel', title: 'Regla de Hückel', formula: 'aromático: cíclico, plano, conjugado y con 4n + 2 electrones π', concepts: ['am.heterociclos', 'am.orden', 'am.resonancia'],
+      vars: [['n', '0, 1, 2… (un número entero)', '—'], ['4n + 2', '2, 6, 10… electrones π', 'electrones']],
+      what: 'Decidir si un anillo es aromático, y por eso si el par libre de un N "está ocupado" en la aromaticidad.',
+      when: 'Basicidad de heterociclos: en el **pirrol** el par del N es parte de los 6 π (no básico); en la **piridina** no (sí básico).',
+      example: 'Pirrol: 4 electrones π de los dos C=C + 2 del par del N = **6** (n = 1) → aromático; protonarlo destruiría el sexteto.',
+      deeper: 'Con 4n + 2 electrones π se llenan justo los orbitales de enlace del anillo: una capa cerrada, muy estable. Por eso el pirrol no "presta" su par: perdería esa estabilidad.',
+      sources: [{ label: 'Cátedra · diap. 26', slide: 26 }, { label: 'McMurry (LibreTexts) · 15.3 Aromaticity and the Hückel 4n + 2 Rule', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Organic_Chemistry_(McMurry)/15:_Benzene_and_Aromaticity/15.03:_Aromaticity_and_the_Huckel_4n__2_Rule' }],
+      calc: { inputs: [{ id: 'pi', label: 'Electrones π del anillo', value: 6, step: 1 }], run: v => ((v.pi - 2) % 4 === 0 && v.pi >= 2 ? `**${v.pi}** = 4·${(v.pi - 2) / 4} + 2 → cumple Hückel (si es cíclico, plano y conjugado)` : `**${v.pi}** no es 4n + 2 → no aromático${v.pi % 4 === 0 && v.pi > 0 ? ' (con 4n puede ser antiaromático)' : ''}`) } }
+  ];
+
+  /* Recetario: se completa con tu evidencia (misma que las hojas del árbol). */
+  cls.recipes = [
+    { id: 'rc-alquil', mission: 'm6', concept: 'am.alquilacion', slide: 30, title: 'Alquilación del amoníaco', base: 'NH₃ (en gran exceso)', reagents: 'Haluro de alquilo R–X', condition: 'SN2; mucho NH₃ para favorecer la 1°', result: 'R–NH₂… y una **mezcla** de 2°, 3° y sal cuaternaria', note: 'La amina producto también ataca: polialquilación.' },
+    { id: 'rc-azida', mission: 'm6', concept: 'am.alquilacion', slide: 31, title: 'Vía azida', base: 'Haluro de alquilo R–X', reagents: '1) NaN₃ · 2) LiAlH₄', condition: 'SN2 y después reducción', result: 'Amina **1°** R–NH₂, sin polialquilación', note: 'La azida entra una sola vez.' },
+    { id: 'rc-gabriel', mission: 'm6', concept: 'am.alquilacion', slide: 31, title: 'Síntesis de Gabriel', base: 'Haluro de alquilo R–X (1°)', reagents: '1) Ftalimida + KOH · 2) hidrazina (H₂N–NH₂) o hidrólisis', condition: 'SN2 con el N⁻ de la ftalimida', result: 'Amina **1°** pura R–NH₂', note: 'La N-alquilftalimida no vuelve a reaccionar: no sobrealquila.' },
+    { id: 'rc-aminred', mission: 'm6', concept: 'am.reduccion', slide: 32, title: 'Aminación reductiva', base: 'Aldehído o cetona', reagents: 'NH₃ o una amina + NaBH₃CN (o H₂/catalizador)', condition: 'Se forma una imina que se reduce en el mismo matraz', result: 'Con NH₃ → 1° · con 1° → 2° · con 2° → 3°', note: 'Agrega un grupo al N sin sobrealquilar.' },
+    { id: 'rc-amida', mission: 'm6', concept: 'am.reduccion', slide: 33, title: 'Reducción de amidas', base: 'Amida R–CO–NH₂', reagents: 'LiAlH₄ (y después agua)', condition: 'Reducción fuerte', result: 'R–CH₂–NH₂: el C=O se vuelve CH₂', note: 'Desde un ácido carboxílico: primero la amida, después LiAlH₄.' },
+    { id: 'rc-nitro', mission: 'm6', concept: 'am.reduccion', slide: 33, title: 'Reducción de nitroarenos', base: 'Nitrobenceno Ar–NO₂', reagents: 'H₂/Pt, Fe/HCl o Sn/HCl', condition: 'Reducción del grupo nitro', result: '**Anilina** Ar–NH₂', note: 'Así se prepara la anilina desde el benceno (nitrar y reducir).' },
+    { id: 'rc-acil', mission: 'm7', concept: 'am.acilacion', slide: 34, ...mission('m7').parts.find(p => p.id === 'r1').recipe },
+    { id: 'rc-diaz', mission: 'm7', concept: 'am.diazonio', slide: 39, ...mission('m7').parts.find(p => p.id === 'r2').recipe },
+    { id: 'rc-sandmeyer', mission: 'm7', concept: 'am.diazonio', slide: 40, title: 'Sandmeyer y compañía', base: 'Sal de diazonio Ar–N₂⁺', reagents: 'CuCl · CuBr · CuCN · KI · HBF₄ · H₂O', condition: 'Calor suave (sale N₂)', result: 'Ar–Cl · Ar–Br · Ar–CN · Ar–I · Ar–F · Ar–OH', note: 'El N₂ es un grupo saliente buenísimo: casi cualquier cosa lo reemplaza.' },
+    { id: 'rc-hofmann', mission: 'm7', concept: 'am.hofmann', slide: 35, ...mission('m7').parts.find(p => p.id === 'r3').recipe }
+  ];
+
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

@@ -204,8 +204,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Hecha** | Opus 5.5 |
 | 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Hecha** (esperando tu prueba) | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
 | 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | **Hecha** (esperando tu prueba) | Opus 5.5 |
-| 5 | Formulario con investigación y recetario de pociones | **Siguiente** | Opus 5.5 |
-| 6 | Las otras misiones de Aminas al modelo nuevo | Pendiente | Opus 5.5 |
+| 5 | Formulario con investigación y recetario de pociones | **Hecha** (esperando tu prueba) | Opus 5.5 |
+| 6 | Las otras misiones de Aminas al modelo nuevo | **Siguiente** | Opus 5.5 |
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Pendiente | Sonnet 5.5 |
 | 8 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | Pendiente | Sonnet 5.5 |
 | 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | Pendiente | Sonnet 5.5 |
@@ -244,6 +244,11 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
 - **Etapa 4b (5 oct, a pedido de Niquito: "un usuario nuevo se puede marear"):** ver `docs/etapa-4b-intuitivo/SPEC.md`. Recorrido de 30 s la
   primera vez (ilumina y nombra cada parte, también los objetos invisibles de la pintura), avisos de una sola vez (barra de confianza, pista del
   compañero), botón "?" con "Cómo funciona la torre", diagnóstico marcado "Recomendado para empezar" y objetos que brillan hasta que tocas uno.
+- **Etapa 5 hecha (5 oct):** ver `docs/etapa-5-grimorio/SPEC.md`. El Libro es ahora **tu grimorio** con 3 pestañas. **Formulario**: 8 tarjetas
+  (pKa, pKa + pKb = 14, Keq desde pKa, Henderson-Hasselbalch, carga formal, regla del nitrógeno, picos N–H en IR, Hückel) con letras y unidades,
+  para qué, cuándo, ejemplo resuelto, "a fondo", fuentes (cátedra → McMurry en LibreTexts) y 7 calculadoras. **Recetario**: 10 reacciones que se
+  completan con tu evidencia (???, vista, aprendida al acertar en su misión, dominada con sello). "No recuerdo la regla" abre la tarjeta del concepto.
+  El formulario se cierra en Prueba encima.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

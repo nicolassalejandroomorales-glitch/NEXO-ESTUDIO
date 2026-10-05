@@ -40,6 +40,9 @@ Además, a nivel de clase (etapa 4, `docs/etapa-4-diagnostico/SPEC.md`):
   2 = lo básico del tema, 3 = lo difícil). Cada una con su `concept`.
 - `base: [misiones]`: el "Repaso desde cero". Cada misión base declara `concept` (una raíz del árbol, `root: true`), explicaciones con `deeper`,
   ejercicios de fácil a difícil y una pregunta escrita.
+- `formulas: [{ id, title, formula, vars: [[símbolo, qué es, unidad]], what, when, example, deeper, sources: [{ label, url | slide }], concepts, calc? }]`:
+  el formulario del grimorio (etapa 5). `calc = { inputs: [{ id, label, value, step }], run: valores => texto }` es la calculadora opcional.
+- `recipes: [{ id, mission, concept, slide, title, base, reagents, condition, result, note }]`: el recetario; se completa con la evidencia del concepto.
 - En cada error típico (`misconceptions`): `base` (de qué raíz viene, para el desvío) y opcionalmente `check` (un caso corto que aparece justo después).
 
 ### La meta de la clase: el camino al 7

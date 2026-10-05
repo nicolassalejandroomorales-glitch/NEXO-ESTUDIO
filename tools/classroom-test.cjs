@@ -140,6 +140,33 @@ for (const [id, file] of Object.entries(catalog)) {
     assert.deepEqual(kbase(null), ['path', 'basepick'], 'Repaso desde cero parte eligiendo la base');
     assert.ok(kbase(cls.base[0].id).includes('lesson') && kbase(cls.base[0].id).includes('close'), 'Cada base se recorre sola');
   }
+  // Etapa 5: formulario y recetario.
+  if (cls.formulas) {
+    for (const f of cls.formulas) {
+      assert.ok(f.title && f.formula && f.vars?.length && f.what && f.when && f.example && f.deeper, `${f.id}: la tarjeta necesita fórmula, letras, para qué, cuándo, ejemplo y "a fondo"`);
+      assert.ok(f.sources?.length && f.sources.every(x => x.label && (x.url || (x.slide && cls.slides[x.slide]))), `${f.id}: cada fuente necesita un enlace o una diapositiva existente`);
+      assert.ok(f.concepts.every(c => cls.concepts.some(k => k.id === c)), `${f.id}: concepto inexistente`);
+      if (f.calc) { const v = Object.fromEntries(f.calc.inputs.map(i => [i.id, i.value])); const out = f.calc.run(v); assert.ok(out && !/NaN|undefined|Infinity/.test(out), `${f.id}: la calculadora no da un resultado`); }
+    }
+    const run = (id, v) => cls.formulas.find(f => f.id === id).calc.run(v);
+    assert.match(run('f-keq', { r: 4.76, p: 10.76 }), /10⁶.*derecha/, 'Keq: ácido acético + trietilamina da 10⁶ hacia la derecha (diap. 17)');
+    assert.match(run('f-keq', { r: 10, p: 5 }), /izquierda/, 'Keq: si el ácido producto es más fuerte gana la izquierda');
+    assert.match(run('f-hh', { ph: 10.6, pka: 10.6 }), /50 %/, 'Henderson-Hasselbalch: pH = pKa deja la mitad protonada');
+    assert.match(run('f-cf', { v: 6, n: 6, e: 1 }), /−1|-1/, 'Carga formal del O del hidróxido: −1');
+    assert.match(run('f-pkb', { pkb: 3.4 }), /10,6/, 'pKa + pKb = 14');
+    assert.match(run('f-nrule', { m: 58 }), /par/, 'Regla del nitrógeno: 58 es par');
+    assert.match(run('f-huckel', { pi: 6 }), /cumple/, 'Hückel: 6 electrones π cumple');
+    assert.match(run('f-huckel', { pi: 4 }), /no es 4n \+ 2/, 'Hückel: 4 electrones π no cumple');
+    // "No recuerdo la regla" encuentra una tarjeta para los conceptos de cálculo
+    for (const c of ['am.pka', 'am.equilibrio', 'base.carga', 'am.espectro']) assert.ok(cls.formulas.some(f => f.concepts.includes(c)), `${c}: sin tarjeta del formulario`);
+  }
+  if (cls.recipes) {
+    const rids = new Set();
+    for (const r of cls.recipes) {
+      assert.ok(!rids.has(r.id) && r.title && r.base && r.reagents && r.condition && r.result, `${r.id}: receta incompleta o repetida`); rids.add(r.id);
+      assert.ok(cls.concepts.some(c => c.id === r.concept && c.mission === r.mission) && cls.slides[r.slide], `${r.id}: concepto, misión o diapositiva inválidos`);
+    }
+  }
   const m7 = cls.missions.find(m => m.parts);
   if (m7) {
     const ks = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m7.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, conf: {}, confWhy: {} });

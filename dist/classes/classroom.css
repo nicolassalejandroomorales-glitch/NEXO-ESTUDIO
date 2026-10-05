@@ -678,3 +678,45 @@ body[data-nexo-ambient-motion="reduced"] :is(.cr-recipe-card, .cr-flask-bubble, 
 @media (max-width: 700px) { .cr-tip { flex-wrap: wrap; } .cr-tour.is-top { top: 120px; } }
 @media (prefers-reduced-motion: reduce) { .is-tour-target, .classroom.is-spots-new .cr-spot, .cr-tour { animation: none !important; } }
 body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour) { animation: none !important; }
+
+/* ── Etapa 5: el grimorio (docs/etapa-5-grimorio/SPEC.md) ── */
+.cr-tabs { display: flex; gap: 6px; margin: 0 0 14px; padding: 4px; border-radius: 12px; background: rgb(138 93 23 / .12); }
+.cr-tab { flex: 1; min-height: 44px; border: 0; border-radius: 9px; background: transparent; color: var(--ink-soft); font: inherit; font-weight: 700; cursor: pointer; }
+.cr-tab.is-on { background: var(--parch); color: var(--ink); box-shadow: 0 2px 8px rgb(80 50 10 / .2); }
+.cr-formulas, .cr-recipes { display: grid; gap: 10px; }
+.cr-fcard { border-radius: 12px; border: 1px solid var(--parch-edge); background: rgb(255 255 255 / .55); overflow: hidden; }
+.cr-fcard.is-open { border-color: var(--gold-deep); background: #fffaf0; }
+.cr-fhead { width: 100%; display: grid; gap: 4px; padding: 12px 14px; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--ink); font: inherit; }
+.cr-fhead b { color: var(--gold-deep); }
+.cr-formula-big { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; color: var(--ink); }
+.cr-fbody { padding: 0 14px 14px; display: grid; gap: 10px; }
+.cr-vars { width: 100%; border-collapse: collapse; font-size: .92rem; }
+.cr-vars th, .cr-vars td { padding: 6px 8px; border-bottom: 1px solid #eadcbc; text-align: left; vertical-align: top; color: var(--ink); }
+.cr-vars th { color: var(--gold-deep); font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; }
+.cr-fdl { display: grid; gap: 6px; margin: 0; }
+.cr-fdl dt { font-weight: 700; color: var(--gold-deep); }
+.cr-fdl dd { margin: 0; color: var(--ink); line-height: 1.55; }
+.cr-calc { padding: 10px 12px; border-radius: 10px; background: #eef4f6; border: 1px solid #bcd0d6; }
+.cr-calc-in { display: flex; flex-wrap: wrap; gap: 10px; }
+.cr-calc-in label { display: grid; gap: 4px; font-size: .88rem; color: var(--ink); }
+.cr-calc-in input { width: 130px; min-height: 40px; padding: 6px 8px; border-radius: 8px; border: 1px solid #9fb6bd; font: inherit; color: var(--ink); background: #fff; }
+.cr-calc-out { margin: 8px 0 0; color: var(--ink); font-size: 1.02rem; }
+.cr-fsrc { margin: 0; font-size: .88rem; color: var(--ink-soft); }
+.cr-fsrc a { color: var(--gold-deep); }
+.cr-rcard { position: relative; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--parch-edge); background: rgb(255 255 255 / .55); color: var(--ink); }
+.cr-rcard h3 { margin: 0 0 8px; font-family: Georgia, 'Times New Roman', serif; }
+.cr-rcard.is-hidden { background: repeating-linear-gradient(135deg, #efe4cb 0 10px, #e9dcbf 10px 20px); color: var(--ink-soft); }
+.cr-rcard.is-hidden h3 { letter-spacing: .3em; }
+.cr-rcard.is-mastered { border: 2px solid var(--gold-deep); box-shadow: 0 0 0 4px rgb(232 192 106 / .25); }
+.cr-unknown { color: var(--ink-soft); letter-spacing: .2em; }
+.cr-seal { position: absolute; top: 10px; right: 12px; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f2cf74, #a7731c); color: #fff7dc; box-shadow: 0 3px 8px rgb(0 0 0 / .3); }
+@media (min-width: 900px) { .cr-recipes { grid-template-columns: 1fr 1fr; } }
+.cr-formula-big sup, .cr-fdl sup { font-size: .72em; }
+@media (max-width: 700px) {
+  .cr-vars thead { display: none; }
+  .cr-vars tr { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; padding: 6px 0; border-bottom: 1px solid #eadcbc; }
+  .cr-vars td { border: 0; padding: 0; }
+  .cr-vars td:nth-child(2) { grid-column: 2; }
+  .cr-vars td:nth-child(3) { grid-column: 2; color: var(--ink-soft); font-size: .85rem; }
+}
