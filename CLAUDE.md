@@ -145,3 +145,6 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   3 guardianes que se desbloquean (Trimetilamina, Ciclobutadieno, Benceno malvado) + Rey Amonio final; el juego elige el desafío (conectar, ordenar,
   clasificar, ruta de síntesis, elegir, flecha) con preguntas de la pauta PEP 1 2025. Preguntas en `contenido.js`. Ver `docs/juegos-batalla/SPEC.md`.
   Base aprobada por Niquito (4 oct). En curso: música de combate por jefe, arenas "de jefe" y rediseño del Rey. Pendiente: conectarlo a `#/games`.
+- **Bitácora viva** (5 oct 2026, chat propio, `docs/update-02-organizacion/SPEC.md` v2): diseño de organización, calendario, pruebas y notas
+  en pixel art de madera (pestañas Hoy · Calendario · Pruebas · Notas · Avisos), avisos por urgencia en el Inicio, semana crítica (19–27 oct),
+  notas en un solo lugar (frascos alquímicos) y mascota acompañando. Maqueta: `docs/update-02-organizacion/maqueta/`. **Solo diseño, sin programar**; esperando respuestas de Niquito.

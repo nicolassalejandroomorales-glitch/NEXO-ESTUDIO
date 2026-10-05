@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bitácora viva · maqueta</title>
+<!-- MAQUETA DE DISEÑO (docs/update-02-organizacion/SPEC.md). No es la app: datos fijos y de ejemplo.
+     Colores = rampas de tools/home-pixel/pixel.py. Mascota = dist/dev/pixelmascotas.js. -->
+<style>
+:root{
+  --w0:#1a0f13;--w1:#2c1916;--w2:#47281b;--w3:#673c23;--w4:#8a552e;--w5:#b0743d;--w6:#d29a55;--w7:#f0c378;--w8:#ffe2a0;
+  --p0:#4e4034;--p1:#7a6650;--p2:#a69070;--p3:#cab692;--p4:#e6d6b2;--p5:#fff4d8;
+  --b2:#8a5c20;--b3:#ba8a30;--b4:#e2b850;--b5:#fbe08a;
+  --ink:#24130f;--red:#c4544a;--red2:#e0473a;--green:#3fa077;
+  --org:#ffbd59;--ana:#36e3d2;--fq:#8c7cff;--fis:#ff6d8d;
+  --u:4px; /* 1 píxel de arte */
+  --mono:"Courier New",ui-monospace,monospace; --serif:Georgia,"Iowan Old Style",serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--w1);color:var(--p5);font-family:var(--serif);image-rendering:pixelated}
+body{background-image:repeating-linear-gradient(0deg,transparent 0 60px,var(--w0) 60px 64px),repeating-linear-gradient(90deg,var(--w2) 0 4px,transparent 4px 180px)}
+canvas{image-rendering:pixelated;display:block}
+.view{display:none;max-width:1180px;margin:0 auto;padding:24px 16px 48px}
+body[data-view="hoy"] #hoy,body[data-view="notas"] #notas,body[data-view="cal"] #cal,body[data-view="inicio"] #inicio{display:block}
+/* Marcos pixel: esquinas recortadas 1 px de arte + bisel claro/oscuro */
+.wood{background:var(--w3);background-image:repeating-linear-gradient(0deg,transparent 0 20px,var(--w2) 20px 24px);
+  box-shadow:inset var(--u) var(--u) 0 var(--w5),inset calc(-1*var(--u)) calc(-1*var(--u)) 0 var(--w2),0 0 0 var(--u) var(--w0);
+  clip-path:polygon(4px 0,calc(100% - 4px) 0,calc(100% - 4px) 4px,100% 4px,100% calc(100% - 4px),calc(100% - 4px) calc(100% - 4px),calc(100% - 4px) 100%,4px 100%,4px calc(100% - 4px),0 calc(100% - 4px),0 4px,4px 4px);padding:20px}
+.paper{background:var(--p4);color:var(--ink);
+  background-image:linear-gradient(45deg,var(--p3) 25%,transparent 25% 75%,var(--p3) 75%),linear-gradient(45deg,var(--p3) 25%,transparent 25% 75%,var(--p3) 75%);
+  background-size:8px 8px;background-position:0 0,4px 4px;background-clip:padding-box;
+  box-shadow:inset 0 0 0 var(--u) var(--p2),inset 0 0 0 8px var(--p3),0 var(--u) 0 var(--u) var(--w0);padding:18px}
+.paper>.in{background:var(--p4);margin:-6px;padding:12px}
+.cork{background:#9a6a3c;background-image:radial-gradient(var(--w4) 1.5px,transparent 2px),radial-gradient(var(--w6) 1.5px,transparent 2px);background-size:12px 12px,16px 16px;background-position:0 0,6px 8px;
+  box-shadow:inset 0 0 0 8px var(--w4),inset 0 0 0 12px var(--w2),0 0 0 4px var(--w0);padding:28px}
+.lbl{font-family:var(--mono);font-weight:700;letter-spacing:.12em;text-transform:uppercase;font-size:12px}
+h1,h2,h3{margin:0;font-weight:700}
+/* Cabecera del libro + marcapáginas */
+.bookhead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;padding:16px 20px 0}
+.bookhead h1{font-family:var(--mono);font-size:30px;letter-spacing:.2em;color:var(--w8);text-shadow:4px 4px 0 var(--w0)}
+.lantern{width:12px;height:16px;background:var(--b4);box-shadow:0 0 0 4px var(--w0),0 0 18px 6px rgb(255 210 120/.55);display:inline-block;margin:0 14px;animation:flick 1.6s steps(3) infinite}
+@keyframes flick{0%{opacity:1}33%{opacity:.8}66%{opacity:.95}}
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font-family:var(--mono);font-weight:700;font-size:14px;padding:10px 14px 16px;background:var(--w2);color:var(--p3);box-shadow:inset 4px 4px 0 var(--w3),0 0 0 4px var(--w0);
+  clip-path:polygon(0 0,100% 0,100% 100%,50% calc(100% - 8px),0 100%)}
+.tab.on{background:var(--red);color:var(--p5);box-shadow:inset 4px 4px 0 #e0776a,0 0 0 4px var(--w0);transform:translateY(8px)}
+.board{margin-top:20px}
+/* Cinta semana crítica */
+.ribbon{display:flex;align-items:center;gap:14px;background:var(--red);color:var(--p5);padding:10px 18px;margin:0 -8px 22px;box-shadow:0 4px 0 #7a2420,0 0 0 4px var(--w0);font-family:var(--mono);font-weight:700}
+.ribbon b{font-size:18px;letter-spacing:.06em}
+.ribbon .pulse{width:12px;height:12px;background:var(--b5);animation:pulse 1.2s steps(2) infinite}
+@keyframes pulse{50%{opacity:.3}}
+/* Notas de prueba con reloj de arena */
+.notes{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.note{position:relative;padding:16px 14px 14px;display:flex;gap:12px;transform:rotate(var(--r,0deg))}
+.note .pin{position:absolute;top:-8px;left:50%;width:12px;height:12px;background:var(--pin,var(--b4));box-shadow:0 0 0 4px var(--w0)}
+.note h3{font-family:var(--serif);font-size:20px}
+.note small{display:block;font-family:var(--mono);font-size:11px;color:var(--p0);margin-top:4px}
+.note .days{font-family:var(--mono);font-size:22px;white-space:nowrap;font-weight:700;color:var(--ink)}
+.note.hot{box-shadow:inset 0 0 0 4px var(--p2),inset 0 0 0 8px var(--p3),0 0 0 4px var(--b4),0 0 16px 4px rgb(255 200 90/.45);animation:glow 2.4s steps(4) infinite}
+@keyframes glow{50%{box-shadow:inset 0 0 0 4px var(--p2),inset 0 0 0 8px var(--p3),0 0 0 4px var(--b5),0 0 24px 8px rgb(255 200 90/.6)}}
+.course{display:inline-block;font-family:var(--mono);font-weight:700;font-size:11px;padding:2px 6px;background:var(--c);color:var(--ink);box-shadow:0 0 0 2px var(--ink)}
+s{color:var(--red)}
+/* Plan de hoy */
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:22px;margin-top:24px}
+.plan li{list-style:none;display:grid;grid-template-columns:28px 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:4px dotted var(--p2)}
+.plan ul{margin:8px 0 0;padding:0}
+.box{width:20px;height:20px;background:var(--p5);box-shadow:0 0 0 4px var(--ink);margin-top:3px}
+.box.done{background:var(--green)}
+.plan b{font-size:17px}.plan p{margin:4px 0 0;font-size:14px;color:var(--p0)}
+.plan li.done b{text-decoration:line-through;text-decoration-thickness:3px;color:var(--p1)}
+.btn{font-family:var(--mono);font-weight:700;font-size:14px;border:0;padding:10px 14px;background:var(--forest,#2b7c5f);color:var(--p5);box-shadow:inset 4px 4px 0 #3fa077,inset -4px -4px 0 #1f5a48,0 0 0 4px var(--ink);cursor:pointer}
+.btn.wood-btn{background:var(--w4);box-shadow:inset 4px 4px 0 var(--w6),inset -4px -4px 0 var(--w2),0 0 0 4px var(--w0)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:10px}
+.week div{background:var(--p5);box-shadow:0 0 0 3px var(--p2);min-height:76px;padding:6px;font-family:var(--mono);font-size:11px}
+.week div.today{box-shadow:0 0 0 4px var(--b3)}
+.week i{display:block;font-style:normal;margin-top:4px;padding:2px 4px;background:var(--c,var(--p3));color:var(--ink)}
+/* Mascota */
+.mascot{display:flex;align-items:flex-end;gap:10px}
+.mascot canvas{width:160px;height:176px}
+.bubble{position:relative;background:var(--p5);color:var(--ink);padding:12px 14px;max-width:300px;font-size:15px;line-height:1.35;box-shadow:0 0 0 4px var(--ink),6px 6px 0 4px rgb(0 0 0/.25);margin-bottom:120px}
+.bubble:after{content:"";position:absolute;left:-16px;bottom:16px;width:12px;height:12px;background:var(--p5);box-shadow:0 0 0 4px var(--ink)}
+.dust{position:fixed;inset:0;pointer-events:none}
+/* Notas: libro alquímico */
+.spines{display:flex;gap:6px}
+.spine{font-family:var(--mono);font-weight:700;padding:14px 12px;background:color-mix(in srgb,var(--c) 55%,var(--w2));color:var(--ink);box-shadow:inset 4px 0 0 rgb(255 255 255/.25),0 0 0 4px var(--w0)}
+.spine.on{background:var(--c);transform:translateY(-8px)}
+.book{display:grid;grid-template-columns:1.5fr 1fr;gap:0;margin-top:14px}
+.book>.paper:first-child{box-shadow:inset 0 0 0 4px var(--p2),inset -16px 0 0 -8px var(--p2),0 4px 0 4px var(--w0)}
+.vials{display:flex;align-items:flex-end;gap:16px;padding:18px 6px 6px;min-height:230px;border-bottom:8px solid var(--w3)}
+.vial{text-align:center;font-family:var(--mono);font-size:12px;font-weight:700}
+.vial canvas{margin:0 auto}
+.vial .g{font-size:20px;display:block;margin-top:6px}
+.vial .w{color:var(--p0)}
+.need{font-family:var(--mono);text-align:center;padding:10px 0}
+.need .big{font-size:64px;font-weight:700;color:var(--green);text-shadow:4px 4px 0 var(--p2);line-height:1}
+.rules{margin:12px 0 0;padding:0;font-size:14px}
+.rules li{list-style:none;padding:6px 0 6px 22px;position:relative}
+.rules li:before{content:"";position:absolute;left:0;top:11px;width:10px;height:10px;background:var(--b3);box-shadow:0 0 0 2px var(--ink)}
+.slider{margin-top:14px;padding:12px;background:var(--p5);box-shadow:0 0 0 4px var(--p2)}
+.track{height:12px;background:var(--p3);box-shadow:0 0 0 3px var(--ink);position:relative;margin:14px 0 8px}
+.track span{position:absolute;left:58%;top:-8px;width:16px;height:28px;background:var(--w5);box-shadow:inset 4px 4px 0 var(--w7),0 0 0 3px var(--ink)}
+.toast{display:inline-flex;gap:10px;align-items:center;margin-top:14px;padding:8px 12px;background:var(--ink);color:var(--p5);font-family:var(--mono);font-size:13px}
+.toast u{color:var(--b5)}
+.demo{font-family:var(--mono);font-size:11px;color:var(--p2);margin-top:6px}
+/* Calendario */
+.calhead{display:flex;align-items:center;justify-content:center;gap:18px;padding:14px}
+.calhead h2{font-family:var(--mono);font-size:26px;letter-spacing:.15em;color:var(--w8);text-shadow:4px 4px 0 var(--w0)}
+.calwrap{display:grid;grid-template-columns:1fr 340px;gap:22px}
+.wd,.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wd b{font-family:var(--mono);font-size:11px;text-align:center;color:var(--p0);padding:4px 0}
+.day{min-height:92px;background:var(--p5);box-shadow:0 0 0 3px var(--p2);padding:6px;position:relative;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--p0)}
+.day.empty{background:transparent;box-shadow:none}
+.day.crit{background:#f6d9c6;box-shadow:0 0 0 3px #d8907a}
+.day.today{box-shadow:0 0 0 4px var(--b3),0 0 14px 2px rgb(255 200 90/.6)}
+.day.today:after{content:"ᚱ";position:absolute;right:8px;bottom:6px;font-size:22px;color:var(--b3);animation:pulse 2s steps(3) infinite}
+.day.sel{box-shadow:0 0 0 4px var(--ink)}
+.ev{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:11px;color:var(--ink)}
+.warn{position:absolute;top:4px;right:6px;color:var(--red2)}
+.legend{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;margin-top:12px;color:var(--p0)}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+/* Inicio */
+.room{height:300px;background:url(../../../dist/assets/home-scenes/refugio-pixel.png) center 30%/cover;box-shadow:0 0 0 4px var(--w0);position:relative}
+.room:after{content:"";position:absolute;inset:auto 0 0 0;height:120px;background:linear-gradient(transparent,var(--w1))}
+.cap{font-family:var(--mono);font-size:12px;color:var(--p3);margin:10px 0 0}
+@media (max-width:700px){
+  .book>*,.calwrap>*,.grid2>*,.notes>*{min-width:0}.wood{padding:12px}.cork{padding:18px 14px}.view{padding:12px 8px 32px}
+  .vials{flex-wrap:wrap;justify-content:center}.vial canvas{transform:scale(.75);transform-origin:bottom center;margin-top:-40px}
+  .note{flex-direction:column;gap:6px}.calhead h2{font-size:18px}.calhead .lantern{display:none}.days,.wd{gap:3px}.day{padding:3px}
+  .week{grid-template-columns:repeat(4,minmax(0,1fr))}.plan li{grid-template-columns:24px minmax(0,1fr)}.plan li .btn{grid-column:2;justify-self:start}
+  .need .big{font-size:52px}.ribbon{flex-wrap:wrap;gap:6px}
+  .notes{grid-template-columns:1fr 1fr}.grid2,.book,.calwrap{grid-template-columns:1fr}
+  .bookhead{flex-direction:column;align-items:flex-start}.tab{font-size:12px;padding:8px 9px 14px}
+  .mascot canvas{width:112px;height:123px}.bubble{margin-bottom:70px;font-size:14px}
+  .vials{gap:8px;overflow-x:auto}.day{min-height:56px;font-size:11px}.ev span.t{display:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body data-view="hoy">
+<canvas class="dust" id="dust" aria-hidden="true"></canvas>
+
+<template id="head">
+  <header class="bookhead">
+    <h1><span class="lantern"></span>BITÁCORA<span class="lantern"></span></h1>
+    <nav class="tabs"><span class="tab" data-t="hoy">✦ Hoy</span><span class="tab" data-t="cal">▦ Calendario</span><span class="tab" data-t="pru">⚑ Pruebas</span><span class="tab" data-t="notas">⚗ Notas</span><span class="tab" data-t="av">✉ Avisos</span></nav>
+  </header>
+</template>
+
+<!-- ───────────── HOY ───────────── -->
+<section class="view" id="hoy">
+  <div class="wood" data-head="hoy">
+    <div class="cork board">
+      <div class="ribbon"><span class="pulse"></span><b>SEMANA CRÍTICA · 19–27 OCT</b><span>4 evaluaciones en 9 días</span></div>
+      <div class="notes">
+        <article class="paper note hot" style="--r:-1deg;--pin:var(--red2)"><span class="pin"></span><canvas class="hg" data-f=".33"></canvas><div><span class="course" style="--c:var(--ana)">ANA</span><h3>Control 1</h3><div class="days">14 días</div><small>Lun 19/10</small></div></article>
+        <article class="paper note" style="--r:1deg"><span class="pin"></span><canvas class="hg" data-f=".24"></canvas><div><span class="course" style="--c:var(--fq)">FQ</span><h3>PEP 1</h3><div class="days">16 días</div><small>Mié 21/10 · confirmar fecha</small></div></article>
+        <article class="paper note" style="--r:-.5deg"><span class="pin"></span><canvas class="hg" data-f=".0"></canvas><div><span class="course" style="--c:var(--fq)">FQ</span><h3>Control 1</h3><div class="days">21 días</div><small><s>20/10</s> → Lun 26/10 · cambió</small></div></article>
+        <article class="paper note" style="--r:1.5deg"><span class="pin"></span><canvas class="hg" data-f=".0"></canvas><div><span class="course" style="--c:var(--org)">ORG</span><h3>PEP 1</h3><div class="days">22 días</div><small>Mar 27/10 · Aminas y aromáticos</small></div></article>
+      </div>
+    </div>
+    <div class="grid2">
+      <section class="paper plan"><div class="in">
+        <p class="lbl">Plan de hoy · lun 5 oct · 0 / 120 min</p>
+        <ul>
+          <li class="done"><span class="box done"></span><div><b>16:00 · 10 min · Repaso FSRS (3 tarjetas)</b><p>Repasos al día: mantiene lo que ya sabes.</p></div><span></span></li>
+          <li><span class="box"></span><div><b>16:15 · 25 min · Aminas: 6 ejercicios de basicidad sin apuntes</b><p>PEP 1 ORG en 22 días, cae en la semana crítica · 3 errores abiertos.</p></div><button class="btn">Empezar</button></li>
+          <li><span class="box"></span><div><b>17:00 · 25 min · Analítica: errores de análisis (guía 1)</b><p>Control 1 ANA en 14 días · todavía sin evidencia.</p></div><button class="btn wood-btn">Empezar</button></li>
+        </ul>
+      </div></section>
+      <section class="mascot"><canvas class="pet" width="40" height="44" data-kind="matraz" data-expr="idea"></canvas>
+        <div class="bubble">La PEP 1 de Orgánica es la última, pero cae en la semana pesada. ¿Partimos hoy con 25 min de Aminas? 🧪</div></section>
+    </div>
+    <section class="paper" style="margin-top:22px"><div class="in"><p class="lbl">Esta semana</p>
+      <div class="week">
+        <div class="today">LUN 5<i style="--c:var(--org)">Clase ORG</i><i style="--c:#cfe8d8">Plan 60 min</i></div><div>MAR 6<i style="--c:var(--ana)">Lab ANA</i><i>Pre-lab ✓</i></div><div>MIÉ 7<i style="--c:var(--fq)">Clase FQ</i></div><div>JUE 8<i style="--c:var(--fis)">Clase FIS</i></div><div>VIE 9<i style="--c:#cfe8d8">Ensayo ANA</i></div><div>SÁB 10</div><div>DOM 11<i style="--c:var(--b5)">Ritual 5 min</i></div>
+      </div><p class="demo">Horario de ejemplo: falta cargar el tuyo.</p></div></section>
+  </div>
+</section>
+
+<!-- ───────────── NOTAS ───────────── -->
+<section class="view" id="notas">
+  <div class="wood" data-head="notas">
+    <div class="spines" style="margin-top:22px"><span class="spine" style="--c:var(--org)">ORG</span><span class="spine on" style="--c:var(--ana)">ANA</span><span class="spine" style="--c:var(--fq)">FQ</span><span class="spine" style="--c:var(--fis)">FIS</span></div>
+    <div class="book">
+      <section class="paper"><div class="in">
+        <p class="lbl">Química Analítica · Teoría (60 % del ramo) · <span style="color:var(--p1)">Laboratorio →</span></p>
+        <div class="vials">
+          <div class="vial"><canvas class="flask" data-w="30" data-g="4.8"></canvas><span class="g" style="color:var(--b2)">4,8</span><span class="w">PEP 1 · 30 %</span></div>
+          <div class="vial"><canvas class="flask" data-w="30" data-g=""></canvas><span class="g">?</span><span class="w">PEP 2 · 30 %</span></div>
+          <div class="vial"><canvas class="flask" data-w="25" data-g=""></canvas><span class="g">?</span><span class="w">PEP 3 · 25 %</span></div>
+          <div class="vial"><canvas class="flask" data-w="15" data-g="5.6"></canvas><span class="g" style="color:#1f5a48">5,6</span><span class="w">Controles · 15 %</span></div>
+        </div>
+        <div class="toast">✒ Guardado: Controles 5,6 <u>deshacer</u></div>
+        <p class="demo">Notas de ejemplo para la maqueta.</p>
+      </div></section>
+      <section class="paper"><div class="in">
+        <div class="need"><p class="lbl">Necesitas en lo que queda (55 %)</p><div class="big">3,1</div><p style="font-family:var(--serif);font-size:15px;color:var(--ink)">promedio para aprobar teoría con 4,0. Vas con <b>5,1</b> en lo rendido.</p></div>
+        <div class="slider"><p class="lbl">¿Y si me saco…?</p><div class="track"><span></span></div><p style="margin:0;font-size:14px">Si PEP 2 y PEP 3 = <b>4,5</b> → teoría <b>4,76</b> · ramo depende del lab (mín. 4,0)</p></div>
+        <ul class="rules"><li>PEP bajo 4,0 → examen, aunque el promedio dé 4,0.</li><li>Laboratorio 40 % del ramo, mínimo 4,0.</li><li>Inasistencias ANA: 1 de 3 permitidas (ejemplo).</li></ul>
+      </div></section>
+    </div>
+    <div class="mascot" style="justify-content:flex-end;margin-top:16px"><div class="bubble" style="margin-bottom:110px">¡Ese 5,6 en controles sube todo! Con un 3,1 en lo que queda ya apruebas teoría.</div><canvas class="pet" width="40" height="44" data-kind="atomo" data-expr="feliz"></canvas></div>
+  </div>
+</section>
+
+<!-- ───────────── CALENDARIO ───────────── -->
+<section class="view" id="cal">
+  <div class="wood" data-head="cal">
+    <div class="calhead"><span class="lantern"></span><span class="btn wood-btn">‹</span><h2>OCTUBRE 2026</h2><span class="btn wood-btn">›</span><span class="lantern"></span></div>
+    <div class="calwrap">
+      <section class="paper"><div class="in">
+        <div class="wd"><b>LUN</b><b>MAR</b><b>MIÉ</b><b>JUE</b><b>VIE</b><b>SÁB</b><b>DOM</b></div>
+        <div class="days" id="days"></div>
+        <div class="legend"><span><canvas class="seal" data-c="#c4544a"></canvas> Prueba</span><span>⚗ Lab</span><span>✒ Entrega</span><span style="background:#f6d9c6;padding:0 6px">Semana crítica</span><span style="color:var(--red2)">⚠ choque</span></div><p class="demo">Labs e informe de ejemplo: falta cargar tu horario.</p>
+      </div></section>
+      <aside>
+        <section class="paper"><div class="in">
+          <p class="lbl">Martes 27 oct</p>
+          <h3 style="font-size:24px;margin:8px 0 4px"><span class="course" style="--c:var(--org)">ORG</span> PEP 1</h3>
+          <p style="margin:0 0 10px;font-size:14px">Aminas, heterociclos y aromáticos</p>
+          <p class="lbl" style="color:var(--p1)">Plan hacia atrás</p>
+          <ul class="rules"><li>6–13 oct · materia nueva (Aminas)</li><li>13–24 oct · ejercicios sin apuntes, mezclados</li><li>24 oct · ensayo PEP 2025 cronometrado</li><li>26 oct · repaso liviano y dormir</li></ul>
+          <button class="btn" style="margin-top:12px">Abrir ficha</button> <button class="btn wood-btn">+ Agregar</button>
+        </div></section>
+        <div class="mascot" style="margin-top:16px"><canvas class="pet" width="40" height="44" data-kind="slime" data-expr="concentrada"></canvas><div class="bubble" style="margin-bottom:90px;font-size:14px">Lunes 26 y martes 27 seguidos ⚠. El domingo 25 hacemos ensayo.</div></div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── INICIO ───────────── -->
+<section class="view" id="inicio">
+  <div class="room"></div>
+  <div class="cork" style="margin-top:-60px;position:relative">
+    <div class="ribbon"><span class="pulse"></span><b>SEMANA CRÍTICA · 19–27 OCT</b><span>Empieza Orgánica esta semana</span></div>
+    <div class="notes">
+      <article class="paper note hot" style="--r:-1deg;--pin:var(--red2)"><span class="pin"></span><canvas class="hg" data-f=".33"></canvas><div><span class="course" style="--c:var(--ana)">ANA</span><h3>Control 1</h3><div class="days">14 días</div><small>Hoy basta con 20 min</small></div></article>
+      <article class="paper note" style="--r:1deg"><span class="pin"></span><canvas class="hg" data-f=".24"></canvas><div><span class="course" style="--c:var(--fq)">FQ</span><h3>PEP 1</h3><div class="days">16 días</div><small>Confirmar fecha con cátedra</small></div></article>
+      <article class="paper note" style="--r:-.5deg;--pin:var(--b5)"><span class="pin"></span><canvas class="hg" data-f="0"></canvas><div><span class="course" style="--c:var(--fq)">FQ</span><h3>Control 1</h3><div class="days">21 días</div><small><s>20/10</s> → 26/10 · cambió</small></div></article>
+      <article class="paper note" style="--r:1.5deg"><span class="pin"></span><canvas class="hg" data-f="0"></canvas><div><span class="course" style="--c:var(--org)">ORG</span><h3>PEP 1</h3><div class="days">22 días</div><small>Semana crítica</small></div></article>
+    </div>
+    <div class="mascot" style="margin-top:14px"><canvas class="pet" width="40" height="44" data-kind="matraz" data-expr="feliz"></canvas><div class="bubble" style="margin-bottom:100px">¡Buenas! Hoy toca: 25 min de Aminas y 3 repasos. <u>Ver mi día →</u></div></div>
+  </div>
+  <p class="cap">El tablón del Inicio cambia según cuánto falta. El calendario de la pared brilla más cuando hay una prueba a ≤ 7 días.</p>
+</section>
+
+<script src="../../../dist/dev/pixelmascotas.js"></script>
+<script>
+(() => {
+  const q = new URLSearchParams(location.search); document.body.dataset.view = q.get('v') || 'hoy';
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Cabecera con marcapáginas (el activo baja).
+  document.querySelectorAll('[data-head]').forEach(el => {
+    el.prepend(document.getElementById('head').content.cloneNode(true));
+    el.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.t === el.dataset.head));
+  });
+  const P = id => { const c = getComputedStyle(document.documentElement).getPropertyValue(id).trim(); return c; };
+  function plot(ctx, rows, pal) { rows.forEach((r, y) => [...r].forEach((ch, x) => { if (pal[ch]) { ctx.fillStyle = pal[ch]; ctx.fillRect(x, y, 1, 1); } })); }
+
+  // Reloj de arena (12×20 px de arte, ×4). f = fracción ya caída.
+  const hgs = [...document.querySelectorAll('canvas.hg')];
+  function drawHG(c, t) {
+    const f = +c.dataset.f, x = c.getContext('2d'); c.width = 12; c.height = 20; c.style.width = '48px'; c.style.height = '80px';
+    const pal = { k: '#24130f', b: '#ba8a30', B: '#fbe08a', g: '#bcd6c0', G: '#eef8e8', s: '#e2b850', S: '#fff6c8' };
+    plot(x, ['kkkkkkkkkkkk', 'kbBBBBBBBBbk', 'kkkkkkkkkkkk', '.kGggggggGk.', '.kg......gk.', '.kg......gk.', '..kg....gk..', '...kg..gk...', '....kggk....', '.....kk.....',
+      '....kggk....', '...kg..gk...', '..kg....gk..', '.kg......gk.', '.kg......gk.', '.kGggggggGk.', 'kkkkkkkkkkkk', 'kbBBBBBBBBbk', 'kkkkkkkkkkkk'], pal);
+    const top = Math.round(6 * (1 - f)), bot = Math.max(1, Math.round(6 * f));
+    for (let i = 0; i < top; i++) { const y = 9 - i, w = [2, 4, 6, 6, 6, 6][i] || 6; x.fillStyle = i === top - 1 ? pal.S : pal.s; x.fillRect(6 - w / 2, y - 0, w, 1); }
+    for (let i = 0; i < bot; i++) { const y = 15 - i, w = [6, 6, 6, 4, 2, 2][i] || 2; x.fillStyle = i === bot - 1 ? pal.S : pal.s; x.fillRect(6 - w / 2, y, w, 1); }
+    if (top > 0) { x.fillStyle = pal.s; const k = Math.floor(t * 6) % 3; for (let y = 10; y < 15 - bot + 1; y++) if ((y + k) % 3) x.fillRect(5 + (y % 2), y, 1, 1); }
+  }
+
+  // Frasco: ancho según el peso, líquido según la nota (1–7). Burbujas que suben por escalones.
+  const flasks = [...document.querySelectorAll('canvas.flask')];
+  const R = window.PixelMascotas.RAMPS, rgb = a => `rgb(${a.join(',')})`;
+  function drawFlask(c, t) {
+    const w = Math.round(10 + +c.dataset.w * .55), h = 44, g = c.dataset.g === '' ? null : +c.dataset.g, x = c.getContext('2d');
+    c.width = w + 4; c.height = h; c.style.width = (w + 4) * 4 + 'px'; c.style.height = h * 4 + 'px'; x.clearRect(0, 0, c.width, c.height);
+    const body = { x: 2, y: 12, w, h: h - 13 }, neck = { x: 2 + Math.round(w / 2) - 3, w: 6 };
+    const liq = g === null ? null : g < 4 ? R.pink : g < 5 ? R.brass : R.potion;
+    // corcho y cuello
+    x.fillStyle = rgb(R.wood[5]); x.fillRect(neck.x, 1, neck.w, 4); x.fillStyle = rgb(R.wood[3]); x.fillRect(neck.x, 4, neck.w, 1);
+    x.fillStyle = rgb(R.glass[1]); x.fillRect(neck.x - 1, 5, neck.w + 2, 8); x.fillStyle = rgb(R.glass[4]); x.fillRect(neck.x, 5, neck.w, 7);
+    // cuerpo: contorno + vidrio
+    x.fillStyle = rgb(R.glass[1]); x.fillRect(body.x - 1, body.y, body.w + 2, body.h + 1); x.fillRect(body.x, body.y + body.h, body.w, 1);
+    x.fillStyle = rgb(R.glass[3]); x.fillRect(body.x, body.y + 1, body.w, body.h - 1);
+    x.clearRect(body.x - 1, body.y, 1, 1); x.clearRect(body.x + body.w, body.y, 1, 1); x.clearRect(body.x - 1, body.y + body.h, 1, 1); x.clearRect(body.x + body.w, body.y + body.h, 1, 1);
+    if (liq) {
+      const lh = Math.round((body.h - 2) * (g - 1) / 6), ly = body.y + body.h - lh;
+      x.fillStyle = rgb(liq[3]); x.fillRect(body.x, ly, body.w, lh); x.fillStyle = rgb(liq[5]); x.fillRect(body.x, ly, body.w, 1);
+      x.fillStyle = rgb(liq[2]); x.fillRect(body.x + body.w - 2, ly + 1, 2, lh - 1);
+      for (let i = 0; i < 4; i++) { const by = ly + 1 + ((Math.floor(t * 5) + i * 7) % Math.max(2, lh - 2)), bx = body.x + 2 + ((i * 5 + 3) % Math.max(1, body.w - 4));
+        x.fillStyle = rgb(liq[6]); x.fillRect(bx, body.y + body.h - 1 - (by - ly), 1, 1); }
+    } else { x.fillStyle = rgb(R.glass[2]); for (let y = body.y + 3; y < body.y + body.h - 1; y += 3) x.fillRect(body.x + (y % 2), y, body.w - 1, 1); }
+    // brillo del vidrio
+    x.fillStyle = rgb(R.glass[6]); x.fillRect(body.x + 1, body.y + 3, 1, body.h - 8); x.fillRect(neck.x + 1, 6, 1, 4);
+    // marca del 4,0
+    const m4 = body.y + body.h - Math.round((body.h - 2) * 3 / 6); x.fillStyle = '#c4544a'; x.fillRect(body.x - 1, m4, 3, 1);
+  }
+
+  // Sello de lacre 9×9.
+  function seal(c, color) { c.width = 9; c.height = 9; c.style.width = c.style.height = '18px'; const x = c.getContext('2d');
+    plot(x, ['..kkkkk..', '.kcccccK.', 'kccCccccK', 'kcCCCcccK', 'kccCccccK', 'kcccccccK', 'kccccccKK', '.kKcccKK.', '..kkkkk..'], { k: '#4a1410', c: color, C: '#ffd0c0', K: '#7a2420' }); }
+
+  // Calendario de octubre 2026 (el 1 es jueves).
+  const days = document.getElementById('days');
+  if (days) {
+    const ev = { 19: [['ANA', 'Control 1', '--ana']], 21: [['FQ', 'PEP 1', '--fq']], 26: [['FQ', 'Control 1', '--fq']], 27: [['ORG', 'PEP 1', '--org']], 6: [['⚗', 'Lab ANA']], 13: [['⚗', 'Lab ANA']], 20: [['⚗', 'Lab ANA']], 16: [['✒', 'Informe']] };
+    let html = '<div class="day empty"></div>'.repeat(3);
+    for (let d = 1; d <= 31; d++) {
+      const cls = ['day', d >= 19 && d <= 27 ? 'crit' : '', d === 5 ? 'today' : '', d === 27 ? 'sel' : ''].join(' ');
+      html += `<div class="${cls}">${d}${d === 26 || d === 27 ? '<span class="warn">⚠</span>' : ''}${(ev[d] || []).map(e => e[2] ? `<div class="ev"><canvas class="seal" data-c="var(${e[2]})"></canvas><span class="t">${e[0]} ${e[1]}</span></div>` : `<div class="ev">${e[0]} <span class="t">${e[1]}</span></div>`).join('')}</div>`;
+    }
+    days.innerHTML = html + '<div class="day empty"></div>';
+  }
+  document.querySelectorAll('canvas.seal').forEach(c => { const v = c.dataset.c; seal(c, v.startsWith('var') ? P(v.slice(4, -1)) : v); });
+
+  // Mascotas: respiran, parpadean y miran (pose re-rasterizada, nunca estirada).
+  const pets = [...document.querySelectorAll('canvas.pet')];
+  const base = { outfit: {}, look: [0, 0], excite: 0, bodyTilt: 0, rootTilt: 0, hop: 0, lift: 3, slosh: 0, cork: 0, tag: 0, footL: 0, footR: 0, spin: 0, drip: 0, hat: 0 };
+  // Polvo en la luz: píxeles que suben lento.
+  const dust = document.getElementById('dust'), dx = dust.getContext('2d');
+  const motes = Array.from({ length: 40 }, () => ({ x: Math.random(), y: Math.random(), s: .2 + Math.random() * .5 }));
+  function frame(ms) {
+    const t = reduced ? 0 : ms / 1000;
+    hgs.forEach(c => drawHG(c, t)); flasks.forEach(c => drawFlask(c, t));
+    pets.forEach((c, i) => { const b = Math.sin(t * 2 * Math.PI / 3 + i), blink = !reduced && (t + i * 1.3) % 4 < .13;
+      window.PixelMascotas.render(c.getContext('2d'), c.dataset.kind, { ...base, t, expr: c.dataset.expr, blink, sx: 1 + .02 * b, sy: 1 - .03 * b, lift: 3 + Math.round(b), look: [Math.round(Math.sin(t * .7 + i)), 0] }); });
+    dust.width = innerWidth / 4 | 0; dust.height = innerHeight / 4 | 0; dust.style.width = '100%'; dust.style.height = '100%';
+    motes.forEach(m => { const y = ((m.y - t * .01 * m.s) % 1 + 1) % 1; dx.fillStyle = `rgba(255,226,160,${.25 + .25 * Math.sin(t * 2 + m.x * 9)})`; dx.fillRect(m.x * dust.width | 0, y * dust.height | 0, 1, 1); });
+    if (!reduced) setTimeout(() => requestAnimationFrame(frame), 125); // 8 cuadros/s: movimiento "por escalones" de pixel art
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
