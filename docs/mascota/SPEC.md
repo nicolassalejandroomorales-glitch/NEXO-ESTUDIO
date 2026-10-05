@@ -23,7 +23,24 @@ Antes de la vida en la sala se borra todo lo viejo para rehacerlo con el diseño
 **Quedó pendiente de la Fase 0**: CSS muerto del avatar/tienda en `styles.css`, `arcane.css` y `update01.css` (no estorba; limpiarlo al hacer la tienda nueva),
 y pruebas de navegador/nube que aún mencionan la mascota vieja (`e2e-test`, `cloud-e2e`, `cloud-test`, `database-test`, `optimize-room-art`).
 
-## Fase 4 — Mascota temática simple (4 oct 2026) ← DIRECCIÓN ACTUAL
+## Fase 5 — Las mismas mascotas en PIXEL ART (5 oct 2026) ← DIRECCIÓN ACTUAL
+
+Niquito pidió rehacer átomo, matraz y slime en pixel art con todas las animaciones. El Inicio también pasa a pixel art
+(otro chat: `docs/inicio-pixelart/SPEC.md`, 418×235 px de arte ×4), así que las mascotas usan **el mismo tamaño de píxel y las mismas rampas**.
+- `dist/dev/pixelmascotas.js`: motor de sprites. Grilla de 40×44 px de arte; cada cuadro se **re-rasteriza** con la pose (aplastar, inclinar,
+  flotar, poción inclinada, corcho que salta) → nunca se estira la imagen. Sombreado por escalones dentro de rampas (luz arriba-izquierda),
+  contorno propio de cada pieza + contorno exterior con el tono más oscuro ("selout"). Ojos, bocas, 14 expresiones, 14 accesorios y efectos
+  (corazón, notas, !, ?, 6, 7, lágrima, z, estrella, vapor, enojo, libros, bombilla) son mini dibujos hechos a mano (mapas de caracteres).
+- Demo: `/dev/mascota-pixel.html` sobre la muestra pixel del refugio (copia en `dist/dev/ref/muestra-ventana.png`): camina por el escritorio,
+  saca un libro de la estantería, lo lee junto a la ventana, duerme junto a las plantas, emotes, vestuario y luciérnagas de píxel.
+  Hoja de revisión: `/dev/pixel-hoja.html` (×6–×8, expresiones, cosméticos y poses).
+- La versión SVG (Fase 4) queda como respaldo; el diseño, conductas, expresiones, emotes y ranuras son los mismos.
+- **Mini brazos con manitos** (5 oct 2026): cápsula hombro→(codo)→mano + manito redonda, re-rasterizados por cuadro. Matraz: brazos de vidrio
+  con manitos crema; átomo: brazos celeste energía con manitos crema; slime: seudópodos de gelatina. `armPose(nombre)`: rest, walk,
+  **sixseven** (el gesto del meme: palmas arriba que suben y bajan alternadas), **dab** (brazos en diagonal, cara en el codo, cuerpo inclinado),
+  wave, dance, up, carry, read, cry, fists, fiddle, scratch, cheeks, sleep. En la demo las poses se mezclan suave y cada conducta usa la suya.
+
+## Fase 4 — Mascota temática simple (4 oct 2026) — su diseño se conserva en la Fase 5 (pixel)
 
 Ningún diseño de raptor convenció. Diagnóstico honesto: no había referencia clara de lo que gusta y el dibujo de animales por código tiene techo.
 **Niquito eligió una mascota temática de formas simples** (lo que sí se dibuja bien por código y encaja con Nexo/química).
