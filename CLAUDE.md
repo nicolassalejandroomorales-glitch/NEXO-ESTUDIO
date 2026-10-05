@@ -135,6 +135,10 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   **5 oct 2026: versión PIXEL ART** (`dist/dev/pixelmascotas.js`, demo `/dev/mascota-pixel.html`): sprites de 40×44 px de arte con las **mismas
   rampas y tamaño de píxel (×4) que el refugio pixel**; cada pose se re-rasteriza (nunca se estira la imagen). Mismas conductas, 14 expresiones,
   emotes (incluido "6 7") y 14 accesorios. La versión SVG queda de respaldo.
+- **Inicio en pixel art** (5 oct 2026, chat propio, `docs/inicio-pixelart/SPEC.md`): el refugio se rehízo en pixel art de verdad
+  (`tools/home-pixel/build_refugio.py` → `refugio-pixel.png`, 113 KB) y **ya es el Inicio por defecto** (escena `refugio-pixel` en
+  `home-scene.js`; `?scene=refugio-012` abre el arte viejo). Le gustan mucho el piso, la ventana y las runas (no agregar más runas).
+  Pendiente: capas animadas en la app (hoy el fondo es estático; la animación existe en el GIF), ventana de tarde/noche en pixel y zoom por zonas.
 - **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. SPEC borrador en `docs/juegos/SPEC.md` (esperando decisiones de Niquito). Principio: los juegos deben alimentar
   el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
 - **Campaña "Camino a la PEP 1"** (4 oct 2026): `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`; `?todo=1` abre todos los jefes).
