@@ -241,6 +241,9 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   recuerda tu error típico de otro día. **Repaso desde cero**: 4 misiones base (Lewis, cargas formales, ácido-base y pKa, SN2/E2 y solvente), cada una
   con pregunta escrita. También: pregunta escrita en la receta de diazonio, y dos errores antiguos arreglados (el rescate se metía antes de tu posición
   al fallar el encargo final; el aviso de flechas aparecía en actividades que no eran de dibujo). Prueba nueva: responder nunca cambia lo que ya pasaste.
+- **Etapa 4b (5 oct, a pedido de Niquito: "un usuario nuevo se puede marear"):** ver `docs/etapa-4b-intuitivo/SPEC.md`. Recorrido de 30 s la
+  primera vez (ilumina y nombra cada parte, también los objetos invisibles de la pintura), avisos de una sola vez (barra de confianza, pista del
+  compañero), botón "?" con "Cómo funciona la torre", diagnóstico marcado "Recomendado para empezar" y objetos que brillan hasta que tocas uno.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

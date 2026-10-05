@@ -27,6 +27,26 @@
   const SPOT_LABEL = { sage: 'Pedirle al sabio que explique desde cero', book: 'Abrir el glosario del sabio', board: 'Ver las diapositivas de la clase',
     window: 'Cambiar la hora de la torre', flasks: 'Mezclar los frascos: dato curioso' };
   const HOURS = [7, 12.5, 18.6, 22];
+  const SPOT_NAME = { sage: 'Sabio · desde cero', book: 'Libro · glosario', board: 'Pizarra · diapositivas', window: 'Ventana · hora', flasks: 'Frascos · datos curiosos' };
+  /* Recorrido de la primera vez (docs/etapa-4b-intuitivo/SPEC.md): una línea por parte, iluminando cada una. */
+  const TOUR = [
+    { target: null, title: 'Bienvenido a la torre', text: 'Te muestro en 30 segundos dónde está cada cosa. Puedes saltarlo cuando quieras.' },
+    { target: '.cr-dialog', title: 'El sabio te habla aquí', text: 'Lee lo que dice abajo. El botón verde siempre te lleva al paso siguiente.' },
+    { target: '.cr-mascot', title: 'Tu compañero', text: 'En la práctica, tócalo y te da una pista. Esa respuesta cuenta como "con pista".' },
+    { target: '.cr-objects, .cr-spot', title: 'Los objetos de la torre', text: 'Sabio: te explica desde cero. Libro: glosario. Pizarra: diapositivas de la clase. Ventana: la hora. Frascos: datos curiosos.', place: 'top' },
+    { target: '.cr-goal-chip', title: 'Tu camino al 7', text: 'Los puntos de la PEP que ya demostraste. Se ganan acertando sin ayuda los casos estilo prueba.' },
+    { target: '.cr-help-btn', title: '¿Te perdiste?', text: 'Este botón explica cada parte cuando quieras y repite este recorrido.' },
+    { target: '.cr-path[data-path="diagnostico"]', title: 'Empieza por aquí', text: 'Si es tu primera vez, el diagnóstico te dice en 5 minutos por qué misión partir.' }
+  ];
+  const HELP = [
+    ['El sabio (abajo)', 'Te explica y te guía. El botón verde avanza; "Explícame más simple" lo dice con otras palabras.'],
+    ['Tu compañero', 'En la práctica te da una pista si lo tocas. Lo que respondes con pista cuenta como "con pista", no "sin ayuda".'],
+    ['La barra de confianza', 'Antes de responder marcas qué tan seguro estás. No baja tu nota: sirve para saber si de verdad lo sabes o adivinaste.'],
+    ['Los objetos de la torre', 'Sabio: desde cero · Libro: glosario · Pizarra: diapositivas · Ventana: hora del día · Frascos: datos curiosos.'],
+    ['Camino al 7', 'Los puntos de la PEP que ya demostraste acertando sin ayuda los casos estilo prueba.'],
+    ['Las hojas', 'Cada concepto es una hoja: brote (guiado) → verde (lo hiciste solo) → flor (lo recordaste días después).'],
+    ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Misiones: una idea por visita. Expedición: todo seguido. Prueba encima: directo a la PEP.']
+  ];
   function dominantScene() {
     const style = getComputedStyle(document.body);
     return SCENES.reduce((best, key) => (parseFloat(style.getPropertyValue(`--w-${key}`)) || (key === 'day' ? 0.01 : 0)) >
@@ -39,7 +59,7 @@
     const state = api.getState();
     if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {};
     const s = state.classSessions[id] ||= {};
-    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy', 'detour']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
+    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy', 'detour', 'tips']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
     if (!Number.isInteger(s.beat)) s.beat = 0;
     return s;
   }
@@ -258,7 +278,7 @@
       <div class="cr-life cr-board-glow" aria-hidden="true" style="left:${bx}%;top:${by}%;width:${bw}%;height:${bh}%"></div>
       <div class="cr-life cr-bubbles" aria-hidden="true" style="left:${fx}%;top:${fy}%;width:${fw}%;height:${fh}%">${'<i></i>'.repeat(7)}</div>
       ${s.burst ? `<div class="cr-life cr-burst" aria-hidden="true" style="left:${fx}%;top:${fy - 8}%;width:${fw}%;height:${fh + 8}%">${'<i></i>'.repeat(12)}</div>` : ''}
-      ${Object.entries(spots).map(([id, [x, y, w, h]], i) => `<button class="cr-spot is-${id}" data-cr="spot" data-spot="${id}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%;--i:${i}" aria-label="${esc(SPOT_LABEL[id])}" title="${esc(SPOT_LABEL[id])}">${glows[id] ? `<img class="cr-spot-glow" src="${esc(glows[id])}" alt="">` : ''}</button>`).join('')}
+      ${Object.entries(spots).map(([id, [x, y, w, h]], i) => `<button class="cr-spot is-${id}" data-cr="spot" data-spot="${id}" data-name="${esc(SPOT_NAME[id] || '')}" style="left:${x}%;top:${y}%;width:${w}%;height:${h}%;--i:${i}" aria-label="${esc(SPOT_LABEL[id])}" title="${esc(SPOT_LABEL[id])}">${glows[id] ? `<img class="cr-spot-glow" src="${esc(glows[id])}" alt="">` : ''}</button>`).join('')}
       </div><div class="cr-motes" aria-hidden="true"></div></div>`;
   }
 
@@ -486,10 +506,12 @@
   /* ───────── Barra de confianza (docs/clase-viva/DISENO.md §5) ─────────
      Antes de responder: qué tan seguro estás. Con 60 % o menos, por qué. Después: qué significa tu resultado. */
   const EV = () => window.NexoClassEvidence;
+  const tipMarkup = (key, html) => `<p class="cr-tip" role="note"><span aria-hidden="true">💡</span><span>${html}</span><button class="cr-btn cr-small" data-cr="tip" data-tip="${key}">Entendido</button></p>`;
   function confidenceMarkup(item, s) {
     const conf = s.conf[item.id], why = s.confWhy[item.id], set = conf !== undefined;
     const words = !set ? 'Mueve la barra' : conf <= 20 ? 'Estoy adivinando' : conf <= 60 ? 'Tengo dudas' : conf < 80 ? 'Bastante seguro' : 'Muy seguro';
-    return `<div class="cr-conf ${set ? '' : 'is-unset'}">
+    const tip = s.tips?.conf ? '' : tipMarkup('conf', 'Primera vez: <b>mueve la barra</b> según qué tan seguro estás antes de responder. No baja tu nota; sirve para saber si lo sabes de verdad o adivinaste.');
+    return `${tip}<div class="cr-conf ${set ? '' : 'is-unset'}">
       <label class="cr-conf-label" for="conf-${esc(item.id)}">Antes de responder: ¿qué tan seguro estás? <b>${set ? `${conf} %` : ''}</b> <span>${words}</span></label>
       <input id="conf-${esc(item.id)}" class="cr-conf-range" type="range" min="0" max="100" step="10" value="${set ? conf : 50}" data-cr-conf="${esc(item.id)}"
         style="--v:${set ? conf : 50}%" aria-valuetext="${set ? `${conf} por ciento` : 'sin marcar'}">
@@ -542,7 +564,7 @@
     if (b.kind === 'path') {
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
       center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).filter(([, p]) => !p.hidden).map(([id, p]) =>
-        `<button class="cr-path" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span><b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
+        `<button class="cr-path ${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? 'is-recommended' : ''}" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span>${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? '<span class="cr-path-rec">Recomendado para empezar</span>' : ''}<b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
         <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>
         ${cls.goal ? `<p class="cr-soon cr-goal-line">Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>` : ''}`;
       return { sage, center };
@@ -711,6 +733,7 @@
       center = `<article class="cr-card ${record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
         <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
+        ${b.stage === 'practice' && !record && !hint && s.tips.conf && !s.tips.hint ? tipMarkup('hint', '¿Te trabaste? <b>Toca a tu compañero</b> (abajo, a la derecha) y te dará una pista.') : ''}
         ${item.paper && !record ? '<p class="cr-paper">✎ Si prefieres, resuélvelo en papel como en la prueba y después escribe aquí lo esencial para autocorregirte con la pauta.</p>' : ''}
         ${record || pre ? '' : confidenceMarkup(item, s)}
         <fieldset class="cr-gate" ${!pre && !record && s.conf[item.id] === undefined ? 'disabled aria-describedby="gate-note"' : ''}>
@@ -778,7 +801,11 @@
     if (!s.panel) return '';
     const m = b?.m || cls.missions[0];
     let title = '', body = '';
-    if (s.panel === 'zero') {
+    if (s.panel === 'help') {
+      title = '¿Cómo funciona la torre?';
+      body = `<dl class="cr-help">${HELP.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+        <div class="cr-row"><button class="cr-btn cr-primary" data-cr="tour" data-go="again">Ver el recorrido de nuevo</button></div>`;
+    } else if (s.panel === 'zero') {
       title = 'El sabio explica desde cero';
       body = (m.stages.fundamentals || []).map(f => `<section class="cr-zero"><h3>${esc(f.title.replace(/^Desde cero: /, ''))}</h3>${f.svg ? `<div class="cr-figure">${f.svg}</div>` : ''}<p>${md(f.body)}</p>${f.deeper ? `<p>${md(f.deeper)}</p>` : ''}${f.rows ? `<dl class="cr-rows">${f.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}</section>`).join('');
     } else if (s.panel === 'glossary') {
@@ -819,6 +846,17 @@
       <header><b>${esc(title)}</b><button class="cr-btn cr-small" data-cr="panel-close">Cerrar ✕</button></header><div class="cr-panel-body">${body}</div></div></div>`;
   }
 
+  // Ilumina lo que explica el recorrido y pone la burbuja donde no lo tape.
+  function placeTour(root, step) {
+    const bubble = root.querySelector('.cr-tour');
+    const targets = step.target ? [...root.querySelectorAll(step.target)].filter(el => el.getClientRects().length) : [];
+    targets.forEach(el => el.classList.add('is-tour-target'));
+    if (!targets.length || step.place === 'top') { bubble.classList.add(targets.length ? 'is-top' : 'is-center'); return; }
+    const r = targets[0].getBoundingClientRect(), h = window.innerHeight;
+    if (r.top + r.height / 2 > h / 2) bubble.style.bottom = `${Math.max(8, h - r.top + 14)}px`;
+    else bubble.style.top = `${Math.min(h - 180, r.bottom + 14)}px`;
+  }
+
   function render(id, api) {
     const cls = window.NexoClasses?.[id];
     if (window.NexoClassSlides?.[id]) cls.slideImages = window.NexoClassSlides[id]; // imágenes reales del PPT (tools/classroom-art/slides.py)
@@ -831,19 +869,23 @@
     const hintable = b.kind === 'question' && (b.stage === 'practice' || b.stage === 'challenge') && !s.answers[b.item.id] && !s.hints[b.item.id];
     let progress = Math.round((s.beat / Math.max(1, list.length - 1)) * 100);
     const goal = goalOf(cls, s);
+    if (s.path === 'diagnostico') { const plan = diagnosisPlan(cls, s); progress = plan.done ? 100 : Math.round((plan.asked.length - 1) / (cls.diagnosis?.max || 7) * 100); }
     // En el mapa y la bienvenida, el % es de toda la clase (actividades respondidas); dentro de una misión, de esa misión.
     if (b.kind === 'pick' || b.kind === 'path') { const all = allItems(cls); progress = Math.round(all.filter(({ item }) => s.answers[item.id]).length / Math.max(1, all.length) * 100); }
     const where = !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
       ? `Misión ${cls.missions.findIndex(m => m.id === s.mission) + 1}` : s.path === 'misiones' ? 'la clase' : PATHS[s.path].name;
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
-    api.app.innerHTML = `<section class="classroom ${entering ? 'is-entering' : ''}" aria-label="Torre del alquimista: ${esc(cls.title)}">
+    if (!s.tips.tour && s.tour == null && b.kind === 'path') s.tour = 0; // primera vez: recorrido
+    const step = s.tour != null ? TOUR[s.tour] : null;
+    api.app.innerHTML = `<section class="classroom ${entering ? 'is-entering' : ''} ${step ? 'is-touring' : ''} ${s.tips.spot ? '' : 'is-spots-new'}" aria-label="Torre del alquimista: ${esc(cls.title)}">
       ${scene(cls, s, b)}
       <header class="cr-top">
         <button class="cr-btn cr-small cr-ghost" data-cr="exit">← Salir</button>
         <div class="cr-progress"><div class="cr-thread" role="progressbar" aria-label="Avance de ${esc(where)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
           <span class="cr-progress-label">${esc(where)} · <b>${progress} %</b></span></div>
         ${goal ? `<button class="cr-btn cr-small cr-ghost cr-goal-chip" data-cr="goal" aria-label="Tu camino al 7: ${pts(goal.earned)} de ${goal.total} puntos"><span aria-hidden="true">★</span> <span class="cr-goal-chip-txt">Camino al 7 · </span><b>${pts(goal.earned)}</b>/${goal.total}</button>` : ''}
+        <button class="cr-btn cr-small cr-ghost cr-help-btn" data-cr="help" aria-label="¿Cómo funciona la torre?" title="¿Cómo funciona?">?</button>
         <button class="cr-btn cr-small cr-ghost cr-slides-btn" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
       </header>
       <nav class="cr-objects" aria-label="Objetos de la torre">${[['sage', 'Sabio', 'Desde cero'], ['book', 'Libro', 'Glosario'], ['board', 'Pizarra', 'Diapositivas'], ['window', 'Ventana', 'Hora'], ['flasks', 'Frascos', 'Dato curioso']]
@@ -858,11 +900,15 @@
         <div class="cr-actions">${sage.actions}</div>
       </section>
       ${panel(cls, s, b, api)}
+      ${step ? `<div class="cr-tour" role="dialog" aria-modal="false" aria-label="Recorrido: ${esc(step.title)}"><p class="cr-eyebrow">Recorrido · ${s.tour + 1} de ${TOUR.length}</p>
+        <b>${esc(step.title)}</b><p>${esc(step.text)}</p><div class="cr-row"><button class="cr-btn cr-small" data-cr="tour" data-go="skip">Saltar</button>
+        <button class="cr-btn cr-small cr-primary" data-cr="tour" data-go="next">${s.tour < TOUR.length - 1 ? 'Siguiente ▸' : '¡Listo!'}</button></div></div>` : ''}
     </section>`;
     document.body.classList.add('in-classroom');
     s.burst = null; // la reacción de la escena dura una sola vista
     api.hydrate();
     const root = api.app.querySelector('.classroom');
+    if (step) placeTour(root, step);
     root.addEventListener('click', event => onClick(event, id, api));
     // La barra de confianza se marca al soltarla (también si la dejas en 50 %) o con las flechas del teclado.
     const commit = event => {
@@ -943,6 +989,7 @@
     if (action === 'deeper') { s.revealed[button.dataset.key] = !s.revealed[button.dataset.key]; return rerender(id, api); }
     if (action === 'spot') {
       const spot = button.dataset.spot;
+      s.tips.spot = true;
       if (spot === 'board') { s.slideOpen = String((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1); }
       else if (spot === 'sage') { s.panel = 'zero'; }
       else if (spot === 'book') { s.panel = 'glossary'; }
@@ -970,6 +1017,15 @@
     if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
     if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'help') { s.slideOpen = null; s.panel = 'help'; s.tour = null; return rerender(id, api); }
+    if (action === 'tip') { s.tips[button.dataset.tip] = true; return rerender(id, api); }
+    if (action === 'tour') {
+      const go = button.dataset.go;
+      if (go === 'again') { s.panel = null; s.tour = 0; if (s.path) { s.path = null; s.mission = null; s.beat = 0; } }
+      else if (go === 'next' && s.tour < TOUR.length - 1) s.tour += 1;
+      else { s.tour = null; s.tips.tour = true; }
+      return rerender(id, api);
+    }
     if (action === 'base') { s.panel = null; s.path = 'base'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
     if (action === 'detour') { s.detour[button.dataset.key] = button.dataset.go === '1'; s.beat += 1; s.mascotMood = 'happy'; return rerender(id, api); }
     if (action === 'diag-redo') {

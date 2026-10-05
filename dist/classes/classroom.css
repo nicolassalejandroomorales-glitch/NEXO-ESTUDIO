@@ -645,3 +645,36 @@ body[data-nexo-ambient-motion="reduced"] :is(.cr-recipe-card, .cr-flask-bubble, 
 .cr-paths { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); width: min(720px, 100%); }
 .cr-base-card h3 { margin: 2px 0 10px; font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
 .cr-base-card > p:not(.cr-eyebrow) { font-size: 1.08rem; line-height: 1.65; color: var(--ink); }
+
+/* ── Etapa 4b: que un usuario nuevo no se maree (docs/etapa-4b-intuitivo/SPEC.md) ── */
+.cr-tour { position: fixed; left: 0; right: 0; margin: 0 auto; z-index: 60; width: min(440px, calc(100vw - 32px)); padding: 14px 16px; border-radius: 14px;
+  color: var(--ink); background: linear-gradient(180deg, #fffaf0, var(--parch)); border: 2px solid var(--gold-deep); box-shadow: 0 18px 50px rgb(0 0 0 / .55);
+  animation: cr-seal .35s ease-out both; }
+.cr-tour.is-center { top: 32%; }
+.cr-tour.is-top { top: 76px; }
+.cr-tour > b { display: block; font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; margin: 2px 0 4px; }
+.cr-tour > p:not(.cr-eyebrow) { margin: 0 0 10px; line-height: 1.5; }
+.cr-tour .cr-row { display: flex; justify-content: flex-end; gap: 8px; }
+.is-tour-target:not(.cr-spot):not(.cr-dialog) { position: relative; }
+.is-tour-target { z-index: 55 !important; outline: 3px solid var(--gold) !important; outline-offset: 3px; border-radius: 12px; animation: cr-tour-pulse 1.4s ease-in-out infinite; }
+@keyframes cr-tour-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgb(232 192 106 / .55); } 50% { box-shadow: 0 0 0 10px rgb(232 192 106 / 0); } }
+/* En el recorrido, los objetos invisibles de la pintura muestran su nombre. */
+.classroom.is-touring .cr-spot.is-tour-target { background: rgb(255 226 160 / .14); }
+.classroom.is-touring .cr-spot.is-tour-target::after { content: attr(data-name); position: absolute; left: 50%; bottom: 100%; transform: translate(-50%, -6px); white-space: nowrap;
+  padding: 4px 8px; border-radius: 8px; background: rgb(29 26 22 / .92); color: #ffe7b0; font-size: .8rem; font-weight: 600; pointer-events: none; }
+/* Hasta que tocas un objeto por primera vez, brillan suave para que sepas que existen. */
+.classroom.is-spots-new:not(.is-touring) .cr-spot { animation: cr-spot-hello 3.2s ease-in-out infinite; }
+.classroom.is-spots-new .cr-object { box-shadow: 0 0 0 2px rgb(232 192 106 / .55); }
+@keyframes cr-spot-hello { 0%, 100% { box-shadow: 0 0 0 0 rgb(255 214 140 / 0); } 50% { box-shadow: 0 0 34px 8px rgb(255 214 140 / .28); } }
+.cr-help-btn { min-width: 40px; font-weight: 800; font-size: 1.05rem; }
+.cr-help { display: grid; gap: 8px; margin: 0 0 14px; }
+.cr-help > div { padding: 10px 12px; border-radius: 10px; background: rgb(255 255 255 / .5); }
+.cr-help dt { font-weight: 700; color: var(--gold-deep); }
+.cr-help dd { margin: 2px 0 0; color: var(--ink); line-height: 1.5; }
+.cr-tip { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding: 10px 12px; border-radius: 10px; background: #fff3cf; border: 1px solid #e3c271; color: var(--ink); line-height: 1.45; }
+.cr-tip > span:nth-child(2) { flex: 1; }
+.cr-path.is-recommended { box-shadow: 0 0 0 3px var(--gold), 0 14px 34px rgb(0 0 0 / .4); }
+.cr-path-rec { align-self: flex-start; padding: 2px 10px; border-radius: 999px; background: #2f6b4a; color: #fff; font-size: .78rem; font-weight: 700; }
+@media (max-width: 700px) { .cr-tip { flex-wrap: wrap; } .cr-tour.is-top { top: 120px; } }
+@media (prefers-reduced-motion: reduce) { .is-tour-target, .classroom.is-spots-new .cr-spot, .cr-tour { animation: none !important; } }
+body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour) { animation: none !important; }
