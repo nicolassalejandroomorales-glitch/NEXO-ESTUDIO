@@ -27,9 +27,9 @@
     if (!hs) return { text: a.el, charge, anchor: 'middle', x: 0, left: -ew / 2, right: ew / 2 };
     // Los H van hacia el lado donde no hay enlaces (NH₂ o H₂N), como en los libros.
     const nb = M().bondsOf(g, a.id).map(b => M().atomById(g, b.a === a.id ? b.b : b.a)).filter(Boolean);
-    const mdx = nb.reduce((s, o) => s + (o.x - a.x), 0) / Math.max(1, nb.length);
+    const allRight = nb.length && nb.every(o => o.x - a.x > 4); // todos los enlaces hacia la derecha → H₂N–, H₃C–
     const w = ew + textW(hs);
-    if (mdx > 4) return { text: hs + a.el, charge, anchor: 'end', x: ew / 2, left: ew / 2 - w, right: ew / 2 };
+    if (allRight) return { text: hs + a.el, charge, anchor: 'end', x: ew / 2, left: ew / 2 - w, right: ew / 2 };
     return { text: a.el + hs, charge, anchor: 'start', x: -ew / 2, left: -ew / 2, right: -ew / 2 + w };
   }
   // Distancia desde el centro del átomo hasta el borde de su rótulo en la dirección (ux, uy), más un margen.

@@ -447,11 +447,11 @@
   const AZ3 = { atoms: [A('n', 'N', 90, 150), A('c1', 'C', 155, 115), A('c2', 'C', 220, 150), A('c3', 'C', 285, 115), A('m1', 'N', 290, 215), A('m2', 'N', 340, 215)],
     bonds: [B('n', 'c1'), B('c1', 'c2'), B('c2', 'c3'), B('m1', 'm2', 3)] };
   const RA_BASE = [A('o', 'O', 170, 55), A('c', 'C', 170, 130), A('m1', 'C', 110, 165), A('m2', 'C', 230, 165)];
-  const RA1 = { scene: { atoms: [...RA_BASE, A('n', 'N', 330, 130)], bonds: [B('c', 'o', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, o: 2 }, lpAngle: { n: 180 } };
-  const RA1B = { atoms: [...RA1.scene.atoms, A('me', 'C', 385, 165)], bonds: [...RA1.scene.bonds, B('n', 'me')] };
+  const RA1 = { scene: { atoms: [...RA_BASE, A('n', 'N', 320, 80)], bonds: [B('c', 'o', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, o: 2 }, lpAngle: { n: 180 } };
+  const RA1B = { atoms: [...RA1.scene.atoms, A('me', 'C', 375, 115)], bonds: [...RA1.scene.bonds, B('n', 'me')] };
   const IMINE = [A('n', 'N', 170, 55), A('c', 'C', 170, 130), A('m1', 'C', 110, 165), A('m2', 'C', 230, 165)];
   const RA2 = { atoms: [...IMINE, A('w', 'O', 320, 80, 0, { label: 'H₂O' })], bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] };
-  const RA3 = { scene: { atoms: [...IMINE, A('hy', 'H', 320, 150, -1, { label: 'H⁻' })], bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, hy: 1 }, lpAngle: { hy: 180 } };
+  const RA3 = { scene: { atoms: [...IMINE, A('hy', 'H', 310, 85, -1, { label: 'H⁻' })], bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, hy: 1 }, lpAngle: { hy: 180 } };
   const RA4 = { atoms: IMINE, bonds: [B('c', 'n'), B('c', 'm1'), B('c', 'm2')] };
   const ACETONE = { atoms: [A('c', 'C', 210, 130), A('o', 'O', 210, 60), A('m1', 'C', 150, 165), A('m2', 'C', 270, 165)], bonds: [B('c', 'o', 2), B('c', 'm1'), B('c', 'm2')] };
   const ISOPROPYLAMINE = { atoms: [A('c', 'C', 210, 130), A('n', 'N', 210, 60), A('m1', 'C', 150, 165), A('m2', 'C', 270, 165)], bonds: [B('c', 'n'), B('c', 'm1'), B('c', 'm2')] };
@@ -1575,4 +1575,160 @@
 
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
+  /* ── Etapa 6: misiones 1, 2, 3 y 8 al modelo de la clase viva. Se reusan las lecciones y actividades de siempre
+     (por su id) y se reparten en partes con "adivina antes", actividades nuevas y una regla del sabio. ── */
+  const dopa = ring(150, 140, 40, 'r');
+  // Dopamina: cadena en r0, OH en r3 (para) y r4 (meta). RDKit lo revisa en tools/molecule-test.cjs.
+  const DOPAMINE = { atoms: [...dopa.atoms, A('o1', 'O', 105, 62), A('o2', 'O', 60, 140), A('ca', 'C', 235, 115, 0, { hide: true }), A('cb', 'C', 285, 140, 0, { hide: true }), A('n', 'N', 335, 115)],
+    bonds: [...dopa.bonds, B('r4', 'o1'), B('r3', 'o2'), B('r0', 'ca'), B('ca', 'cb'), B('cb', 'n')] };
+  const TRIMETHYL = { atoms: [A('n', 'N', 200, 130), A('c1', 'C', 140, 165), A('c2', 'C', 260, 165), A('c3', 'C', 200, 60)], bonds: [B('n', 'c1'), B('n', 'c2'), B('n', 'c3')] };
+  const NMEANILINE = { atoms: [...ANILINE.atoms, A('me', 'C', 300, 115)], bonds: [...ANILINE.bonds, B('n', 'me')] };
+  const restructure = (mId, hook, parts) => {
+    const m = mission(mId), pool = [...(m.stages.practice || [])], blocks = [...(m.stages.explain || [])];
+    const take = (list, id) => { const i = list.findIndex(x => x.id === id); if (i < 0) throw new Error(`${mId}: no existe ${id}`); return list.splice(i, 1)[0]; };
+    m.stages.hook = hook;
+    m.parts = parts.map(p => ({ ...p, explain: p.explain.map(id => take(blocks, id)), practice: p.practice.map(x => (typeof x === 'string' ? take(pool, x) : x)),
+      ...(p.worked ? { worked: m.stages.worked } : {}) }));
+    if (blocks.length || pool.length) throw new Error(`${mId}: quedaron sin parte ${[...blocks, ...pool].map(x => x.id)}`);
+    m.stages.explain = []; m.stages.practice = []; delete m.stages.worked;
+    m.minutes = Math.max(m.minutes, 22);
+  };
+  const rl = (title, concept, steps) => ({ title, concept, steps });
+
+  restructure('m1', { title: 'Tu cerebro funciona con aminas', scene: DOPAMINE, smiles: 'NCCc1ccc(O)c(O)c1',
+      sage: 'Aprendiz… esta molécula está ahora mismo en tu cerebro.',
+      text: 'La **dopamina** es una amina: un NH₂ en la punta de una cadena. Ese N tiene un **par libre** que, a pH 7,4, atrapa un H⁺: casi toda la dopamina de tu cuerpo está como ion amonio. Hoy aprendes qué es una amina, cómo se clasifica y por qué ese par libre lo decide todo.' }, [
+    { id: 'r1', intro: 'Parte 1: **qué es una amina y cómo se clasifica**.', worked: false,
+      pretest: q('m1-pre1', 'Para decir si una amina es 1°, 2° o 3°, ¿qué crees que se mira?', [{ text: 'Cuántos carbonos están unidos al N', correct: true }, { text: 'Qué tipo de carbono lleva el N, como en los alcoholes', misconception: 'carbon-rule' }, { text: 'Cuántos carbonos tiene la molécula', note: 'El tamaño no importa: solo lo que toca al N.' }],
+        { explain: 'Se cuentan los grupos de carbono unidos directamente al N.', slide: 2, concept: 'am.clasificacion' }),
+      explain: ['b1'],
+      practice: ['m1-p1',
+        classify('m1-cl1', 'Clasifica cada amina.', [['p', 'Primaria (1°)'], ['s', 'Secundaria (2°)'], ['t', 'Terciaria (3°)'], ['q', 'Sal cuaternaria']],
+          [['a', 'CH₃CH₂–NH₂', 'p'], ['b', '(CH₃)₂NH', 's'], ['c', '(CH₃)₃N', 't'], ['d', '(CH₃)₄N⁺ Cl⁻', 'q'], ['e', '(CH₃)₃C–NH₂', 'p'], ['f', 'C₆H₅–NH–CH₃', 's']],
+          { explain: 'Cuenta los carbonos unidos al N: 1 → 1°, 2 → 2°, 3 → 3°, 4 → sal cuaternaria. La terc-butilamina es 1°: el N toca un solo carbono.', slide: 2, hint: 'No mires el carbono: mira el N y cuenta quién lo toca.', concept: 'am.clasificacion', misconception: 'count-groups' }),
+        pick('m1-pk1', 'En la anfetamina, toca lo que debes mirar para clasificarla.', [[{ t: 'C₆H₅–CH₂–' }, { t: 'CH(CH₃)', target: 'c' }, { t: '–' }, { t: 'NH₂', target: 'n' }]],
+          { c: { label: 'El carbono que lleva el N', misconception: 'carbon-rule' }, n: { label: 'El nitrógeno' } }, 'n',
+          { explain: 'Se mira el N: tiene un solo grupo de carbono. La anfetamina es una amina primaria, aunque ese carbono sea secundario.', slide: 2, captions: ['Anfetamina'], hint: '¿Clasificas mirando el carbono o el nitrógeno?', concept: 'am.clasificacion' })],
+      rule: rl('Regla para clasificar', 'am.clasificacion', ['Encuentra el **N**.', 'Cuenta los **carbonos unidos directamente** al N (los H no cuentan).', '1 → **1°** · 2 → **2°** · 3 → **3°** · 4 (con carga +) → **sal cuaternaria**.']) },
+    { id: 'r2', intro: 'Parte 2: **el par libre lo hace todo**. Base o nucleófilo: depende de a quién ataca.', worked: true,
+      pretest: q('m1-pre2', 'Mezclas metilamina con HCl. ¿Qué crees que pasa?', [{ text: 'El N atrapa el H⁺ y se forma una sal', correct: true }, { text: 'El N se une al Cl', misconception: 'n-binds-cl' }, { text: 'No pasa nada', note: 'El par libre del N reacciona con el H⁺ del HCl.' }],
+        { explain: 'El par libre atrapa el H⁺: CH₃NH₃⁺ Cl⁻.', slide: 5, concept: 'am.par-libre' }),
+      explain: ['b2'],
+      practice: ['m1-p2', 'm1-a1', 'm1-b1'],
+      rule: rl('Regla del par libre', 'am.par-libre', ['El par libre del N ataca lo que tenga **carga + o δ+**.', 'Si atrapa un **H⁺** → actúa como **base** (sal de amonio).', 'Si ataca un **carbono** δ+ → actúa como **nucleófilo** (alquilación, acilación).']) },
+    { id: 'r3', intro: 'Parte 3: **la forma del nitrógeno**. Una pirámide que se da vuelta como un paraguas.', worked: false,
+      pretest: q('m1-pre3', 'La trimetilamina tiene 3 grupos en el N. ¿Crees que la molécula es plana?', [{ text: 'No: es una pirámide baja', correct: true }, { text: 'Sí: tres grupos se ordenan en un triángulo plano', misconception: 'flat-n' }],
+        { explain: 'El par libre empuja los enlaces hacia abajo: pirámide trigonal de unos 108°.', slide: 11, concept: 'am.geometria' }),
+      explain: ['b3'],
+      practice: ['m1-p3',
+        match('m1-mt1', 'Une cada nitrógeno con su forma.', [['N de una amina, R₃N', 'sp³, piramidal, unos 108°'], ['N del ion amonio, R₄N⁺', 'sp³, tetraédrico, 109,5°'], ['N de la piridina', 'sp², en un anillo plano, unos 120°']],
+          { explain: 'Con par libre el N es piramidal; sin par (4 enlaces) es tetraédrico; en la piridina es sp² y plano.', slide: 11, hint: 'Cuenta enlaces y pares libres de cada N.', concept: 'am.geometria' }),
+        write('m1-w1', 'Explícalo con tus palabras: ¿por qué no se pueden separar los dos enantiómeros de una amina con tres grupos distintos en el N?',
+          'Porque el N es piramidal y la pirámide se invierte muy rápido, como un paraguas que se da vuelta con el viento (inversión piramidal). Así, un enantiómero se convierte en el otro todo el tiempo y queda una mezcla racémica que no se puede separar.',
+          ['Dije que el N es piramidal (sp³, con el par libre)', 'Dije que la pirámide se invierte muy rápido (inversión piramidal)', 'Concluí que los enantiómeros se interconvierten y no se separan'],
+          { explain: 'La inversión piramidal interconvierte los enantiómeros.', slide: 11, hint: 'Piensa en el paraguas.', concept: 'am.geometria',
+            keywords: [{ label: 'Pirámide', any: ['piramid', 'sp3', 'sp³'] }, { label: 'Se invierte', any: ['invier', 'da vuelta', 'voltea', 'paraguas'] }, { label: 'Se interconvierten', any: ['interconvier', 'convierte', 'racemic', 'mezcla'] }] })],
+      rule: rl('Regla de la forma', 'am.geometria', ['3 enlaces + 1 par = 4 zonas → **sp³**.', 'Con los átomos solos: **pirámide trigonal**, unos 108°.', 'La pirámide se **invierte** muy rápido: los enantiómeros no se separan.']) }
+  ]);
+
+  restructure('m2', { title: 'La etiqueta del frasco', scene: AMINOPHENOL, smiles: 'Nc1ccc(O)cc1',
+      sage: 'Aprendiz… en el laboratorio el frasco dice "4-aminofenol". ¿Por qué no "4-hidroxianilina"?',
+      text: 'Esta molécula (la base del paracetamol) tiene un –OH y un –NH₂. El nombre lo decide la **prioridad**: el –OH manda (fenol) y el –NH₂ pasa a ser el prefijo **amino-**. Hoy aprendes a nombrar aminas para no equivocarte en la prueba ni con un frasco real.' }, [
+    { id: 'r1', intro: 'Parte 1: **alquilaminas, alcanaminas y sales**.', worked: true,
+      pretest: q('m2-pre1', '¿Cómo crees que se llama CH₃–NH–CH₃?', [{ text: 'Dimetilamina', correct: true }, { text: 'Metilmetilamina', misconception: 'forgot-di' }, { text: 'Etilamina', note: 'Tiene dos grupos metilo separados por el N, no un etilo.' }],
+        { explain: 'Dos metilos iguales → di: dimetilamina.', slide: 8, concept: 'am.nombres' }),
+      explain: ['b21', 'b24', 'b25'],
+      practice: ['m2-p1', 'm2-p2',
+        { id: 'm2-fx1', type: 'spot', source: SRC, concept: 'am.nombres', slide: 8,
+          prompt: 'Un aprendiz nombró (CH₃)₂N–CH₂CH₂CH₃. Revisa su hoja: ¿en qué paso se equivocó?',
+          steps: ['Cadena principal: el propilo (el grupo más complejo) → propan-1-amina', 'Los dos metilos están en el N', 'Escribe: 2-dimetilpropan-1-amina'], wrong: 2,
+          stepNotes: { 0: 'Bien: el grupo más complejo da la cadena principal.', 1: 'Bien: los metilos están unidos al N.' },
+          fix: { question: '¿Cómo debió escribirlo?', options: [{ text: 'N,N-dimetilpropan-1-amina', correct: true }, { text: '1,1-dimetilpropanamina', note: 'Los números son para carbonos de la cadena; estos grupos están en el N.' }, { text: 'Trimetilpropilamina', note: 'Hay dos metilos, no tres.' }] },
+          explain: 'Los grupos sobre el N llevan el localizador N: N,N-dimetilpropan-1-amina.', hint: '¿Dónde están los metilos: en un carbono o en el N?', misconception: 'n-locant' }],
+      rule: rl('Regla del nombre (alquilaminas)', 'am.nombres', ['¿Grupos simples? → **alquilamina** en orden alfabético, con di-/tri-.', '¿Un grupo complejo? → ese da la cadena: **alcan-#-amina**.', 'Los grupos en el N llevan **N-** (N,N-dimetil…). Con 4 grupos: sal de **-amonio**.']) },
+    { id: 'r2', intro: 'Parte 2: **anilinas y quién manda**.', worked: false,
+      pretest: q('m2-pre2', 'Una molécula tiene –OH y –NH₂. ¿Cuál crees que da el sufijo del nombre?', [{ text: 'El –OH', correct: true }, { text: 'El –NH₂', misconception: 'amine-priority' }],
+        { explain: 'El alcohol tiene más prioridad: el NH₂ queda como amino-.', slide: 6, concept: 'am.nombres-aril' }),
+      explain: ['b22', 'b23'],
+      practice: ['m2-p3', 'm2-p4',
+        { id: 'm2-b1', type: 'build', source: SRC, concept: 'am.nombres-aril', slide: 7, smiles: 'CNc1ccccc1',
+          prompt: 'Dibuja la **N-metilanilina**. Ya tienes la anilina: agrégale lo que falta.',
+          start: ANILINE, target: NMEANILINE,
+          near: [{ graph: { atoms: [...ANILINE.atoms.map(a => a.id === 'r2' ? { ...a, hide: false } : a), A('me', 'C', 175, 230)], bonds: [...ANILINE.bonds, B('r2', 'me')] }, note: 'Ese CH₃ quedó en el anillo (sería una metilanilina). La "N-" dice que va en el nitrógeno.' }],
+          explain: 'N-metil significa que el CH₃ está en el N: C₆H₅–NH–CH₃.', hint: 'Toca el N para seleccionarlo y después un espacio vacío al lado.' },
+        classify('m2-cl1', '¿El NH₂ va como sufijo (-amina / anilina) o como prefijo (amino-)?', [['suf', 'Sufijo: -amina o anilina'], ['pre', 'Prefijo: amino-']],
+          [['a', 'H₂N–CH₂CH₂–OH', 'pre'], ['b', 'CH₃CH₂CH₂–NH₂', 'suf'], ['c', 'H₂N–C₆H₄–COOH', 'pre'], ['d', 'Cl–C₆H₄–NH₂', 'suf']],
+          { explain: 'Si hay –OH o –COOH, ellos mandan y el NH₂ es amino-. Un halógeno no manda: el nombre sigue siendo anilina o amina.', slide: 6, hint: 'Busca si hay un –OH o un –COOH.', concept: 'am.nombres-aril', misconception: 'amine-priority' })],
+      rule: rl('Regla de quién manda', 'am.nombres-aril', ['Prioridad: **ácido > alcohol > amina**.', 'Si manda otro grupo, el NH₂ es **amino-**.', 'En el benceno: derivado de la **anilina**, el C del NH₂ es el 1.']) }
+  ]);
+
+  const EXTRACT = { id: 'rc-extraccion', mission: 'm3', concept: 'am.sales', slide: 16, title: 'Poción de extracción', base: 'Amina + compuesto neutro, en éter',
+    reagents: '1) HCl acuoso · 2) separar capas · 3) NaOH a la capa acuosa · 4) extraer con éter', condition: 'Embudo de decantación', result: 'La amina sola, de vuelta en éter',
+    note: 'Con HCl la amina pasa al agua como sal; el compuesto neutro se queda en el éter. Con NaOH vuelve a ser neutra y regresa al éter.' };
+  cls.recipes.push(EXTRACT);
+  restructure('m3', { title: 'El limón y el pescado', scene: TRIMETHYL, smiles: 'CN(C)C',
+      sage: 'Aprendiz… ¿por qué al pescado se le echa limón?',
+      text: 'El olor a pescado viene de aminas pequeñas como la **trimetilamina**, que es volátil (se evapora fácil). El ácido del limón la **protona**: se vuelve una sal, iónica y nada volátil. Ya no llega a tu nariz. Hoy: por qué unas aminas hierven más que otras, cuáles se disuelven en agua y cómo una sal sirve para separar y para vender fármacos.' }, [
+    { id: 'r1', intro: 'Parte 1: **puentes de H: ebullición y solubilidad**.', worked: false,
+      pretest: q('m3-pre1', 'Propilamina y trimetilamina tienen la misma fórmula (C₃H₉N). ¿Cuál crees que hierve más alto?', [{ text: 'La propilamina', correct: true }, { text: 'La trimetilamina', misconception: 'tertiary-donor' }, { text: 'Igual: misma fórmula', note: 'La fórmula no basta: importan los N–H.' }],
+        { explain: 'La propilamina tiene N–H y forma puentes de H: unos 48 °C frente a 3 °C.', slide: 12, concept: 'am.fisicas' }),
+      explain: ['b31', 'b32', 'b33'],
+      practice: ['m3-p1', 'm3-p2',
+        q('m3-tw1', 'Casos gemelos: misma fórmula, C₃H₉N. ¿Por qué A hierve a unos 48 °C y B a unos 3 °C?', [{ text: 'A tiene N–H y forma puentes de H entre sus moléculas; B no', correct: true }, { text: 'B es más pesada', note: 'Tienen la misma fórmula: pesan lo mismo.' }, { text: 'A es terciaria', misconception: 'tertiary-donor' }],
+          { figures: [{ scene: PROPAMINE, caption: 'A: propilamina (1°)' }, { scene: TRIMETHYL, caption: 'B: trimetilamina (3°)' }],
+            explain: 'Sin N–H, la trimetilamina no dona puentes de H: sus moléculas se separan con poca energía.', slide: 12, hint: 'Busca los H unidos al N.', concept: 'am.fisicas' })],
+      rule: rl('Regla de los puentes de H', 'am.fisicas', ['Más **N–H** → más puentes de H → **mayor ebullición** (1° > 2° > 3°).', 'Hasta unos **5 carbonos**, solubles en agua; con más, poco solubles.', 'Una 3° acepta puentes de H del agua, pero no dona.']) },
+    { id: 'r2', intro: 'Parte 2: **sales y extracción**. El truco del HCl.', worked: true,
+      pretest: q('m3-pre2', 'Una amina está disuelta en éter y le agregas HCl acuoso. ¿A dónde crees que se va?', [{ text: 'Al agua, como sal', correct: true }, { text: 'Se queda en el éter', misconception: 'salt-organic' }],
+        { explain: 'Protonada es un ion: se va a la capa acuosa.', slide: 16, concept: 'am.sales' }),
+      explain: ['b34'],
+      practice: ['m3-p3',
+        { id: 'm3-rc1', type: 'recipe', source: SRC, concept: 'am.sales', slide: 16,
+          prompt: 'El caldero pide **separar la ciclohexilamina del naftaleno** (los dos en éter). Elige los pasos en orden.', base: 'Ciclohexilamina + naftaleno en éter', target: 'la amina sola',
+          ingredients: [{ id: 'hcl', label: 'HCl acuoso' }, { id: 'sep', label: 'Separar la capa acuosa' }, { id: 'naoh', label: 'NaOH a la capa acuosa' }, { id: 'eter', label: 'Extraer con éter y evaporar' }, { id: 'calor', label: 'Calentar fuerte' }, { id: 'nacl', label: 'NaCl' }],
+          answer: ['hcl', 'sep', 'naoh', 'eter'],
+          notes: { calor: 'Calentar no separa: los dos siguen juntos en el éter.', nacl: 'La sal común no protona la amina: no la cambia de capa.' },
+          orderNote: 'Primero hay que volver iónica a la amina (HCl), separarla, devolverla a neutra (NaOH) y recién ahí sacarla con éter.',
+          explain: 'HCl → la amina pasa al agua como sal; separas; NaOH → vuelve a ser neutra; éter → la recuperas sola.', hint: 'Piensa: ¿qué la vuelve soluble en agua y qué la devuelve al éter?' },
+        { id: 'm3-fx1', type: 'spot', source: SRC, concept: 'am.sales', slide: 16,
+          prompt: 'Un aprendiz quiso pasar una amina del éter al agua. Revisa su hoja: ¿en qué paso se equivocó?',
+          steps: ['Tiene la amina disuelta en éter', 'Agrega NaOH acuoso y agita', 'Separa la capa acuosa', 'Espera encontrar la amina en el agua'], wrong: 1,
+          stepNotes: { 0: 'Bien: así parte.', 2: 'Separar está bien; el problema es el reactivo.', 3: 'Esa expectativa viene del error anterior.' },
+          fix: { question: '¿Qué debió agregar?', options: [{ text: 'HCl acuoso', correct: true }, { text: 'Más éter', note: 'Más éter no cambia nada.' }, { text: 'Agua pura', note: 'Una amina grande neutra casi no se disuelve en agua.' }] },
+          explain: 'Con NaOH la amina sigue neutra y se queda en el éter. Se necesita un ácido (HCl) para volverla sal.', hint: 'Para ir al agua, la amina tiene que tener carga.', misconception: 'salt-organic' }],
+      recipe: EXTRACT }
+  ]);
+
+  restructure('m8', { title: 'Un frasco sin etiqueta',
+      sage: 'Aprendiz… en el laboratorio apareció un frasco sin etiqueta que huele a pescado. ¿Es una amina? ¿De qué tipo?',
+      text: 'Tienes tres detectives: el **espectro de masas** dice si hay un número impar de N (regla del nitrógeno), el **IR** cuenta los enlaces N–H (dos picos, uno o ninguno) y la **RMN** muestra los H cerca del N. Con los tres, el frasco ya no tiene secretos.' }, [
+    { id: 'r1', intro: 'Parte 1: **el IR cuenta los N–H**.', worked: false,
+      pretest: q('m8-pre1', 'Una amina terciaria, ¿cuántos picos N–H crees que muestra en el IR?', [{ text: 'Ninguno', correct: true }, { text: 'Uno', misconception: 'ir-peaks' }, { text: 'Tres, uno por grupo', note: 'Los picos son de enlaces N–H, no de grupos de carbono.' }],
+        { explain: 'Sin N–H no hay estiramiento N–H.', slide: 44, concept: 'am.espectro' }),
+      explain: ['b81'],
+      practice: ['m8-p1',
+        q('m8-q1', 'Un compuesto C₄H₁₁N muestra **un** pico cerca de 3350 cm⁻¹. ¿Qué tipo de amina es?', [{ text: 'Secundaria', correct: true }, { text: 'Primaria', misconception: 'ir-peaks' }, { text: 'Terciaria', note: 'Una terciaria no tiene N–H: no daría ningún pico.' }],
+          { explain: 'Un pico N–H = un solo enlace N–H = amina 2°, por ejemplo la dietilamina.', slide: 44, hint: 'Dos picos 1°, uno 2°, ninguno 3°.', concept: 'am.espectro' }),
+        { id: 'm8-fx1', type: 'spot', source: SRC, concept: 'am.espectro', slide: 44,
+          prompt: 'Un aprendiz analizó un compuesto sin picos entre 3350 y 3500 cm⁻¹. Revisa su hoja: ¿en qué paso se equivocó?',
+          steps: ['El espectro de masas da M⁺ = 59: tiene un N', 'No hay picos N–H en el IR', 'Concluye: no es una amina', 'Descarta la trimetilamina'], wrong: 2,
+          stepNotes: { 0: 'Bien: masa impar, número impar de N.', 1: 'Bien leído.', 3: 'Esa conclusión viene del error anterior.' },
+          fix: { question: '¿Qué debió concluir?', options: [{ text: 'Puede ser una amina terciaria, que no tiene N–H', correct: true }, { text: 'Es un alcohol', note: 'Un alcohol daría una banda O–H ancha y fuerte.' }, { text: 'El IR está malo', note: 'El IR está bien: las 3° no tienen N–H.' }] },
+          explain: 'Sin picos N–H puede ser una amina 3°. Para confirmarlo, se trata con HCl: aparece el N–H⁺ entre 2200 y 3000 cm⁻¹.', hint: '¿Qué amina no tiene N–H?', misconception: 'ir-peaks' }],
+      rule: rl('Regla del IR', 'am.espectro', ['3350–3500 cm⁻¹: **2 picos → 1°**, **1 pico → 2°**, **ninguno → 3°**.', 'Las N–H son más finas y débiles que la banda ancha O–H.', 'Para confirmar una 3°: con HCl aparece N–H⁺ (2200–3000 cm⁻¹).']) },
+    { id: 'r2', intro: 'Parte 2: **masas y RMN**: la regla del nitrógeno y los H cerca del N.', worked: true,
+      pretest: q('m8-pre2', 'Un compuesto tiene ion molecular de masa 73. ¿Qué crees que sugiere?', [{ text: 'Que tiene un número impar de N', correct: true }, { text: 'Que no tiene N', misconception: 'n-rule' }],
+        { explain: 'Regla del nitrógeno: masa impar → número impar de N.', slide: 47, concept: 'am.espectro' }),
+      explain: ['b82', 'b83'],
+      practice: ['m8-p2', 'm8-p3',
+        order('m8-o1', 'Ordena los pasos para identificar el frasco sin etiqueta.', [['ms', 'Masas: ¿M⁺ impar? → tiene N'], ['ir', 'IR: cuenta los picos N–H → 1°, 2° o 3°'], ['rmn', 'RMN: H α al N entre 2 y 3 ppm → confirma la estructura']], ['ms', 'ir', 'rmn'],
+          { direction: 'Del primero al último.', explain: 'Primero si hay N (masas), luego el tipo de amina (IR) y al final la estructura exacta (RMN).', slide: 45, hint: 'De lo más general (¿tiene N?) a lo más fino (¿dónde están los H?).', concept: 'am.espectro' })],
+      rule: rl('Regla de los tres detectives', 'am.espectro', ['**Masas**: M⁺ impar → número impar de N.', '**IR**: picos N–H → 1°, 2° o 3°.', '**RMN ¹H**: H α al N en 2–3 ppm; el N–H, señal ancha.']) }
+  ]);
+  mission('m8').stages.transfer.push(write('m8-w1', 'Estilo prueba: ¿cómo distingues propilamina de trimetilamina (las dos C₃H₉N) con un IR? Explícalo.',
+    'La propilamina es una amina primaria: tiene dos enlaces N–H y muestra dos picos entre 3350 y 3500 cm⁻¹. La trimetilamina es terciaria: no tiene N–H, así que no muestra ningún pico en esa zona. Las dos tienen M⁺ = 59 (impar, un N), así que el espectro de masas no las distingue.',
+    ['Dije que la propilamina (1°) muestra dos picos N–H', 'Dije que la trimetilamina (3°) no muestra ninguno', 'Mencioné la zona 3350–3500 cm⁻¹ o que masas no las distingue'],
+    { explain: 'Dos picos contra ninguno: el IR las separa.', slide: 44, concept: 'am.espectro',
+      keywords: [{ label: 'Dos picos', any: ['dos picos', '2 picos', 'dos señales'] }, { label: 'Ninguno en la 3°', any: ['ningun', 'no tiene n-h', 'no tiene n–h', 'sin n-h', 'sin n–h', 'sin picos'] }, { label: 'Zona N–H', any: ['3350', '3500', '3400'] }] }));
+
 })();

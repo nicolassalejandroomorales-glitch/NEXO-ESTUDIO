@@ -205,8 +205,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Hecha** (esperando tu prueba) | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
 | 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | **Hecha** (esperando tu prueba) | Opus 5.5 |
 | 5 | Formulario con investigación y recetario de pociones | **Hecha** (esperando tu prueba) | Opus 5.5 |
-| 6 | Las otras misiones de Aminas al modelo nuevo | **Siguiente** | Opus 5.5 |
-| 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Pendiente | Sonnet 5.5 |
+| 6 | Las otras misiones de Aminas al modelo nuevo | **Hecha** (esperando tu prueba) | Opus 5.5 |
+| 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | **Siguiente** | Sonnet 5.5 |
 | 8 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | Pendiente | Sonnet 5.5 |
 | 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | Pendiente | Sonnet 5.5 |
 | 10 | **Arte al final:** torre por capas, árbol vivo y personajes cartoon, diseñados con calma | En diseño (bocetos) | Opus 5.5 |
@@ -258,7 +258,11 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   m4 con caso de la lidocaína (clorhidrato), 2 partes (medir con el pKa · hacia dónde va el equilibrio), flechas de la protonación, simulación de pH
   y aprendiz que confunde el lado débil; m5 con caso de la nicotina, 3 partes (resonancia · anillos con N · el agua cambia el orden), mecanismo de
   resonancia de la anilina y gemelos con el par dibujado. Como no son reacciones, cada parte guarda una **regla del sabio** (lista de chequeo) en el
-  recetario. Faltan las misiones 1, 2, 3 y 8.
+  recetario. **Misiones 1, 2, 3 y 8 (6 oct):** casos de la dopamina, la etiqueta del 4-aminofenol, el limón y el pescado, y el frasco
+  sin etiqueta; cada una en 2–3 partes que reusan las lecciones de cátedra, con "adivina antes", ejemplo resuelto dentro de su parte,
+  actividades nuevas (clasificar, tocar, dibujar la N-metilanilina, gemelos, caldero de extracción, aprendiz) y reglas del sabio.
+  **Etapa 6 completa: las 8 misiones de Aminas siguen el modelo de la clase viva.** También: dibujo de moléculas estilo libro y plantilla
+  `tools/new-class.cjs` al día (probada en cada `npm test`).
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

@@ -73,7 +73,7 @@ for (const [id, file] of Object.entries(catalog)) {
   assert.ok(kinds({ path: 'misiones', mission: m1.id, answers: { [wrongId]: { choice: wrongChoice, correct: false } } }).includes('rescue'), 'Un error debe abrir el rescate');
   const allRight = Object.fromEntries(m1.stages.diagnostic.map(i => [i.id, { choice: i.options.findIndex(o => o.correct), correct: true }]));
   assert.ok(kinds({ path: 'misiones', mission: m1.id, answers: allRight }).includes('offer'), 'Diagnóstico perfecto ofrece saltar la lección');
-  assert.ok(!kinds({ path: 'misiones', mission: m1.id, answers: allRight, skipExplain: { [m1.id]: true } }).includes('lesson'), 'Saltar la lección la quita');
+  assert.ok(!context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m1.id, answers: allRight, hints: {}, retries: {}, revealed: {}, skipExplain: { [m1.id]: true } }).some(b => b.kind === 'step' || b.kind === 'question' && b.stage === 'pretest' || (b.kind === 'lesson' && !['recipe', 'rule'].includes(b.block.kind))), 'Saltar la lección la quita (las recetas y reglas guardadas quedan como resumen)');
   assert.ok(!kinds({ path: 'prueba' }).includes('lesson'), 'Prueba encima no pasa por la lección');
   const lessons = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m1.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {} }).filter(b => b.kind === 'lesson');
   assert.ok(lessons.some(b => b.zero) && lessons.findIndex(b => b.zero) < lessons.findIndex(b => !b.zero), 'Las bases desde cero van antes de la materia');

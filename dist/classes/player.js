@@ -224,7 +224,7 @@
         }
         (m.stages.explain || []).forEach(block => out.push({ kind: 'lesson', block, m }));
         if (m.stages.worked) {
-          say(`Veamos un experimento. ${m.stages.worked.prompt}`, m);
+          say(`Veamos un ejemplo resuelto. ${m.stages.worked.prompt}`, m);
           m.stages.worked.steps.forEach((step, i) => out.push({ kind: 'step', step, i, m }));
         }
       }
@@ -233,6 +233,7 @@
         if (!s.skipExplain[m.id]) {
           if (p.pretest) { say('Antes de explicarte, adivina. Aquí equivocarse no cuenta: solo prepara tu cabeza.', m); out.push({ kind: 'question', item: p.pretest, m, stage: 'pretest', n: 1, of: 1 }); }
           (p.explain || []).forEach(block => out.push({ kind: 'lesson', block, m }));
+          if (p.worked) { say(`Veamos un ejemplo resuelto. ${p.worked.prompt}`, m); p.worked.steps.forEach((step, i) => out.push({ kind: 'step', step, i, m, worked: p.worked })); }
           say('Ahora tú. Si te trabas, toca a tu compañero en la mesa: te dará una pista.', m);
         }
         (p.practice || []).forEach((item, i, list) => ask(item, m, 'practice', i + 1, list.length));
@@ -711,10 +712,10 @@
       return { sage, center };
     }
     if (b.kind === 'step') {
-      const w = b.m.stages.worked, key = `${b.m.id}-w${b.i}`, hidden = b.step.ask && !s.revealed[key];
+      const w = b.worked || b.m.stages.worked, key = `${b.m.id}-w${b.i}`, hidden = b.step.ask && !s.revealed[key];
       sage.text = hidden ? `Antes de mirar, piensa: ${b.step.ask}` : `Paso ${b.i + 1}. ${b.step.text}`;
       sage.actions = hidden ? `<button class="cr-btn cr-primary" data-cr="reveal" data-key="${key}">Ya lo pensé, muéstrame ▸</button>` : cont();
-      center = `<div class="cr-parchment cr-experiment"><p class="cr-eyebrow">Experimento</p><p class="cr-exp-prompt">${md(w.prompt)}</p>
+      center = `<div class="cr-parchment cr-experiment"><p class="cr-eyebrow">Ejemplo resuelto</p><p class="cr-exp-prompt">${md(w.prompt)}</p>
         <ol class="cr-worked">${w.steps.map((st, i) => {
           if (i > b.i) return '';
           if (i === b.i && hidden) return `<li class="is-ask"><span>${i + 1}</span><p>¿…?</p></li>`;
