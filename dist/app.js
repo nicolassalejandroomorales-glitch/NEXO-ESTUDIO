@@ -294,6 +294,8 @@
         if (!Array.isArray(existing) || (existing.length === 4 && existing.every(item => item.weight === '' && item.grade === ''))) next.grades[id] = { ...next.grades[id], ...deepClone(plan), rounding: '2' };
       }
     }
+    // Control 1 de Orgánica II (Aminas), confirmado el 05-10: se agrega a quienes ya tenían el calendario sembrado.
+    if(!next.events.some(item=>item.id==='official-org-c1')) next.events.push({...deepClone(NEXO_SEMESTER.events.find(item=>item.id==='official-org-c1')),priority:3,status:'planned'});
     // La calendarización docente posterior corrigió la fecha inicial del Control 1 FQII.
     // Solo actualiza el evento sembrado, no una fecha que el estudiante haya cambiado.
     const fqControl=next.events.find(item=>item.id==='official-fq-c1');
@@ -918,7 +920,7 @@
     const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
-      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=19'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=19')),
+      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=20'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=20')),
         window.NexoLoader.script(`./classes/${file}?v=16`),
         // Motor de evidencia y repaso espaciado (FSRS); si no cargan, la clase funciona igual sin agendar repasos.
         window.NexoLoader.script('./classes/evidence.js?v=4'), window.NexoLoader.script('./classes/molecule.js?v=2'), window.NexoLoader.script('./classes/editor.js?v=5'), window.NexoLoader.script('./academic/reviews.js?v=14').catch(() => null)])

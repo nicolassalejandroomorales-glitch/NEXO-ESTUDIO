@@ -1,9 +1,10 @@
 /* Programación comunicada por Nicolás el 22-09-2026; control FQII cotejado con calendario docente 2S2026. Editable en la app. */
 const NEXO_SEMESTER = {
-  version: '2026-09-29',
+  version: '2026-10-05',
   events: [
     { id: 'official-fq-c1', title: 'Control 1', subject: 'fisico', type: 'exam', date: '2026-10-26', topic: 'Equilibrio químico, electrolitos, equilibrio iónico y electroquímico', source: 'Calendarización Ejercicios FQII QyF 2s2026', dateNote: 'El calendario de ejercicios 2S2026 indica 26/10; antes se había informado 20/10. Confirma con cátedra.' },
     { id: 'official-fq-pep1', title: 'PEP 1', subject: 'fisico', type: 'exam', date: '2026-10-21', topic: 'Equilibrio químico, iónico y electroquímico', weekdayUncertain: true },
+    { id: 'official-org-c1', title: 'Control 1', subject: 'organica', type: 'exam', date: '2026-10-14', topic: 'Aminas', source: 'Classroom QOII (aplazado una semana, anuncio del 30-09)', dateNote: 'Confirmado por Niquito el 05-10 con el calendario de ejercicios actualizado.' },
     { id: 'official-org-pep1', title: 'PEP 1', subject: 'organica', type: 'exam', date: '2026-10-27', topic: 'Aminas, heterociclos y compuestos aromáticos' },
     { id: 'official-ana-c1', title: 'Control 1', subject: 'analitica', type: 'exam', date: '2026-10-19' },
     { id: 'official-ana-c2', title: 'Control 2', subject: 'analitica', type: 'exam', date: '2026-11-05' },

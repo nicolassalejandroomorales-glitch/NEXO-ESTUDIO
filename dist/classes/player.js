@@ -123,6 +123,16 @@
     return cls.missions.find(m => itemsOf(m).some(x => x.item.id === base)); };
   const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+  // La próxima evaluación del ramo según el calendario de la app (Bitácora): para la cuenta regresiva y la hoja de la noche anterior.
+  function nextExam(cls, api, now = new Date()) {
+    const t = today(now), list = (api?.getState?.().events || []).filter(e => e && e.subject === cls.subject && e.type === 'exam' && /^\d{4}-\d{2}-\d{2}$/.test(e.date || '') && e.date >= t)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    const e = list[0]; if (!e) return null;
+    const [y, m, d] = e.date.split('-').map(Number), days = Math.round((new Date(y, m - 1, d) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+    const when = new Date(y, m - 1, d).toLocaleDateString('es-CL', { weekday: 'long', day: 'numeric', month: 'long' });
+    return { ...e, days, when, label: days === 0 ? 'es hoy' : days === 1 ? 'es mañana' : `en ${days} días` };
+  }
+
   /* ───────── Etapa 8: ejercicios infinitos (docs/etapa-8-entrenar/SPEC.md) ─────────
      Un generado se guarda solo como texto: "gen:<generador>:<nivel>:<semilla>[:<concepto>]". La misma semilla
      siempre arma la misma pregunta, así que no hay que guardar la pregunta para corregirla o revisarla después. */
@@ -772,7 +782,8 @@
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
       center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${PATH_ORDER.filter(id => PATHS[id] && !PATHS[id].hidden).map(id => [id, PATHS[id]]).map(([id, p]) =>
         `<button class="cr-path ${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? 'is-recommended' : ''}" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span>${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? '<span class="cr-path-rec">Recomendado para empezar</span>' : ''}<b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
-        ${cls.goal ? `<p class="cr-soon cr-goal-line">${cls.missions.length} misiones · Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>`
+        ${(ex => ex ? `<p class="cr-soon cr-exam-line">⏳ <b>${esc(ex.title)}</b> ${esc(ex.label)} (${esc(ex.when)})${ex.topic ? ` · ${esc(ex.topic)}` : ''}${cls.goal ? ' · <button class="cr-link" data-cr="goal">ver mi camino al 7</button>' : ''}</p>` : '')(nextExam(cls, api))}
+        ${nextExam(cls, api) ? '' : cls.goal ? `<p class="cr-soon cr-goal-line">${cls.missions.length} misiones · Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>`
           : `<p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>`}`;
       return { sage, center };
     }
@@ -863,7 +874,8 @@
         120: [alba(5, 10), nuevo(40), pause(10), alba(10, 35, 'Práctica mezclada', 'Diez preguntas revueltas de todo lo que has visto.'), sim(20)] }[mins]
         .filter(x => !x.skip);
       const total = plan.reduce((a, x) => a + x.min, 0);
-      sage.text = `Tu plan de **${mins < 60 ? `${mins} minutos` : '2 horas'}**. Hazlo en orden: el repaso primero, porque recordar algo que se te está olvidando es lo que más lo fija.${seen ? '' : ' Como todavía no has visto nada, parte directo con lo nuevo.'}`;
+      const ex = nextExam(cls, api);
+      sage.text = `${ex ? `El **${ex.title}** ${ex.label}. ` : ''}Tu plan de **${mins < 60 ? `${mins} minutos` : '2 horas'}**. Hazlo en orden: el repaso primero, porque recordar algo que se te está olvidando es lo que más lo fija.${seen ? '' : ' Como todavía no has visto nada, parte directo con lo nuevo.'}`;
       sage.actions = `<button class="cr-btn" data-cr="plan-min" data-min="0">Cambiar el tiempo</button>`;
       center = `<div class="cr-parchment cr-plan"><p class="cr-eyebrow">Tu plan de hoy · ≈ ${total} min</p>
         <ol class="cr-plan-list">${plan.map((x, i) => `<li class="${x.done ? 'is-done' : ''}"><span class="cr-plan-n">${x.done ? '✓' : i + 1}</span>
@@ -1261,10 +1273,10 @@
     const beasts = bestiary(cls, recs).filter(b => b.state !== 'captured').slice(0, 3);
     const lv = E && cls.concepts ? E.leaves(cls, store) : {}, rank = c => E?.LEAVES?.[lv[c.id]?.shown]?.rank || 0;
     const weak = (cls.concepts || []).filter(c => !c.root && lv[c.id]).sort((a, b) => (lv[b.id].count ? 1 : 0) - (lv[a.id].count ? 1 : 0) || rank(a) - rank(b)).slice(0, 4); // primero lo que ya viste y está flojo
-    const rules = cls.missions.flatMap(m => (m.parts || []).filter(p => p.rule).map(p => p.rule));
-    return `<p class="cr-act-help">Una página con lo esencial para la noche antes de la ${esc(cls.evaluation)}. Léela, cierra los ojos y <b>recuérdala</b>: recordar fija más que releer.</p>
+    const rules = cls.missions.flatMap(m => (m.parts || []).filter(p => p.rule).map(p => p.rule)), ex = nextExam(cls, api), evalName = ex ? `${ex.title} (${ex.when})` : cls.evaluation;
+    return `<p class="cr-act-help">Una página con lo esencial para la noche antes ${ex ? `del <b>${esc(evalName)}</b>, que ${esc(ex.label.startsWith('es') ? ex.label : `es ${ex.label}`)}` : `de la ${esc(cls.evaluation)}`}. Léela, cierra los ojos y <b>recuérdala</b>: recordar fija más que releer.</p>
       <div class="cr-row"><button class="cr-btn cr-primary cr-small" data-cr="print">🖨 Imprimir o guardar en PDF</button></div>
-      <article class="cr-night"><header><b>${esc(cls.title)} · noche antes de la ${esc(cls.evaluation)}</b><span>${esc(today())}</span></header>
+      <article class="cr-night"><header><b>${esc(cls.title)} · noche antes ${ex ? `del ${esc(evalName)}` : `de la ${esc(cls.evaluation)}`}</b><span>${esc(today())}</span></header>
         <section><h4>Fórmulas</h4><ul>${(cls.formulas || []).map(f => `<li><b>${esc(f.title)}:</b> ${sup(esc(f.formula))}</li>`).join('')}</ul></section>
         <section><h4>Recetas</h4><ul>${(cls.recipes || []).map(r => `<li><b>${esc(r.title)}:</b> ${md(r.base)} + ${md(r.reagents)}${r.condition ? ` (${md(r.condition)})` : ''} → ${md(r.result)}</li>`).join('')}</ul></section>
         ${rules.length ? `<section><h4>Reglas</h4><ul>${rules.map(r => `<li><b>${esc(r.title)}:</b> ${r.steps.map(md).join(' · ')}</li>`).join('')}</ul></section>` : ''}
@@ -1731,6 +1743,6 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
+  window.NexoClassroom = { nextExam, render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
     genItem, genFor, trainLevels, levelOf, startLevel, newRun, bestiary, LEVELS };
 })();

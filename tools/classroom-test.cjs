@@ -323,6 +323,16 @@ for (const [id, file] of Object.entries(catalog)) {
     assert.equal(L.react('benceno', 'hno3').to, 'nitrobenceno'); assert.equal(L.react('diazonio', 'cubr').to, 'bromobenceno'); assert.equal(L.react('trietilamina', 'acCl').to, null);
     console.log(`Etapa 8: ${G.generators.length} generadores · ${made} ejercicios revisados (5 niveles) · escalera, Entrenar, ronda, simulacro, bestiario y laboratorio OK.`);
   }
+  // Cuenta regresiva: la próxima evaluación del ramo según el calendario (ignora las pasadas y otros ramos).
+  if (cls.subject) {
+    const NX = context.window.NexoClassroom, api = { getState: () => ({ events: [
+      { subject: cls.subject, type: 'exam', title: 'Pasada', date: '2026-10-01' }, { subject: 'otro', type: 'exam', title: 'Otro ramo', date: '2026-10-06' },
+      { subject: cls.subject, type: 'exam', title: 'PEP 1', date: '2026-10-27' }, { subject: cls.subject, type: 'exam', title: 'Control 1', date: '2026-10-14' }] }) };
+    const ex = NX.nextExam(cls, api, new Date(2026, 9, 5, 18));
+    assert.ok(ex && ex.title === 'Control 1' && ex.days === 9 && ex.label === 'en 9 días', 'La cuenta regresiva toma la evaluación más cercana del ramo');
+    assert.equal(NX.nextExam(cls, api, new Date(2026, 9, 14, 8)).label, 'es hoy', 'El mismo día dice "es hoy"');
+    assert.equal(NX.nextExam(cls, { getState: () => ({}) }), null, 'Sin calendario no muestra nada');
+  }
   // Meta de la clase: cada pregunta de la prueba apunta a misiones que tienen caso estilo prueba.
   if (cls.goal) {
     const sum = cls.goal.questions.reduce((a, q) => a + q.points, 0) + (cls.goal.rest || []).reduce((a, r) => a + r.points, 0);
