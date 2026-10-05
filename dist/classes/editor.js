@@ -8,41 +8,84 @@
   const M = () => window.NexoMolecule;
   const esc = v => String(v ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
   const VB = { w: 420, h: 260 };
+  window.__nexoMolDraw = 2; // versión del dibujo
   const SUB = '₀₁₂₃₄₅₆₇₈₉';
   const ELEMENTS = ['C', 'N', 'O', 'Cl', 'Br', 'H'];
   const clone = g => ({ atoms: g.atoms.map(a => ({ ...a })), bonds: g.bonds.map(b => ({ ...b })) });
 
-  /* ── Dibujo común ── */
+  /* ── Dibujo común (estilo de libro: el átomo pesado queda en su punto, los H hacia afuera,
+     los enlaces se cortan justo en el borde del rótulo y los dobles de los anillos van hacia adentro) ── */
+  const CW = ch => /[₀-₉⁺⁻]/.test(ch) ? 6.5 : /[a-z]/.test(ch) ? 8.6 : /[()]/.test(ch) ? 5.8 : 11;
+  const textW = t => [...t].reduce((s, ch) => s + CW(ch), 0);
   function atomLabel(g, a) {
-    if (a.hide) return { text: '', charge: '' };          // vértice de esqueleto (carbono sin rótulo, como en un anillo)
-    if (a.label) return { text: a.label, charge: '' };    // rótulo escrito a mano, p. ej. "N(CH₃)₃⁺"
+    if (a.hide) return { text: '', charge: '', anchor: 'middle', x: 0, left: 0, right: 0 };   // vértice de esqueleto
+    if (a.label) { const w = textW(a.label); return { text: a.label, charge: '', anchor: 'middle', x: 0, left: -w / 2, right: w / 2 }; }
     const h = M().implicitH(g, a), q = a.q || 0;
     const hs = h ? `H${h > 1 ? SUB[h] : ''}` : '';
     const charge = q ? (Math.abs(q) > 1 ? Math.abs(q) : '') + (q > 0 ? '⁺' : '⁻') : '';
-    return { text: a.el + hs, charge };
+    const ew = textW(a.el);
+    if (!hs) return { text: a.el, charge, anchor: 'middle', x: 0, left: -ew / 2, right: ew / 2 };
+    // Los H van hacia el lado donde no hay enlaces (NH₂ o H₂N), como en los libros.
+    const nb = M().bondsOf(g, a.id).map(b => M().atomById(g, b.a === a.id ? b.b : b.a)).filter(Boolean);
+    const mdx = nb.reduce((s, o) => s + (o.x - a.x), 0) / Math.max(1, nb.length);
+    const w = ew + textW(hs);
+    if (mdx > 4) return { text: hs + a.el, charge, anchor: 'end', x: ew / 2, left: ew / 2 - w, right: ew / 2 };
+    return { text: a.el + hs, charge, anchor: 'start', x: -ew / 2, left: -ew / 2, right: -ew / 2 + w };
+  }
+  // Distancia desde el centro del átomo hasta el borde de su rótulo en la dirección (ux, uy), más un margen.
+  function edge(g, a, ux, uy, margin = 3) {
+    if (a.hide) return 0;
+    const L = atomLabel(g, a), top = 10 + margin, right = L.right + margin, left = L.left - margin;
+    const ts = [];
+    if (ux > 1e-6) ts.push(right / ux); if (ux < -1e-6) ts.push(left / ux);
+    if (uy > 1e-6) ts.push(top / uy); if (uy < -1e-6) ts.push(-top / uy);
+    return Math.max(0, Math.min(...ts.filter(t => t >= 0), 60));
+  }
+  // ¿El enlace está en un anillo? Devuelve el centro del anillo (para dibujar el doble hacia adentro).
+  function ringCenter(g, b) {
+    const nbrs = id => g.bonds.filter(x => x !== b && (x.a === id || x.b === id)).map(x => (x.a === id ? x.b : x.a));
+    const prev = { [b.a]: null }, queue = [[b.a, 0]];
+    while (queue.length) {
+      const [id, d] = queue.shift();
+      if (id === b.b) { const path = []; for (let x = id; x !== null; x = prev[x]) path.push(M().atomById(g, x)); return { x: path.reduce((s, o) => s + o.x, 0) / path.length, y: path.reduce((s, o) => s + o.y, 0) / path.length }; }
+      if (d >= 6) continue;
+      for (const n of nbrs(id)) if (!(n in prev)) { prev[n] = id; queue.push([n, d + 1]); }
+    }
+    return null;
   }
   function bondLines(g, b, cls = '') {
     const a1 = M().atomById(g, b.a), a2 = M().atomById(g, b.b);
     if (!a1 || !a2) return '';
     const dx = a2.x - a1.x, dy = a2.y - a1.y, len = Math.hypot(dx, dy) || 1, ux = dx / len, uy = dy / len;
-    const t1 = a1.hide ? 0 : 13, t2 = a2.hide ? 0 : 13, x1 = a1.x + ux * t1, y1 = a1.y + uy * t1, x2 = a2.x - ux * t2, y2 = a2.y - uy * t2, nx = -uy * 4.5, ny = ux * 4.5;
-    const line = (ox, oy) => `<line x1="${(x1 + ox).toFixed(1)}" y1="${(y1 + oy).toFixed(1)}" x2="${(x2 + ox).toFixed(1)}" y2="${(y2 + oy).toFixed(1)}"/>`;
-    const lines = b.o === 2 ? line(nx, ny) + line(-nx, -ny) : b.o === 3 ? line(0, 0) + line(nx * 1.6, ny * 1.6) + line(-nx * 1.6, -ny * 1.6) : line(0, 0);
+    const t1 = edge(g, a1, ux, uy), t2 = edge(g, a2, -ux, -uy);
+    const x1 = a1.x + ux * t1, y1 = a1.y + uy * t1, x2 = a2.x - ux * t2, y2 = a2.y - uy * t2;
+    const line = (ox, oy, s1 = 0, s2 = 0) => `<line x1="${(x1 + ox + ux * s1).toFixed(1)}" y1="${(y1 + oy + uy * s1).toFixed(1)}" x2="${(x2 + ox - ux * s2).toFixed(1)}" y2="${(y2 + oy - uy * s2).toFixed(1)}"/>`;
+    let nx = -uy, ny = ux, lines = line(0, 0);
+    if (b.o === 2) {
+      const c = ringCenter(g, b);
+      if (c) { // anillo: línea en el anillo y otra más corta hacia el centro
+        if ((c.x - (a1.x + a2.x) / 2) * nx + (c.y - (a1.y + a2.y) / 2) * ny < 0) { nx = -nx; ny = -ny; }
+        const cut = len * 0.16;
+        lines = line(0, 0) + line(nx * 6.5, ny * 6.5, a1.hide ? cut : 0, a2.hide ? cut : 0);
+      } else lines = line(nx * 3.4, ny * 3.4) + line(-nx * 3.4, -ny * 3.4);
+    }
+    if (b.o === 3) lines = line(0, 0) + line(nx * 5, ny * 5) + line(-nx * 5, -ny * 5);
     return `<g class="mol-bond ${cls}">${lines}</g>`;
   }
   function atomMarkup(g, a, { cls = '', attrs = '' } = {}) {
-    const { text, charge } = atomLabel(g, a);
+    const L = atomLabel(g, a);
     return `<g class="mol-atom el-${esc(a.el)} ${cls}" transform="translate(${a.x.toFixed(1)} ${a.y.toFixed(1)})" ${attrs}>
-      <circle class="mol-hit" r="${a.hide ? 9 : 17}"/>${text ? `<text class="mol-label" text-anchor="middle" dy="5">${esc(text)}</text>` : ''}${charge ? `<text class="mol-charge" x="${(text.length * 4.6 + 4).toFixed(1)}" y="-8">${charge}</text>` : ''}</g>`;
+      <circle class="mol-hit" r="${a.hide ? 9 : 17}"/>${L.text ? `<text class="mol-label" text-anchor="${L.anchor}" x="${L.x.toFixed(1)}" dy="6">${esc(L.text)}</text>` : ''}${L.charge ? `<text class="mol-charge" x="${(L.right + 1).toFixed(1)}" y="-7">${L.charge}</text>` : ''}</g>`;
   }
-  // Dónde dibujar el par libre: del lado opuesto a los vecinos
+  // Dónde dibujar el par libre: del lado opuesto a los vecinos, justo afuera del rótulo (sin tapar los H).
   function lonePairSpot(g, a, k = 0, n = 1, fixed = null) {
-    const nb = M().bondsOf(g, a.id).map(b => M().atomById(g, b.a === a.id ? b.b : b.a));
+    const nb = M().bondsOf(g, a.id).map(b => M().atomById(g, b.a === a.id ? b.b : b.a)).filter(Boolean);
     let ang = -Math.PI / 2;
     if (fixed !== null && fixed !== undefined) ang = fixed * Math.PI / 180;
-    else if (nb.length) { const vx = nb.reduce((s, o) => s + (o.x - a.x), 0), vy = nb.reduce((s, o) => s + (o.y - a.y), 0); ang = Math.atan2(-vy, -vx); }
+    else if (nb.length) { const vx = nb.reduce((s, o) => s + (o.x - a.x), 0), vy = nb.reduce((s, o) => s + (o.y - a.y), 0); if (Math.hypot(vx, vy) > 1) ang = Math.atan2(-vy, -vx); }
     if (n > 1) ang += (k - (n - 1) / 2) * 1.1;
-    return { x: a.x + Math.cos(ang) * 22, y: a.y + Math.sin(ang) * 22, ang };
+    const r = Math.max(14, edge(g, a, Math.cos(ang), Math.sin(ang), 5) + 4);
+    return { x: a.x + Math.cos(ang) * r, y: a.y + Math.sin(ang) * r, ang };
   }
 
   // Encuadre ajustado a la molécula (para escenas que no se editan), con aire para pares libres y flechas
@@ -91,10 +134,22 @@
     return { x: (a1.x + a2.x) / 2, y: (a1.y + a2.y) / 2 };
   }
   function arrowPath(item, from, to) {
-    const p = spot(item, from), q0 = spot(item, to), dx = q0.x - p.x, dy = q0.y - p.y, len = Math.hypot(dx, dy) || 1;
-    const q = to.startsWith('a:') ? { x: q0.x - dx / len * 16, y: q0.y - dy / len * 16 } : q0;
-    const bend = Math.min(60, len * .45), cx = (p.x + q.x) / 2 - dy / len * bend, cy = (p.y + q.y) / 2 + dx / len * bend - 10;
-    return `M${p.x.toFixed(1)} ${p.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
+    const g = item.scene, p = spot(item, from), q0 = spot(item, to);
+    const cxm = g.atoms.reduce((s, a) => s + a.x, 0) / g.atoms.length, cym = g.atoms.reduce((s, a) => s + a.y, 0) / g.atoms.length;
+    let dx = q0.x - p.x, dy = q0.y - p.y, len = Math.hypot(dx, dy) || 1;
+    // Lado de la curva: hacia afuera de la molécula, para no cruzar enlaces ni rótulos.
+    let nx = -dy / len, ny = dx / len;
+    const mx = (p.x + q0.x) / 2, my = (p.y + q0.y) / 2;
+    if ((mx - cxm) * nx + (my - cym) * ny < 0) { nx = -nx; ny = -ny; }
+    const bend = Math.max(len < 45 ? 26 : 20, Math.min(52, len * .42));
+    const cx = mx + nx * bend, cy = my + ny * bend;
+    // Llega al borde del rótulo (no al centro del átomo), en la dirección en que viene la curva.
+    let q = q0;
+    if (to.startsWith('a:')) { const a = M().atomById(g, to.slice(2)); const vx = cx - q0.x, vy = cy - q0.y, vl = Math.hypot(vx, vy) || 1; const t = edge(g, a, vx / vl, vy / vl, 6) || 9; q = { x: q0.x + vx / vl * t, y: q0.y + vy / vl * t }; }
+    else { const vx = cx - q0.x, vy = cy - q0.y, vl = Math.hypot(vx, vy) || 1; q = { x: q0.x + vx / vl * 5, y: q0.y + vy / vl * 5 }; }
+    let p2 = p;
+    if (from.startsWith('b:')) { const vx = cx - p.x, vy = cy - p.y, vl = Math.hypot(vx, vy) || 1; p2 = { x: p.x + vx / vl * 4, y: p.y + vy / vl * 4 }; }
+    return `M${p2.x.toFixed(1)} ${p2.y.toFixed(1)} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${q.x.toFixed(1)} ${q.y.toFixed(1)}`;
   }
   const key = ([a, b]) => `${a}>${b}`;
   function arrowsMarkup(item, w, { rec, retry, done, actBtn }) {
@@ -104,7 +159,7 @@
     const lps = Object.entries(item.lonePairs || {});
     const box = fitBox(g), [bx, by, bw, bh] = box.split(' ');
     const svg = `<svg class="mol-canvas arrows" viewBox="${box}" data-mol-arrows="${esc(item.id)}" data-retry="${retry ? 1 : 0}" role="application" aria-label="Escena para trazar flechas">
-      <defs>${[['', '#b3261e'], ['-ok', '#2f6b4a'], ['-given', '#5c4a37']].map(([suf, col]) => `<marker id="ah-${esc(item.id)}${suf}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${col}"/></marker>`).join('')}</defs>
+      <defs>${[['', '#b3261e'], ['-ok', '#2f6b4a'], ['-given', '#5c4a37']].map(([suf, col]) => `<marker id="ah-${esc(item.id)}${suf}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0.5 L10 5 L0 9.5 L2.6 5 z" fill="${col}"/></marker>`).join('')}</defs>
       <rect class="mol-bg" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
       ${g.bonds.map((b, i) => `<g class="mol-pick ${w.from === `b:${i}` ? 'is-sel' : ''}" data-mol-pick="b:${i}">${bondLines(g, b)}<line class="mol-bond-hit" x1="${M().atomById(g, b.a).x}" y1="${M().atomById(g, b.a).y}" x2="${M().atomById(g, b.b).x}" y2="${M().atomById(g, b.b).y}"/></g>`).join('')}
       ${g.atoms.map(a => atomMarkup(g, a, { cls: 'mol-pick', attrs: `data-mol-pick="a:${esc(a.id)}"` })).join('')}
@@ -137,7 +192,7 @@
     const g = def.scene, uid = `sc${++sceneSeq}`, box = fitBox(g, 46), [bx, by, bw, bh] = box.split(' ');
     const lps = Object.entries(def.lonePairs || {});
     return `<svg class="mol-canvas is-done mol-scene" viewBox="${box}" role="img" aria-label="${esc(label)}">
-      <defs><marker id="${uid}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="#b3261e"/></marker></defs>
+      <defs><marker id="${uid}" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="11" markerHeight="11" orient="auto-start-reverse"><path d="M0 0.5 L10 5 L0 9.5 L2.6 5 z" fill="#b3261e"/></marker></defs>
       <rect class="mol-bg" x="${bx}" y="${by}" width="${bw}" height="${bh}"/>
       ${g.bonds.map(b => bondLines(g, b)).join('')}${g.atoms.map(a => atomMarkup(g, a)).join('')}
       ${lps.map(([id, n]) => { const a = M().atomById(g, id); return [...Array(n)].map((_, k) => { const s = lonePairSpot(g, a, k, n, def.lpAngle?.[id]), px = -Math.sin(s.ang) * 4, py = Math.cos(s.ang) * 4;

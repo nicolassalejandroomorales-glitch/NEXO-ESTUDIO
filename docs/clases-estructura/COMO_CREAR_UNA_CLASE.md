@@ -131,3 +131,18 @@ Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por mis
 | Escribir el contenido químico de una clase | Opus 5.5 (o Fable 5.1) |
 | Crear el esqueleto, convertir diapositivas, ajustes de estilo | Sonnet 5.5 |
 | Buscar referencias o revisar que nada se rompió | Haiku 4.5 |
+
+## Replicar a otro ramo (lo que se hereda y lo que hay que escribir)
+
+**Se hereda solo (no hay que programar nada):** el aula y la torre, el sabio y el compañero, la barra de confianza, el motor de evidencia
+(hojas, calibración, repaso FSRS), el diagnóstico adaptativo, los errores que guían y el desvío a la base, la mini clase y "Ver a profundidad",
+el grimorio (glosario, formulario con calculadoras, recetario y reglas), el Camino al 7, el recorrido de bienvenida y todos los tipos de actividad.
+
+**Se escribe por ramo (contenido):** misiones con sus partes, conceptos, errores típicos, fórmulas, recetas o reglas, mini clases, diagnóstico y
+la meta de la prueba. Las diapositivas se cargan con `tools/classroom-art/slides.py`.
+
+**Ojo con ramos que no son de química:** el editor de moléculas y las flechas (`build`, `arrows`) son para química. Para Física o Cálculo
+faltaría un tipo de actividad "respuesta numérica con unidades" (pendiente). Todo lo demás sirve igual.
+
+Pasos: `node tools/new-class.cjs <id> "<Título>" "<Evaluación>"` → reemplazar cada REEMPLAZAR → `npm test`.
+`tools/new-class-test.cjs` revisa en cada `npm test` que la plantilla siga funcionando con el aula actual.
