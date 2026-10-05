@@ -38,6 +38,14 @@
   .bulb { position:absolute; left:50%; top:-22%; width:26%; transform:translateX(-50%); pointer-events:none; }
   .puff { position:absolute; width:2.2%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle, rgba(255,240,215,.75), rgba(255,240,215,0) 70%); pointer-events:none; transform:translate(-50%,-50%); }
   .status { color:var(--muted); font-size:14px; margin-top:8px; }
+  .wardrobe label { display:flex; gap:6px; align-items:center; color:var(--muted); font-size:14px; }
+  .wardrobe select { font:inherit; background:#2b241d; color:var(--ink); border:1px solid #6b5a40; border-radius:8px; padding:5px 8px; }
+  .six7 { position:absolute; top:-30%; font:900 34px Georgia; color:#ffd34d; -webkit-text-stroke:2px #3b2418; text-shadow:0 3px 0 #b8741a, 0 0 10px #ffd34d88; pointer-events:none; }
+  .six7.n6 { left:4%; } .six7.n7 { right:4%; }
+  .tear { position:absolute; width:6%; aspect-ratio:.7; background:radial-gradient(circle at 35% 35%, #e9f7ff, #6fc0f0 55%, #2f8fd1); border-radius:50% 50% 50% 50% / 60% 60% 40% 40%; pointer-events:none; }
+  .sweat { position:absolute; right:12%; top:20%; width:9%; aspect-ratio:.7; background:radial-gradient(circle at 35% 35%, #ffffff, #8fd3ff 55%, #3f9fd8); border:2px solid #2b5f80; border-radius:50% 50% 50% 50% / 62% 62% 38% 38%; pointer-events:none; }
+  .anger { position:absolute; right:6%; top:-6%; width:22%; pointer-events:none; }
+  .steam { position:absolute; width:12%; aspect-ratio:1; border-radius:50%; background:radial-gradient(circle, rgba(240,240,240,.85), rgba(240,240,240,0) 70%); pointer-events:none; }
   .debug .node { position:absolute; width:10px; height:10px; margin:-5px; border-radius:50%; background:#ff3b3b; box-shadow:0 0 0 2px #fff; }
   .debug .node small { position:absolute; left:12px; top:-4px; color:#fff; font:11px monospace; background:#000a; padding:0 3px; white-space:nowrap; }
   .m-svg, .m-svg * { transform-box:view-box; }
@@ -58,10 +66,12 @@
 bosteza y duerme en el sillón. Las luciérnagas la persiguen. <b>Tócala</b> para enamorarla.</p>
 <div class="controls" id="pick"></div>
 <div class="controls" id="acts"><button data-act="baile">Bailar</button><button data-act="saludo">Saludar</button><button data-act="bostezo">Bostezar</button><button data-act="idea">Tener una idea</button></div>
-<div class="controls"><button id="acc">Probar accesorios</button><button id="pause">Pausar paseo</button><button id="debug">Ver puntos del suelo</button></div>
+<div class="controls" id="emotes"><button data-act="seisSiete">6 7</button><button data-act="confundida">Confundida</button><button data-act="llorar">Llorar</button><button data-act="enojada">Enojada</button><button data-act="nerviosa">Nerviosa</button><button data-act="deslumbrada">Deslumbrada</button></div>
+<div class="controls wardrobe" id="wardrobe"></div>
+<div class="controls"><button id="acc">Vestir al azar</button><button id="naked">Quitar todo</button><button id="pause">Pausar paseo</button><button id="debug">Ver puntos del suelo</button></div>
 <div class="room" id="room"><div class="walker" id="walker"><div class="aura"></div><div class="flip" id="flip"><div class="turn"><div id="pet"></div></div></div></div></div>
 <p class="status" id="status"></p>
-<script src="alquimicos.js?v=6"></script>
+<script src="alquimicos.js?v=7"></script>
 <script>
 const NODES = {
   desk: { at: [.205, .555], perch: .8 }, nearDesk: { at: [.25, .80] }, rug: { at: [.47, .86] },
@@ -110,7 +120,7 @@ const BULB = '<svg viewBox="0 0 40 50"><circle cx="20" cy="18" r="20" fill="#ffe
 
 // ——— Animador ———
 const A = { kind: 'matraz', parts: {}, w: 0, target: 0, phase: 0, t: 0, air: 0, sit: 0, sitT: 0, sq: 0, sqT: 0, joy: 0, lean: 0, leanT: 0,
-  look: [0, 0], lookT: [0, 0], nextGlance: 2, gesture: 0, dance: 0, stretch: 0, mode: 'idle', excite: 0, last: performance.now() };
+  look: [0, 0], lookT: [0, 0], nextGlance: 2, gesture: 0, dance: 0, stretch: 0, six: 0, shake: 0, mode: 'idle', excite: 0, last: performance.now() };
 function bindParts() {
   const q = c => pet.querySelector('.' + c), qa = c => [...pet.querySelectorAll('.' + c)];
   A.parts = { root: q('m-root'), body: q('m-body'), liquid: q('m-liquid'), footL: q('m-foot-l'), footR: q('m-foot-r'), tag: q('m-tag'),
@@ -125,7 +135,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - A.last) / 1000); A.last = now; A.t += dt;
   A.w = smooth(A.w, A.target, dt); A.sit = smooth(A.sit, A.sitT, dt, 3); A.sq = smooth(A.sq, A.sqT, dt, 14);
   A.joy = smooth(A.joy, 0, dt, 2.2); A.lean = smooth(A.lean, A.leanT, dt, 6); A.excite = smooth(A.excite, 0, dt, 1.5);
-  A.dance = Math.max(0, A.dance - dt); A.stretch = Math.max(0, A.stretch - dt); A.gesture = Math.max(0, A.gesture - dt / 1.2);
+  A.dance = Math.max(0, A.dance - dt); A.stretch = Math.max(0, A.stretch - dt); A.six = Math.max(0, A.six - dt); A.shake = Math.max(0, A.shake - dt); A.gesture = Math.max(0, A.gesture - dt / 1.2);
   if (A.mode === 'idle' && A.t > A.nextGlance) { A.lookT = [Math.random() * 6 - 3, Math.random() * 3 - 1.5]; A.nextGlance = A.t + 1.6 + Math.random() * 2.6; }
   if (A.mode === 'walk') A.lookT = [3, 0]; if (A.mode === 'read') A.lookT = [1.5, 2.6];
   A.look = [smooth(A.look[0], A.lookT[0], dt, 8), smooth(A.look[1], A.lookT[1], dt, 8)];
@@ -137,7 +147,7 @@ function frame(now) {
   A.phase += dt * Math.PI * 2 * freq * (.25 + .75 * w);
   const ph = A.phase, idle = Math.sin(t * 2 * Math.PI / 3.2), breathe = Math.sin(t * 2 * Math.PI / (s > .5 ? 4.5 : 3));
   const lift = 18 * A.air + 22 * joyHop + 10 * dz * Math.max(0, Math.sin(dPh));
-  const sway = dz * 10 * Math.sin(dPh / 2), lean = A.lean;
+  const six = Math.min(1, A.six), sway = dz * 10 * Math.sin(dPh / 2) + six * 13 * Math.sin(t * Math.PI * 2 * 2.3), lean = A.lean + A.shake * 3.5 * Math.sin(t * 70);
   P.gaze.forEach(el => tf(el, `translate(${A.look[0]}px, ${A.look[1]}px)`));
   const bodyScale = (bx, by) => `scale(${bx + .12 * sq - .06 * st}, ${by - .15 * sq + .16 * st})`;
   if (A.kind === 'matraz') {
@@ -215,6 +225,35 @@ const ACTS = {
       { opacity: 1, transform: 'translate(-50%,0) scale(1)', offset: .8 }, { opacity: 0, transform: 'translate(-50%,-20%) scale(.9)' }], { duration: 1600, easing: 'ease-out', fill: 'both' });
     floatFx('rune', '✦', { n: 3, spread: .03, rise: .06, from: [pos[0], pos[1] - .2] }); await wait(1600); b.remove(); setExpr(baseExpr()); }
 };
+// ——— Emotes nuevos ———
+const eyesAt = () => ({ matraz: [[43, 47], [57, 47]], atomo: [[44, 45], [56, 45]], slime: [[41, 57], [59, 57]] }[A.kind]);
+Object.assign(ACTS, {
+  async seisSiete() { status.textContent = '6… 7…'; setExpr('picara'); A.six = 2.8;
+    walker.insertAdjacentHTML('beforeend', '<span class="six7 n6">6</span><span class="six7 n7">7</span>');
+    const [n6, n7] = walker.querySelectorAll('.six7');
+    const bob = (el, d) => el.animate([{ transform: 'translateY(0) rotate(-8deg)' }, { transform: 'translateY(-38%) rotate(6deg)' }, { transform: 'translateY(0) rotate(-8deg)' }],
+      { duration: 435, iterations: 6, delay: d, easing: 'ease-in-out', fill: 'both' });
+    bob(n6, 0); bob(n7, 217); await wait(2700); n6.remove(); n7.remove(); setExpr(baseExpr()); },
+  async confundida() { status.textContent = '¿?'; setExpr('confundida'); A.leanT = 14; floatFx('bang', '?', { n: 2, gap: 380 }); await wait(1600); A.leanT = 0; setExpr(baseExpr()); },
+  async llorar() { status.textContent = 'Snif…'; setExpr('triste');
+    const tears = setInterval(() => eyesAt().forEach(([x, y]) => {
+      const d = document.createElement('span'); d.className = 'tear'; Object.assign(d.style, { left: x + '%', top: y + '%' }); walker.append(d);
+      d.animate([{ transform: 'translate(-50%,0) scale(.5)', opacity: 1 }, { transform: 'translate(-50%,160%) scale(1)', opacity: .9, offset: .7 }, { transform: 'translate(-50%,260%) scale(.6)', opacity: 0 }],
+        { duration: 900, easing: 'ease-in' }).finished.then(() => d.remove()); }), 380);
+    await wait(2400); clearInterval(tears); setExpr(baseExpr()); },
+  async enojada() { status.textContent = '¡Grrr!'; setExpr('enojada'); A.shake = 1.6;
+    walker.insertAdjacentHTML('beforeend', '<svg class="anger" viewBox="0 0 40 40"><g fill="none" stroke="#e0473a" stroke-width="5" stroke-linecap="round"><path d="M6 15 C14 15 15 14 15 6"/><path d="M25 6 C25 14 26 15 34 15"/><path d="M34 25 C26 25 25 26 25 34"/><path d="M15 34 C15 26 14 25 6 25"/></g></svg>');
+    const ang = walker.querySelector('.anger'); ang.animate([{ transform: 'scale(.8)' }, { transform: 'scale(1.15)' }], { duration: 260, iterations: 6, direction: 'alternate' });
+    const steam = setInterval(() => [28, 72].forEach(x => { const p = document.createElement('span'); p.className = 'steam'; Object.assign(p.style, { left: x + '%', top: '8%' }); walker.append(p);
+      p.animate([{ transform: 'translate(-50%,0) scale(.4)', opacity: .9 }, { transform: 'translate(' + (x < 50 ? '-120%' : '20%') + ',-120%) scale(1.4)', opacity: 0 }], { duration: 800, easing: 'ease-out' }).finished.then(() => p.remove()); }), 260);
+    await wait(1700); clearInterval(steam); ang.remove(); setExpr(baseExpr()); },
+  async nerviosa() { status.textContent = 'Eh… je je…'; setExpr('nerviosa'); A.shake = .9;
+    walker.insertAdjacentHTML('beforeend', '<span class="sweat"></span>'); const sw = walker.querySelector('.sweat');
+    sw.animate([{ transform: 'translateY(0)', opacity: 0 }, { opacity: 1, offset: .15 }, { transform: 'translateY(90%)', opacity: 1, offset: .85 }, { transform: 'translateY(110%)', opacity: 0 }], { duration: 1800, easing: 'ease-in' });
+    await wait(1800); sw.remove(); setExpr(baseExpr()); },
+  async deslumbrada() { status.textContent = '¡Wooow!'; setExpr('deslumbrada'); A.excite = 1; A.joy = .6;
+    floatFx('rune', '✦', { n: 6, spread: .07, rise: .08, gap: 90 }); await wait(1800); setExpr(baseExpr()); }
+});
 let busy = false;
 async function act(name) { if (busy) return; busy = true; try { await ACTS[name](); } finally { busy = false; } }
 
@@ -284,7 +323,8 @@ async function idleMoment(ms) {
     await wait(700);
     if (busy || paused || Math.random() > .22) continue;
     const r = Math.random();
-    if (r < .35) A.gesture = 1; else if (r < .55) await act('baile'); else if (r < .75) await act('saludo'); else await act('idea');
+    if (r < .3) A.gesture = 1; else if (r < .45) await act('baile'); else if (r < .58) await act('saludo'); else if (r < .7) await act('idea');
+    else await act(pick(['seisSiete', 'confundida', 'deslumbrada', 'nerviosa']));
   }
 }
 async function loop() {
@@ -306,19 +346,29 @@ async function loop() {
 }
 
 // ——— Controles ———
-let accOn = false;
+// ——— Vestuario: un selector por ranura; la ropa se mantiene al cambiar de mascota ———
+const outfit = {};
+function wearAll() { Alquimicos.unequip(pet); Object.values(outfit).forEach(id => id && Alquimicos.equip(pet, id)); }
+function renderWardrobe() {
+  document.getElementById('wardrobe').innerHTML = Alquimicos.SLOTS.map(slot => '<label>' + slot[0].toUpperCase() + slot.slice(1) +
+    ' <select data-slot="' + slot + '"><option value="">—</option>' + Object.entries(Alquimicos.ACCESORIOS).filter(([, a]) => a.slot === slot)
+      .map(([id]) => '<option value="' + id + '"' + (outfit[slot] === id ? ' selected' : '') + '>' + Alquimicos.NOMBRES[id] + '</option>').join('') + '</select></label>').join('');
+}
+document.getElementById('wardrobe').addEventListener('change', e => { outfit[e.target.dataset.slot] = e.target.value; wearAll(); A.joy = .5; });
 function setKind(k) {
-  A.kind = k; pet.innerHTML = Alquimicos[k](); bindParts(); Alquimicos.setExpression(pet, expr);
-  if (accOn) ['sombrero', 'lentes', 'corbatin'].forEach(a => Alquimicos.equip(pet, a));
+  A.kind = k; pet.innerHTML = Alquimicos[k](); bindParts(); Alquimicos.setExpression(pet, expr); wearAll();
   document.querySelectorAll('#pick button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === k)));
 }
 document.getElementById('pick').innerHTML = Alquimicos.list.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join('');
 document.getElementById('pick').addEventListener('click', e => { if (e.target.dataset.k) setKind(e.target.dataset.k); });
 document.getElementById('acts').addEventListener('click', e => { if (e.target.dataset.act) act(e.target.dataset.act); });
-document.getElementById('acc').addEventListener('click', e => {
-  accOn = !accOn; e.target.setAttribute('aria-pressed', String(accOn));
-  accOn ? ['sombrero', 'lentes', 'corbatin'].forEach(a => Alquimicos.equip(pet, a)) : Alquimicos.unequip(pet);
+document.getElementById('emotes').addEventListener('click', e => { if (e.target.dataset.act) act(e.target.dataset.act); });
+document.getElementById('acc').addEventListener('click', () => {
+  Alquimicos.SLOTS.forEach(slot => { const opts = Object.entries(Alquimicos.ACCESORIOS).filter(([, a]) => a.slot === slot).map(([id]) => id); outfit[slot] = Math.random() < .8 ? pick(opts) : ''; });
+  wearAll(); renderWardrobe(); A.joy = 1; setExpr('feliz', 900);
 });
+document.getElementById('naked').addEventListener('click', () => { Object.keys(outfit).forEach(k => { outfit[k] = ''; }); wearAll(); renderWardrobe(); });
+renderWardrobe();
 document.getElementById('flip').addEventListener('click', () => { A.joy = 1; setExpr('amor', 1500); floatFx('heart', '♥', { n: 4 }); });
 document.getElementById('pause').addEventListener('click', e => { paused = !paused; e.target.textContent = paused ? 'Seguir paseo' : 'Pausar paseo'; });
 document.getElementById('debug').addEventListener('click', () => {

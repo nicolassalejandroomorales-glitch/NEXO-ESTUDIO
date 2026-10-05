@@ -52,6 +52,13 @@ F tubo de ensayo, G gota de mercurio, H cristal. Esperando su elección. Las esp
   amor al tocarla. **Curvas** (Bézier) al caminar e **inclinación** por aceleración. **Luciérnagas en JS** que persiguen con retraso (estela),
   se calman al dormir y se alborotan al estar feliz. **Libros detallados** (cuero, esquinas de metal, símbolo en relieve, cinta, 3 colores;
   abierto con letra capital, texto y un benceno con flechas).
+- **v5 (5 oct 2026)**: 14 expresiones (nuevas: triste, enojada, deslumbrada, nerviosa, confundida, pícara) y emotes nuevos en la demo:
+  **"6 7"** (meme: se balancea de lado a lado con un 6 y un 7 dorados que suben y bajan), confundida "?", llorar (lágrimas), enojada (vapor +
+  símbolo de enojo + temblor), nerviosa (gota de sudor), deslumbrada (ojos de estrella). **14 cosméticos** (`ACCESORIOS` + `NOMBRES`):
+  sombrero de mago, birrete, corona, gorro de lana, flor · lentes, lentes de sol, monóculo · corbatín, bufanda, collar · lupa, varita, taza.
+  Vestuario con un selector por ranura en la demo. Hoja de revisión: `/dev/expresiones.html` (expresiones + cosméticos en las 3).
+- **Ojo**: Niquito propuso llevar **toda la app a pixel art** (ver `docs/pendientes.md`). Si se decide, las mascotas pasan a sprites;
+  diseño, expresiones, emotes, cosméticos y ranuras se conservan.
 
 ## Fase 3 — Diseñar primero, animar después (4 oct 2026) — reemplazada por la Fase 4
 
