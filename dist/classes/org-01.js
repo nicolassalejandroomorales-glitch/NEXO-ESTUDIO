@@ -1174,6 +1174,168 @@
     { id: 'rc-hofmann', mission: 'm7', concept: 'am.hofmann', slide: 35, ...mission('m7').parts.find(p => p.id === 'r3').recipe }
   ];
 
+  /* ── Más ayuda (a pedido de Niquito, 5 oct): si la explicación simple no alcanza → mini clase; si quieres más → a profundidad.
+     Cada bloque de lección sabe de qué concepto es (BLOCK_CONCEPT); las mini clases y las clases a fondo van por concepto. ── */
+  const BLOCK_CONCEPT = {
+    f1: 'base.lewis', f2: 'base.lewis', f3: 'base.acido-base', f4: 'am.clasificacion', f5: 'am.geometria', b1: 'am.clasificacion', b2: 'am.par-libre', b3: 'am.geometria',
+    f21: 'am.nombres', f22: 'am.nombres-aril', b21: 'am.nombres', b22: 'am.nombres-aril', b23: 'am.nombres-aril', b24: 'am.nombres', b25: 'am.nombres',
+    f31: 'am.fisicas', f32: 'am.fisicas', b31: 'am.fisicas', b32: 'am.fisicas', b33: 'am.fisicas', b34: 'am.sales',
+    f41: 'base.acido-base', f42: 'am.equilibrio', f43: 'am.pka', b41: 'am.pka', b42: 'am.equilibrio', b43: 'am.pka',
+    f51: 'am.resonancia', f52: 'am.heterociclos', f53: 'am.resonancia', b51: 'am.resonancia', b52: 'am.resonancia', b53: 'am.resonancia', b54: 'am.heterociclos', b55: 'am.heterociclos', b56: 'am.orden',
+    f61: 'base.sn-e', f62: 'am.reduccion', b61: 'am.alquilacion', b62: 'am.alquilacion', b63: 'am.alquilacion', b64: 'am.reduccion', b65: 'am.reduccion',
+    f69: 'base.lewis', f70: 'am.acilacion', f71: 'base.sn-e', f72: 'base.sn-e', b71: 'am.acilacion', b71m: 'am.acilacion', b73: 'am.diazonio', b74: 'am.diazonio', b72: 'am.hofmann', b72m: 'am.hofmann',
+    f81: 'am.espectro', f82: 'am.espectro', b81: 'am.espectro', b82: 'am.espectro', b83: 'am.espectro'
+  };
+  for (const m of cls.missions) for (const blk of [...(m.stages.fundamentals || []), ...(m.stages.explain || []), ...(m.parts || []).flatMap(p => p.explain || [])]) blk.concept ||= BLOCK_CONCEPT[blk.id];
+  for (const m of cls.base) for (const blk of m.stages.explain) blk.concept ||= m.concept;
+
+  const mc = (prompt, options, explain) => ({ prompt, options, explain });
+  /* Mini clase (2 minutos): una idea con imagen, 3 pasos con ejemplo y una pregunta de control. No cuenta como evidencia: es andamiaje. */
+  cls.mini = {
+    'base.lewis': { idea: 'Piensa en cada átomo como alguien con un número fijo de manos: el C tiene 4, el N 3 (y guarda un par), el O 2 (y guarda dos pares), el H 1.',
+      steps: ['Cuenta los electrones de valencia: el N trae **5**.', 'Cada enlace usa 1 de los suyos: con 3 enlaces el N usó 3 y le quedan **2**, es decir, **un par libre**.', 'En CH₃–NH₂ el N tiene 3 enlaces (C, H, H) y su par libre listo para usar.'],
+      check: mc('¿Cuántos enlaces hace un O neutro?', [{ text: '2', correct: true }, { text: '1', note: 'Con 1 enlace y 3 pares el O queda con carga −1 (como en el OH⁻).' }, { text: '3', note: 'Con 3 enlaces el O queda con carga +1 (como en el H₃O⁺).' }], 'El O trae 6 electrones: 2 en enlaces y 4 en dos pares libres.') },
+    'base.carga': { idea: 'La carga formal compara lo que un átomo **trae** con lo que le **toca** dentro de la molécula. Si le toca menos, queda +; si le toca más, queda −.',
+      steps: ['Lo que trae: sus electrones de valencia (N = 5, O = 6, C = 4).', 'Lo que le toca: sus pares libres enteros + **1 por cada enlace**.', 'Resta: N del NH₄⁺ → 5 − (0 + 4) = **+1**.'],
+      check: mc('El O del H₃O⁺ tiene 3 enlaces y 1 par libre. ¿Su carga formal?', [{ text: '+1', correct: true }, { text: '0', note: '6 − (2 + 3) = +1: le toca un electrón menos de los que trae.' }, { text: '−1', note: 'Al revés: le tocan 5 y trae 6, queda positivo.' }], '6 − (2 + 3) = +1.') },
+    'base.acido-base': { idea: 'Un ácido **regala** un H⁺; una base lo **recibe** usando un par de electrones. Es pasarse un protón de mano en mano.',
+      steps: ['Busca el H⁺ que cambia de dueño.', 'Quien lo pierde es el **ácido**; quien lo gana es la **base**.', 'CH₃NH₂ + HCl → CH₃NH₃⁺ + Cl⁻: el HCl es el ácido y la amina la base.'],
+      check: mc('En NH₃ + H₂O ⇌ NH₄⁺ + OH⁻, ¿quién actúa como base?', [{ text: 'NH₃', correct: true }, { text: 'H₂O', note: 'El agua entrega su H⁺: aquí es el ácido.' }, { text: 'NH₄⁺', note: 'Ese es el ácido conjugado que se forma.' }], 'El NH₃ recibe el H⁺ con su par libre.') },
+    'base.sn-e': { idea: 'Llega un atacante con un par de electrones a una molécula que tiene un grupo con ganas de irse. Si ataca al **carbono**, lo reemplaza (SN2). Si le quita un **H al vecino**, se forma un doble enlace (E2).',
+      steps: ['Encuentra el grupo saliente (Br, Cl, I, –N(CH₃)₃⁺).', '¿El atacante va al carbono o al H del carbono de al lado?', 'Carbono → sustitución. H vecino → eliminación con C=C.'],
+      check: mc('OH⁻ + CH₃–Br → CH₃–OH + Br⁻ es una…', [{ text: 'SN2', correct: true }, { text: 'E2', note: 'No se formó ningún doble enlace: el OH⁻ reemplazó al Br.' }, { text: 'Reacción ácido–base', note: 'No se movió un H⁺: el OH⁻ se unió al carbono.' }], 'El OH⁻ atacó al carbono y salió el Br⁻: sustitución.') },
+    'am.par-libre': { idea: 'El par libre es la **mano libre** del N: con ella agarra un H⁺ (actúa como base) o ataca a un carbono con δ+ (actúa como nucleófilo).',
+      steps: ['Encuentra el N y su par libre.', 'Si el par agarra un **H⁺** → la amina es **base**.', 'Si el par ataca a un **carbono** → la amina es **nucleófilo**.'],
+      check: mc('CH₃NH₂ + CH₃I → (CH₃)₂NH₂⁺ I⁻. Aquí la amina actúa como…', [{ text: 'Nucleófilo', correct: true }, { text: 'Base', note: 'No atrapó un H⁺: atacó al carbono del CH₃I.' }, { text: 'Ácido', note: 'No entregó ningún H⁺.' }], 'Su par libre atacó a un carbono: nucleófilo.') },
+    'am.clasificacion': { idea: 'Cuenta cuántos carbonos le **dan la mano** al nitrógeno. Los H no cuentan.',
+      steps: ['Encuentra el N.', 'Cuenta los carbonos unidos **directamente** a él.', '1 → primaria, 2 → secundaria, 3 → terciaria, 4 → sal de amonio cuaternario.'],
+      check: mc('La dietilamina, (CH₃CH₂)₂NH, es…', [{ text: 'Secundaria', correct: true }, { text: 'Primaria', note: 'Hay dos grupos etilo unidos al N.' }, { text: 'Terciaria', note: 'El N todavía tiene un H: solo dos carbonos lo tocan.' }], 'Dos carbonos unidos al N: secundaria.') },
+    'am.geometria': { idea: 'Imagina una **pirámide baja**: el N arriba, tres grupos abajo y el par libre apuntando hacia afuera como un paraguas.',
+      steps: ['3 enlaces + 1 par = 4 zonas de electrones → se ordenan en tetraedro.', 'Pero la forma se nombra solo con los átomos: queda una **pirámide trigonal**.', 'El ángulo es de unos 108° y la pirámide se invierte rapidísimo, como un paraguas con viento.'],
+      check: mc('¿Qué forma tiene la trimetilamina, (CH₃)₃N?', [{ text: 'Piramidal trigonal', correct: true }, { text: 'Plana trigonal', note: 'El par libre empuja los enlaces hacia abajo: no queda plana.' }, { text: 'Tetraédrica', note: 'Tetraédrica es la de los 4 pares de electrones; con los átomos solos es una pirámide.' }], '3 grupos + 1 par libre: pirámide trigonal.') },
+    'am.nombres': { idea: 'El nombre se arma como una dirección: **grupos del N** (con "N-", en orden alfabético) + **cadena principal** + **"amina"**.',
+      steps: ['Busca la cadena más larga que lleva el N: da la raíz (propan-, butan-…).', 'Los otros grupos unidos al N van con el localizador **N-**.', 'CH₃–NH–CH₂CH₂CH₃ → **N-metilpropan-1-amina**.'],
+      check: mc('CH₃CH₂–NH₂ se llama…', [{ text: 'Etanamina (etilamina)', correct: true }, { text: 'Metanamina', note: 'Tiene dos carbonos: etan-.' }, { text: 'N-etilamina', note: 'El N- se usa para grupos extra sobre el N, no para la cadena principal.' }], 'Dos carbonos con el NH₂: etanamina.') },
+    'am.nombres-aril': { idea: 'Si el NH₂ está en un benceno, la base del nombre es **anilina**. Si hay un grupo más importante (–OH, –COOH), ese manda y el NH₂ pasa a ser "**amino**".',
+      steps: ['¿El NH₂ está pegado a un benceno? → anilina.', '¿Hay –OH o –COOH? → ellos dan el nombre y el NH₂ es prefijo amino-.', 'HO–C₆H₄–NH₂ (para) → **4-aminofenol**, el del paracetamol.'],
+      check: mc('C₆H₅–NH–CH₃ se llama…', [{ text: 'N-metilanilina', correct: true }, { text: '4-metilanilina', note: 'Ese tiene el CH₃ en el anillo, no en el N.' }, { text: 'Metilamina', note: 'Falta el anillo en ese nombre.' }], 'El CH₃ está en el N: N-metilanilina.') },
+    'am.fisicas': { idea: 'Los N–H son **ganchos** (puentes de hidrógeno) que pegan moléculas entre sí y con el agua.',
+      steps: ['Aminas 1° y 2° tienen N–H → se enganchan → hierven más alto.', 'Las 3° no tienen N–H → se pegan menos → hierven más bajo.', 'Con pocos carbonos son solubles en agua; con muchos, la cadena de carbonos gana.'],
+      check: mc('Misma fórmula (C₃H₉N): ¿cuál hierve más alto?', [{ text: 'Propilamina (1°)', correct: true }, { text: 'Trimetilamina (3°)', note: 'Sin N–H no forma puentes de H entre sus moléculas: hierve a unos 3 °C.' }], 'La propilamina tiene dos N–H: hierve a unos 48 °C.') },
+    'am.sales': { idea: 'Con un ácido, la amina se vuelve un **ion** (una sal). Los iones aman el agua y no se disuelven en éter.',
+      steps: ['Amina + HCl → R–NH₃⁺ Cl⁻ (sal).', 'La sal se va a la capa de **agua**.', 'Con NaOH vuelve a ser amina neutra y regresa al **éter**.'],
+      check: mc('Para pasar una amina del éter al agua agregas…', [{ text: 'HCl diluido', correct: true }, { text: 'NaOH', note: 'Una base deja la amina neutra: se queda en el éter.' }, { text: 'Más éter', note: 'Eso no cambia nada: sigue neutra.' }], 'El HCl la protona: la sal se va al agua.') },
+    'am.pka': { idea: 'El pKa del ion amonio mide qué tanto **se aferra** la amina al H⁺ que atrapó. Más alto, más se aferra: más básica.',
+      steps: ['Busca el pKa del **ion amonio** (a veces se escribe pKaH).', 'Compara: el **mayor** es la base más fuerte.', 'Metilamina (10,6) > anilina (4,6): la metilamina es mucho más básica.'],
+      check: mc('Amina A: pKaH 9. Amina B: pKaH 11. ¿Cuál es más básica?', [{ text: 'B', correct: true }, { text: 'A', note: 'Al revés: mayor pKa del ion amonio, base más fuerte.' }], 'B se aferra más a su H⁺.') },
+    'am.equilibrio': { idea: 'Es una **pelea por el H⁺**: el equilibrio queda del lado donde está el ácido más débil (el que menos quiere soltarlo).',
+      steps: ['Identifica los dos ácidos: uno a cada lado de la flecha.', 'Compara sus pKa.', 'Gana el lado del ácido con pKa **mayor**.'],
+      check: mc('CH₃COOH (pKa 4,8) + CH₃NH₂ ⇌ CH₃COO⁻ + CH₃NH₃⁺ (pKa 10,6). ¿Hacia dónde va?', [{ text: 'A la derecha', correct: true }, { text: 'A la izquierda', note: 'El ácido más débil (10,6) está a la derecha: ese lado gana.' }], 'Gana el lado del ácido más débil: la derecha.') },
+    'am.resonancia': { idea: 'Si el par libre del N puede **pasearse** por un anillo o hacia un C=O, está menos disponible para atrapar un H⁺.',
+      steps: ['¿El N está pegado a un anillo aromático o a un C=O?', 'Si sí, su par se reparte por resonancia.', 'Menos par disponible → menos básica: anilina < ciclohexilamina; una amida casi no es básica.'],
+      check: mc('¿Cuál es menos básica?', [{ text: 'Anilina', correct: true }, { text: 'Ciclohexilamina', note: 'Su par no tiene dónde deslocalizarse: es la más básica de las dos.' }], 'En la anilina el par se reparte por el anillo.') },
+    'am.heterociclos': { idea: 'En un anillo con N pregunta: ¿el par del N es parte del **equipo aromático** o está libre afuera del anillo?',
+      steps: ['Cuenta los electrones π del anillo.', 'Si el par del N hace falta para llegar a 6 → está ocupado (pirrol, no básico).', 'Si no hace falta y apunta hacia afuera → está libre (piridina, básica).'],
+      check: mc('¿Cuál es más básica?', [{ text: 'Piridina', correct: true }, { text: 'Pirrol', note: 'Su par forma parte de los 6 electrones aromáticos: protonarlo rompería la aromaticidad.' }], 'En la piridina el par queda fuera del anillo, en un orbital sp².') },
+    'am.orden': { idea: 'Para ordenar por basicidad revisa en este orden: **resonancia**, **hibridación** y **grupos que donan o atraen** electrones.',
+      steps: ['Resonancia con C=O o con un anillo baja mucho la basicidad.', 'sp³ > sp² > sp.', 'Grupos donadores la suben un poco; atractores como –NO₂ la bajan mucho.'],
+      check: mc('De menor a mayor basicidad:', [{ text: 'Acetamida < anilina < metilamina', correct: true }, { text: 'Anilina < acetamida < metilamina', note: 'La amida es la menos básica: su par está muy deslocalizado hacia el C=O.' }, { text: 'Metilamina < anilina < acetamida', note: 'Está al revés: la alquilamina es la más básica.' }], 'Amida (casi nada) < arilamina < alquilamina.') },
+    'am.alquilacion': { idea: 'El N ataca con su par al carbono de un R–X y bota al X⁻ (SN2). El problema: la amina que se forma también tiene par libre y **sigue atacando**.',
+      steps: ['NH₃ + R–X → R–NH₂.', 'R–NH₂ vuelve a atacar → mezcla de 1°, 2°, 3° y sal cuaternaria.', 'Para una sola alquilación: **azida** (NaN₃ y luego LiAlH₄) o **Gabriel**.'],
+      check: mc('¿Qué ruta da propilamina pura desde 1-bromopropano?', [{ text: 'Gabriel (ftalimida + KOH, luego hidrazina)', correct: true }, { text: 'Un poco de NH₃', note: 'Con poco NH₃ la sobrealquilación es peor: el producto compite por el R–X.' }, { text: 'HCl', note: 'El HCl no pone ningún N.' }], 'Gabriel pone el N una sola vez.') },
+    'am.reduccion': { idea: 'Reducir es **agregar H o quitar O**: un C=O puede volverse CH₂, un C=N un CH–N y un NO₂ un NH₂.',
+      steps: ['Aldehído o cetona + amina → imina (C=N).', 'NaBH₃CN reduce el C=N → amina (aminación reductiva).', 'Amida + LiAlH₄ → el C=O pasa a CH₂. Ar–NO₂ + Fe/HCl → Ar–NH₂.'],
+      check: mc('Acetona + NH₃ + NaBH₃CN da…', [{ text: 'Propan-2-amina (isopropilamina)', correct: true }, { text: 'Propanamida', note: 'No se forma C=O nuevo: el C=O se convierte en C–N.' }, { text: 'Nada: la acetona no reacciona', note: 'Forma una imina con el NH₃, que se reduce.' }], 'El C=O de la acetona termina como CH–NH₂.') },
+    'am.acilacion': { idea: 'La amina **intercambia** un H de su N por un grupo acilo (CH₃–C=O). Si no tiene H en el N, no puede intercambiar.',
+      steps: ['El par del N ataca al C=O del cloruro de ácido.', 'Sale Cl⁻ y luego el N pierde un H⁺.', 'Queda la amida R–NH–CO–R′.'],
+      check: mc('CH₃NH₂ + CH₃COCl da…', [{ text: 'N-metilacetamida, CH₃–NH–CO–CH₃', correct: true }, { text: 'CH₃–NH₃⁺ Cl⁻ solamente', note: 'Eso pasa con la segunda amina que atrapa el HCl, pero la primera forma la amida.' }, { text: 'Nada', note: 'Es una amina primaria: tiene H en el N y se acila.' }], 'El N cambia un H por el acetilo.') },
+    'am.hofmann': { idea: 'Convierte el –NH₂ en un grupo saliente **gigante** (–N(CH₃)₃⁺) y luego elimina: por ser tan grande, la base saca el H más fácil de alcanzar.',
+      steps: ['CH₃I en exceso → sal de amonio cuaternario.', 'Ag₂O, H₂O → el contraión pasa a OH⁻.', 'Calor → E2 → alqueno **menos** sustituido.'],
+      check: mc('Hofmann de la 2-butanamina: producto principal', [{ text: '1-Buteno', correct: true }, { text: '2-Buteno', note: 'Ese sería el de Zaitsev. El grupo saliente gigante hace ganar al menos sustituido.' }], 'La base saca el H del CH₃ de la punta.') },
+    'am.diazonio': { idea: 'Convierte el NH₂ de una anilina en **–N₂⁺**, el mejor grupo saliente que existe (sale como gas N₂), y cámbialo por lo que quieras.',
+      steps: ['NaNO₂ + HCl a 0–5 °C → Ar–N₂⁺.', 'Agrega el reactivo: CuCl, CuBr, CuCN, KI, HBF₄ o agua caliente.', 'Sale N₂ y entra Cl, Br, CN, I, F u OH.'],
+      check: mc('Para Ar–Br desde Ar–N₂⁺ usas…', [{ text: 'CuBr', correct: true }, { text: 'CuCl', note: 'Ese pone Cl.' }, { text: 'KI', note: 'Ese pone I.' }], 'Sandmeyer con CuBr.') },
+    'am.espectro': { idea: 'Tres pistas: el **IR** cuenta los N–H, el **espectro de masas** mira si M es impar y la **RMN** mira los H cerca del N.',
+      steps: ['IR: dos picos N–H → 1°; uno → 2°; ninguno → 3°.', 'Masas: M impar → número impar de N.', 'RMN ¹H: los H del C unido al N salen cerca de 2,3–3 ppm; el N–H es una señal ancha.'],
+      check: mc('C₃H₉N, ion molecular 59, sin picos N–H en el IR:', [{ text: 'Trimetilamina', correct: true }, { text: 'Propilamina', note: 'Es primaria: tendría dos picos N–H.' }, { text: 'Etilmetilamina', note: 'Es secundaria: tendría un pico N–H.' }], 'Sin N–H y con un N: amina terciaria.') }
+  };
+
+  /* Ver a profundidad: la clase más profunda de un tema (por qué pasa de verdad, con números), un desafío y fuentes. */
+  const IUPAC_KA = { label: 'IUPAC Gold Book · acidity constant', url: 'https://goldbook.iupac.org/terms/view/A00080' };
+  cls.deep = {
+    'base.acido-base': { title: 'Ácidos y bases a fondo', sections: [
+        ['Brønsted y Lewis', 'Brønsted: ácido = dador de H⁺, base = aceptor de H⁺. Lewis lo amplía: base = dador de un **par de electrones**, ácido = aceptor. Una amina es base de las dos maneras: su par libre recibe un H⁺ (Brønsted) o se une a un BF₃ (Lewis).'],
+        ['Una tabla de pKa para orientarte', 'HCl ≈ −7 · H₃O⁺ ≈ −1,7 · ácido acético 4,76 · ion amonio NH₄⁺ 9,25 · ion metilamonio 10,6 · agua 15,7. Cualquier base cuyo ácido conjugado tenga pKa mayor que el del ácido de la izquierda le quitará el H⁺.'],
+        ['El agua pone el techo', 'En agua, ningún ácido más fuerte que el H₃O⁺ sobrevive: todos le pasan su H⁺ al agua (efecto nivelador). Por eso el HCl y el HNO₃ "son igual de fuertes" en agua.']],
+      challenge: mc('¿Qué ácido protona casi por completo a la metilamina (pKaH 10,6) en agua?', [{ text: 'Ácido acético (pKa 4,76)', correct: true }, { text: 'Ninguno: las aminas son bases débiles', note: 'Débil no significa que no reaccione: con ΔpKa ≈ 6 el equilibrio va un millón a uno.' }, { text: 'Solo el HCl', note: 'Basta un ácido con pKa bastante menor que 10,6.' }], 'ΔpKa = 10,6 − 4,76 ≈ 6 → Keq ≈ 10⁶.'),
+      sources: [{ label: 'Cátedra · diap. 17', slide: 17 }, IUPAC_KA, { label: 'McMurry (LibreTexts) · 2.9', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/02:_Polar_Covalent_Bonds_Acids_and_Bases/2.09:_Predicting_Acid-Base_Reactions_from_pKa_Values' }] },
+    'am.pka': { title: 'Qué decide el pKa de una amina', sections: [
+        ['El pKa es energía', 'ΔG° = 2,303·R·T·pKa. A 25 °C, **cada unidad de pKa son unos 5,7 kJ/mol**. Entre la metilamina (10,6) y la anilina (4,6) hay 6 unidades: unos 34 kJ/mol de diferencia en lo que cuesta quitarle el H⁺ al ion amonio.'],
+        ['Efecto inductivo', 'Los grupos alquilo donan densidad electrónica y estabilizan la carga + del ion amonio. En fase gaseosa el orden es 3° > 2° > 1° > NH₃.'],
+        ['El agua cambia el orden', 'En agua el ion amonio se estabiliza con puentes de H en sus N–H. El ion de una amina 3° tiene un solo N–H: se solvata peor. Resultado en agua: **2° > 1° > 3°** (lo ves en la misión 5).'],
+        ['Hibridación y resonancia', 'Más carácter s retiene más el par (sp³ > sp² > sp). Y si el par se deslocaliza (anilina, amida), el ion amonio pierde esa estabilización: pKa mucho menor.']],
+      challenge: mc('¿Por qué la trimetilamina es menos básica que la dimetilamina en agua, si tiene más grupos donadores?', [{ text: 'Su ion amonio tiene un solo N–H y se solvata peor', correct: true }, { text: 'Porque los metilos atraen electrones', note: 'Los alquilos donan, no atraen: por eso en fase gaseosa la 3° es la más básica.' }, { text: 'Porque es plana', note: 'Es piramidal, como todas las aminas simples.' }], 'La solvatación por puentes de H del ion amonio pesa más que el efecto inductivo en agua.'),
+      sources: [{ label: 'Cátedra · diap. 18 y 27', slide: 18 }, IUPAC_KA, { label: 'McMurry (LibreTexts) · 24.3 Basicity of Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles/24.03:_Basicity_of_Amines' }] },
+    'am.equilibrio': { title: 'Equilibrios ácido–base con números', sections: [
+        ['De dónde sale la regla', 'Para HA + B ⇌ A⁻ + BH⁺: Keq = Ka(HA) / Ka(BH⁺) = 10^(pKa(BH⁺) − pKa(HA)). Por eso gana el lado del ácido más débil.'],
+        ['Cuánto reacciona', 'Si partes con cantidades iguales: Keq = 100 (ΔpKa = 2) → reacciona ~91 %. Keq = 10⁴ → ~99 %. Keq = 10⁶ → prácticamente todo.'],
+        ['Para qué te sirve', 'Extracción: con HCl (pKa −7) cualquier amina pasa a sal y se va al agua. Fármacos: muchos se venden como clorhidratos (sales), más solubles y estables.']],
+      challenge: mc('Con cantidades iguales y ΔpKa = 2, ¿qué fracción reacciona?', [{ text: 'Cerca del 91 %', correct: true }, { text: 'El 100 %', note: 'Keq = 100 es grande, pero no infinita: x/(1−x) = 10 → x ≈ 0,91.' }, { text: 'El 50 %', note: 'Eso sería con Keq = 1 (ΔpKa = 0).' }], 'x²/(1−x)² = 100 → x/(1−x) = 10 → x ≈ 0,91.'),
+      sources: [{ label: 'Cátedra · diap. 17', slide: 17 }, { label: 'McMurry (LibreTexts) · 2.9', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/02:_Polar_Covalent_Bonds_Acids_and_Bases/2.09:_Predicting_Acid-Base_Reactions_from_pKa_Values' }] },
+    'am.resonancia': { title: 'Resonancia y basicidad, con números', sections: [
+        ['La anilina', 'El par del N se reparte por el anillo: hay estructuras de resonancia con carga − en las posiciones orto y para. pKaH de la anilina ≈ 4,6 frente a 10,6 de la ciclohexilamina: **un millón de veces** menos básica.'],
+        ['Los sustituyentes', 'Un –OCH₃ en para dona electrones y la sube un poco (p-anisidina ≈ 5,3). Un –NO₂ en para atrae el par por resonancia y la baja muchísimo (p-nitroanilina ≈ 1,0).'],
+        ['La amida, el extremo', 'En la amida el par está deslocalizado hacia el C=O (el enlace C–N tiene carácter doble). El ácido conjugado de una amida tiene pKa ≈ −0,5 y, además, se protona en el O, no en el N.']],
+      challenge: mc('¿Por qué un –NO₂ en para baja tanto la basicidad de la anilina?', [{ text: 'Por resonancia, el par del N se deslocaliza hasta los O del nitro', correct: true }, { text: 'Porque el NO₂ es voluminoso', note: 'El efecto no es estérico: está en para, lejos del N.' }, { text: 'Porque dona electrones', note: 'Al contrario: es un fuerte atractor.' }], 'La deslocalización llega hasta el grupo nitro.'),
+      sources: [{ label: 'Cátedra · diap. 22 a 24', slide: 22 }, { label: 'McMurry (LibreTexts) · 24.4 Basicity of Arylamines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles/24.04:_Basicity_of_Arylamines' }] },
+    'base.sn-e': { title: 'La ruta de decisión SN1 · SN2 · E1 · E2', sections: [
+        ['El sustrato', 'Metilo y 1°: SN2 (salvo base muy voluminosa → E2). 2°: SN2 con buen nucleófilo poco básico en solvente aprótico; E2 con base fuerte. 3°: nunca SN2; E2 con base fuerte, SN1/E1 con base débil en solvente prótico.'],
+        ['Nucleófilo o base', 'I⁻, Br⁻, N₃⁻, CN⁻: buenos nucleófilos, poco básicos → sustitución. OH⁻, CH₃O⁻: fuertes, sirven para las dos. (CH₃)₃CO⁻: base voluminosa → eliminación.'],
+        ['Solvente y temperatura', 'Aprótico polar (DMSO, acetona) acelera la SN2. Prótico (agua, alcoholes) estabiliza carbocationes → SN1/E1. El **calor** favorece la eliminación.'],
+        ['Estereoquímica', 'SN2: ataque por atrás, **inversión**. E2: el H y el grupo saliente **antiperiplanares** (180°).']],
+      challenge: mc('2-bromo-2-metilpropano + CH₃O⁻ en CH₃OH, con calor. ¿Qué predomina?', [{ text: 'E2: 2-metilpropeno', correct: true }, { text: 'SN2: éter metílico', note: 'Un carbono 3° no permite el ataque por atrás.' }, { text: 'SN1', note: 'Con una base fuerte y calor gana la E2.' }], 'Sustrato 3° + base fuerte + calor → E2.'),
+      sources: [{ label: 'Cátedra · diap. 35', slide: 35 }, { label: 'McMurry (LibreTexts) · libro completo (cap. 11: sustituciones y eliminaciones)', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)' }] },
+    'am.alquilacion': { title: 'Alquilar el nitrógeno sin perder el control', sections: [
+        ['Por qué se sobrealquila', 'La amina producto tiene su par y además los grupos alquilo la hacen tan buen nucleófilo como el NH₃ o mejor: compite por el R–X y la reacción no se detiene en la 1°.'],
+        ['La azida', 'N₃⁻ es un nucleófilo excelente y la alquilazida R–N₃ ya no es nucleófila: entra una sola vez. LiAlH₄ (o H₂/Pd) la reduce a R–NH₂ liberando N₂.'],
+        ['Gabriel', 'El N–H de la ftalimida es ácido (pKa ≈ 8,3) porque queda entre dos C=O; el KOH lo desprotona. El N⁻ hace la SN2 y la N-alquilftalimida, sin H y con el par deslocalizado, no sigue. Hidrazina (o hidrólisis) libera la amina 1°.'],
+        ['Límites de la SN2', 'Funciona con haluros metílicos y 1° (2° con dificultad). Con 3° gana la eliminación y con haluros de arilo no hay SN2: por eso la anilina se hace por otra vía (nitrar y reducir).']],
+      challenge: mc('¿Sirve Gabriel con bromuro de terc-butilo para hacer terc-butilamina?', [{ text: 'No: un haluro 3° no hace SN2 (eliminaría)', correct: true }, { text: 'Sí, igual que con un haluro 1°', note: 'El ataque por atrás está bloqueado en un carbono 3°.' }, { text: 'Sí, pero da amina 2°', note: 'Gabriel siempre da 1°; el problema es que la SN2 no ocurre.' }], 'La SN2 necesita un carbono accesible.'),
+      sources: [{ label: 'Cátedra · diap. 30 y 31', slide: 31 }, { label: 'McMurry (LibreTexts) · cap. 24 Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles' }] },
+    'am.reduccion': { title: 'Reducciones que dan aminas', sections: [
+        ['Aminación reductiva, paso a paso', 'Carbonilo + amina → hemiaminal → pierde agua (catálisis ácida suave, pH ≈ 5–6) → imina o ion iminio. El **NaBH₃CN** es un hidruro suave: reduce el iminio más rápido que la cetona y aguanta el medio ácido.'],
+        ['Amida + LiAlH₄', 'A diferencia de un éster (que da alcohol), la amida pierde el O como aluminato, se forma un ion iminio y se reduce otra vez: el C=O termina como **CH₂** y el N se queda.'],
+        ['Nitroarenos', 'Ar–NO₂ → Ar–NH₂ es una reducción de 6 electrones. Con Fe/HCl o Sn/HCl la anilina sale como sal; se libera con base (NaOH).']],
+      challenge: mc('¿Qué combinación da N-metilciclohexilamina?', [{ text: 'Ciclohexanona + CH₃NH₂ + NaBH₃CN', correct: true }, { text: 'Ciclohexanona + NH₃ + NaBH₃CN', note: 'Eso da ciclohexilamina (1°), sin el metilo en el N.' }, { text: 'Ciclohexanol + CH₃NH₂', note: 'Un alcohol no forma imina.' }], 'La amina que pongas aporta los grupos del N.'),
+      sources: [{ label: 'Cátedra · diap. 32 y 33', slide: 32 }, { label: 'McMurry (LibreTexts) · cap. 24 Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles' }] },
+    'am.acilacion': { title: 'Acilación a fondo', sections: [
+        ['Sustitución nucleofílica en el acilo', 'Adición–eliminación: el N ataca al C=O, se forma un intermediario tetraédrico y vuelve el C=O expulsando al mejor grupo saliente (Cl⁻ mejor que un carboxilato).'],
+        ['Dos equivalentes', 'Se libera HCl, que protonaría a la amina y la dejaría sin par: por eso se usan **2 equivalentes de amina** o una base (piridina, NaOH).'],
+        ['Se detiene en la amida', 'El par del N de la amida está deslocalizado hacia el C=O: ya no es nucleófilo, así que no se acila dos veces.'],
+        ['Para qué se usa', 'Proteger la anilina: la acetanilida es menos activante y deja hacer una sola sustitución (por ejemplo, bromar en para) y después se hidroliza de vuelta (diap. 34).']],
+      challenge: mc('¿Por qué se usan 2 equivalentes de amina con el cloruro de acetilo?', [{ text: 'Uno forma la amida y el otro atrapa el HCl', correct: true }, { text: 'Para acilar dos veces', note: 'La amida no se vuelve a acilar.' }, { text: 'Porque la amina es débil', note: 'El motivo es el HCl que se libera.' }], 'El segundo equivalente funciona como base.'),
+      sources: [{ label: 'Cátedra · diap. 34', slide: 34 }, { label: 'McMurry (LibreTexts) · cap. 24 Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles' }] },
+    'am.hofmann': { title: 'Hofmann a fondo', sections: [
+        ['E2 antiperiplanar', 'El H y el grupo saliente deben estar a 180°. Con –N(CH₃)₃⁺, la conformación que lleva al alqueno más sustituido tiene interacciones gauche con el grupo enorme: cuesta más.'],
+        ['Un estado de transición "tipo carbanión"', 'El –N(CH₃)₃⁺ sale con dificultad, así que la ruptura C–H va adelantada: gana el H más ácido y más accesible, el de un CH₃ (primario).'],
+        ['Control cinético', 'El 1-alqueno es menos estable, pero se forma más rápido. Hofmann se usó para deducir estructuras de alcaloides (metilación exhaustiva).']],
+      challenge: mc('Hofmann de la 2-pentanamina: producto principal', [{ text: '1-Penteno', correct: true }, { text: '2-Penteno', note: 'Ese es el de Zaitsev.' }, { text: 'Pentano', note: 'Es una eliminación: se forma un alqueno.' }], 'Gana el H del CH₃ terminal.'),
+      sources: [{ label: 'Cátedra · diap. 35 a 37', slide: 36 }, { label: 'McMurry (LibreTexts) · cap. 24 Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles' }] },
+    'am.diazonio': { title: 'Sales de diazonio a fondo', sections: [
+        ['Cómo se forman', 'NaNO₂ + HCl → HNO₂ → **NO⁺** (ion nitrosonio, el electrófilo). El N de la anilina ataca al NO⁺; tras pasos de pérdida y ganancia de H⁺ sale agua y queda Ar–N≡N⁺.'],
+        ['Por qué solo aromáticas', 'El Ar–N₂⁺ se estabiliza por resonancia con el anillo y aguanta en frío. Un alquil-diazonio pierde N₂ al instante y da un carbocatión: mezcla de productos.'],
+        ['Sandmeyer y compañía', 'Con Cu(I) el reemplazo va por radicales (transferencia de un electrón). HBF₄ y calor da Ar–F (Schiemann); agua caliente, Ar–OH; KI, Ar–I sin cobre.']],
+      challenge: mc('¿Por qué una alquilamina 1° + HNO₂ no da una sal de diazonio útil?', [{ text: 'El alquil-diazonio pierde N₂ al instante y forma un carbocatión', correct: true }, { text: 'Porque no reacciona con HNO₂', note: 'Sí reacciona; el problema es que el producto no dura.' }, { text: 'Porque da una amida', note: 'No hay C=O que forme amida.' }], 'Sin el anillo que lo estabilice, el diazonio se rompe.'),
+      sources: [{ label: 'Cátedra · diap. 39 y 40', slide: 39 }, { label: 'McMurry (LibreTexts) · cap. 24 Amines', url: 'https://chem.libretexts.org/Bookshelves/Organic_Chemistry/Map:_Organic_Chemistry_(McMurry)/24:_Amines_and_Heterocycles' }] }
+  };
+  // Fuentes IUPAC del formulario (verificadas por búsqueda; el sitio de la IUPAC no se puede abrir desde esta sesión).
+  const addSrc = (id, src, at = 1) => cls.formulas.find(f => f.id === id).sources.splice(at, 0, src);
+  addSrc('f-pka', IUPAC_KA);
+  addSrc('f-huckel', { label: 'IUPAC Gold Book · Hückel (4n + 2) rule', url: 'https://goldbook.iupac.org/terms/view/H02867' });
+  addSrc('f-cf', { label: 'IUPAC · Glossary of terms used in physical organic chemistry (1994)', url: 'https://publications.iupac.org/pac/66/5/1077/index.html' });
+  cls.formulas.find(f => f.id === 'f-cf').deeper += ' Ojo (IUPAC): la carga formal no es la carga real. En el NH₄⁺ el N lleva la carga formal +1, pero los cálculos dicen que en realidad el N es algo negativo y los H son positivos.';
+  cls.formulas.find(f => f.id === 'f-huckel').deeper += ' La IUPAC la define para sistemas monocíclicos planos y advierte que en general vale para n = 0 a 5; con 4n electrones π el sistema es antiaromático.';
+
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

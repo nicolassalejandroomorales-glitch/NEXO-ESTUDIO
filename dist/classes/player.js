@@ -679,7 +679,7 @@
           <button class="cr-btn cr-small" data-cr="mech" data-dir="play" aria-pressed="${Boolean(mw.playing)}">${mw.playing ? '❚❚ Pausa' : '▶ Reproducir'}</button>
           <button class="cr-btn cr-small cr-primary" data-cr="mech" data-dir="1" ${mw.i < blk.frames.length - 1 ? '' : 'disabled'}>Siguiente paso ▸</button></div>
         <div class="cr-mech-dots" aria-hidden="true">${blk.frames.map((_, i) => `<i class="${i === mw.i ? 'is-on' : ''}"></i>`).join('')}</div>
-        ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>`;
+        ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}${moreHelp(cls, s, blk, deep)}</div>`;
       if (blk.slide) center = `<div class="cr-lesson cr-lesson-mech">${center}${projection(cls, blk.slide)}</div>`;
       return { sage, center };
     }
@@ -692,13 +692,13 @@
         ${blk.svg ? `<div class="cr-figure">${blk.svg}</div>` : ''}
         ${blk.rows ? `<dl class="cr-rows">${blk.rows.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>` : ''}
         ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}
-        ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>` : '';
-      center = `<div class="cr-lesson">${blk.slide ? projection(cls, blk.slide) : ''}${parchment}</div>`;
+        ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}${moreHelp(cls, s, blk, deep)}</div>` : '';
+      center = `<div class="cr-lesson">${blk.slide ? projection(cls, blk.slide) : ''}${parchment || moreHelp(cls, s, blk, deep)}</div>`;
       // Sin diapositiva (clase base): la explicación va escrita en el pergamino del centro y el sabio solo la presenta.
       if (!blk.slide && !blk.svg && !blk.rows) {
         sage.text = `**${blk.title}.** Léelo con calma en el pergamino. Si algo no queda claro, pídeme la explicación simple.`;
         center = `<div class="cr-parchment cr-base-card"><p class="cr-eyebrow">${b.m?.concept ? 'Repaso desde cero' : b.zero ? 'Desde cero' : 'Lección'}</p><h3>${esc(blk.title.replace(/^Desde cero: /, ''))}</h3><p>${md(blk.body)}</p>
-          ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>`;
+          ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}${moreHelp(cls, s, blk, deep)}</div>`;
       }
       return { sage, center };
     }
@@ -788,6 +788,40 @@
     return { sage, center };
   }
 
+  /* Más ayuda: si la explicación simple no alcanzó → mini clase; si quieres más → a profundidad. */
+  function moreHelp(cls, s, blk, simpleShown) {
+    const c = blk?.concept, mini = c && cls.mini?.[c], deepC = c && cls.deep?.[c];
+    if (!mini && !deepC) return '';
+    return `<div class="cr-more">${mini && simpleShown ? `<button class="cr-btn cr-small" data-cr="mini" data-concept="${esc(c)}">¿Todavía no? Mini clase de 2 min</button>` : ''}
+      ${deepC ? `<button class="cr-btn cr-small cr-ghost-dark" data-cr="deepclass" data-concept="${esc(c)}">Ver a profundidad ▸</button>` : ''}</div>`;
+  }
+  function miniPanel(cls, s) {
+    const c = s.miniC, m = cls.mini[c], title = (cls.concepts || []).find(k => k.id === c)?.title || c;
+    const step = s.miniStep || 0, last = m.steps.length + 1; // 0 idea · 1..n pasos · n+1 pregunta
+    const dots = `<div class="cr-mech-dots" aria-hidden="true">${[...Array(last + 1)].map((_, i) => `<i class="${i === step ? 'is-on' : ''}"></i>`).join('')}</div>`;
+    let inner = '';
+    if (step === 0) inner = `<p class="cr-eyebrow">La idea</p><p class="cr-mini-big">${md(m.idea)}</p>`;
+    else if (step <= m.steps.length) inner = `<p class="cr-eyebrow">Paso ${step} de ${m.steps.length}</p><ol class="cr-mini-steps">${m.steps.slice(0, step).map((t, i) => `<li class="${i === step - 1 ? 'is-now' : ''}">${md(t)}</li>`).join('')}</ol>`;
+    else {
+      const ans = s.miniAns?.[c];
+      inner = `<p class="cr-eyebrow">¿Lo pillaste? (no cuenta para nada)</p><p class="cr-q">${md(m.check.prompt)}</p><ol class="cr-options">${m.check.options.map((o, i) =>
+        `<li><button class="cr-option ${ans === undefined ? '' : i === ans ? (o.correct ? 'is-right' : 'is-wrong') : o.correct ? 'is-right' : 'is-muted'}" data-cr="mini-ans" data-i="${i}" ${ans === undefined ? '' : 'disabled'}><span class="cr-letter">${String.fromCharCode(65 + i)}</span><span>${esc(o.text)}</span></button></li>`).join('')}</ol>
+        ${ans === undefined ? '' : `<p class="cr-conf-route">${m.check.options[ans].correct ? `<b>¡Eso!</b> ${md(m.check.explain)}` : `${md(m.check.options[ans].note || '')} ${md(m.check.explain)} Si quieres, repasa los pasos o mira la versión a profundidad.`}</p>`}`;
+    }
+    const nav = `<div class="cr-row cr-mini-nav"><button class="cr-btn cr-small" data-cr="mini-step" data-dir="-1" ${step > 0 ? '' : 'disabled'}>◂ Atrás</button>
+      ${step < last ? `<button class="cr-btn cr-small cr-primary" data-cr="mini-step" data-dir="1">Siguiente ▸</button>` : `<button class="cr-btn cr-small cr-primary" data-cr="panel-close">Volver a la clase ▸</button>`}</div>`;
+    return { title: `Mini clase · ${title}`, body: `<div class="cr-mini">${inner}${dots}${nav}</div>` };
+  }
+  function deepPanel(cls, s) {
+    const c = s.deepC, d = cls.deep[c], ans = s.deepAns?.[c];
+    const src = x => x.slide ? `<button class="cr-link" data-cr="slides" data-slide="${x.slide}">${esc(x.label)}</button>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`;
+    return { title: `A profundidad · ${d.title}`, body: `<div class="cr-deepclass">${d.sections.map(([h, t]) => `<section><h3>${esc(h)}</h3><p>${md(t)}</p></section>`).join('')}
+      <section class="cr-deep-challenge"><p class="cr-eyebrow">Desafío a fondo (no cuenta para tu nota)</p><p class="cr-q">${md(d.challenge.prompt)}</p>
+        <ol class="cr-options">${d.challenge.options.map((o, i) => `<li><button class="cr-option ${ans === undefined ? '' : i === ans ? (o.correct ? 'is-right' : 'is-wrong') : o.correct ? 'is-right' : 'is-muted'}" data-cr="deep-ans" data-i="${i}" ${ans === undefined ? '' : 'disabled'}><span class="cr-letter">${String.fromCharCode(65 + i)}</span><span>${esc(o.text)}</span></button></li>`).join('')}</ol>
+        ${ans === undefined ? '' : `<p class="cr-conf-route">${d.challenge.options[ans].correct ? '<b>¡Exacto!</b> ' : `${md(d.challenge.options[ans].note || '')} `}${md(d.challenge.explain)}</p>`}</section>
+      <p class="cr-fsrc"><b>Fuentes:</b> ${d.sources.map(src).join(' · ')}</p></div>` };
+  }
+
   /* ───────── El grimorio: glosario, formulario y recetario (docs/etapa-5-grimorio/SPEC.md) ───────── */
   const grimoireTabs = s => `<div class="cr-tabs" role="tablist" aria-label="Secciones del grimorio">${[['glossary', 'Glosario'], ['formulas', 'Formulario'], ['recipes', 'Recetario']]
     .map(([id, name]) => `<button class="cr-tab ${(s.gtab || 'glossary') === id ? 'is-on' : ''}" role="tab" aria-selected="${(s.gtab || 'glossary') === id}" data-cr="grimoire" data-tab="${id}">${name}</button>`).join('')}</div>`;
@@ -807,7 +841,7 @@
             ${f.calc ? `<div class="cr-calc" data-calc="${esc(f.id)}"><p class="cr-eyebrow">Pruébalo</p><div class="cr-calc-in">${f.calc.inputs.map(i => `<label>${esc(i.label)}<input type="number" inputmode="decimal" step="${i.step}" value="${esc(vals[i.id])}" data-cr-calc="${esc(f.id)}" data-key="${esc(i.id)}"></label>`).join('')}</div>
               <p class="cr-calc-out" aria-live="polite" data-calc-out>${md(f.calc.run(vals))}</p></div>` : ''}
             <button class="cr-btn cr-small" data-cr="deeper" data-key="${deepKey}" aria-expanded="${Boolean(deep)}">${deep ? 'Ocultar' : 'A fondo: por qué funciona'}</button>
-            ${deep ? `<div class="cr-deeper"><p>${md(f.deeper)}</p></div>` : ''}
+            ${deep ? `<div class="cr-deeper"><p>${md(f.deeper)}</p></div>` : ''}${moreHelp(cls, s, { concept: f.concepts[0] }, true)}
             <p class="cr-fsrc"><b>Fuentes:</b> ${f.sources.map(x => x.slide ? `<button class="cr-link" data-cr="slides" data-slide="${x.slide}">${esc(x.label)}</button>` : `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join(' · ')}</p>
           </div>` : ''}</article>`;
       }).join('')}</div>`;
@@ -853,7 +887,9 @@
     if (!s.panel) return '';
     const m = b?.m || cls.missions[0];
     let title = '', body = '';
-    if (s.panel === 'help') {
+    if (s.panel === 'mini' && cls.mini?.[s.miniC]) ({ title, body } = miniPanel(cls, s));
+    else if (s.panel === 'deepclass' && cls.deep?.[s.deepC]) ({ title, body } = deepPanel(cls, s));
+    else if (s.panel === 'help') {
       title = '¿Cómo funciona la torre?';
       body = `<dl class="cr-help">${HELP.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
         <div class="cr-row"><button class="cr-btn cr-primary" data-cr="tour" data-go="again">Ver el recorrido de nuevo</button></div>`;
@@ -1084,6 +1120,11 @@
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
     if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
     if (action === 'grimoire') { s.slideOpen = null; s.panel = 'glossary'; s.gtab = button.dataset.tab; if (button.dataset.card) s.card = button.dataset.card; return rerender(id, api); }
+    if (action === 'mini') { s.slideOpen = null; s.panel = 'mini'; s.miniC = button.dataset.concept; s.miniStep = 0; return rerender(id, api); }
+    if (action === 'mini-step') { s.miniStep = Math.max(0, (s.miniStep || 0) + Number(button.dataset.dir)); return rerender(id, api); }
+    if (action === 'mini-ans') { (s.miniAns ||= {})[s.miniC] = Number(button.dataset.i); return rerender(id, api); }
+    if (action === 'deepclass') { s.slideOpen = null; s.panel = 'deepclass'; s.deepC = button.dataset.concept; return rerender(id, api); }
+    if (action === 'deep-ans') { (s.deepAns ||= {})[s.deepC] = Number(button.dataset.i); return rerender(id, api); }
     if (action === 'fcard') { s.card = s.card === button.dataset.card ? null : button.dataset.card; return rerender(id, api); }
     if (action === 'help') { s.slideOpen = null; s.panel = 'help'; s.tour = null; return rerender(id, api); }
     if (action === 'tip') { s.tips[button.dataset.tip] = true; return rerender(id, api); }

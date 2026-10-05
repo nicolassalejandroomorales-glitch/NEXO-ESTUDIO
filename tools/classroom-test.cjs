@@ -167,6 +167,15 @@ for (const [id, file] of Object.entries(catalog)) {
       assert.ok(cls.concepts.some(c => c.id === r.concept && c.mission === r.mission) && cls.slides[r.slide], `${r.id}: concepto, misión o diapositiva inválidos`);
     }
   }
+  // Más ayuda: cada bloque sabe su concepto; todo concepto tiene mini clase; las clases a fondo traen desafío y fuentes.
+  if (cls.mini) {
+    for (const m of [...cls.missions, ...(cls.base || [])]) for (const blk of context.window.NexoClassroom.blocksOf(m)) assert.ok(cls.concepts.some(c => c.id === blk.concept), `${blk.id}: el bloque no sabe de qué concepto es`);
+    for (const c of cls.concepts) { const m = cls.mini[c.id]; assert.ok(m && m.idea && m.steps.length === 3 && m.check.options.filter(o => o.correct).length === 1 && m.check.explain, `${c.id}: falta su mini clase (idea, 3 pasos y pregunta)`); }
+    for (const [c, d] of Object.entries(cls.deep || {})) {
+      assert.ok(cls.concepts.some(k => k.id === c) && d.title && d.sections.length >= 3 && d.challenge.options.filter(o => o.correct).length === 1, `${c}: clase a fondo incompleta`);
+      assert.ok(d.sources.length >= 2 && d.sources.every(x => x.url || cls.slides[x.slide]), `${c}: la clase a fondo necesita al menos 2 fuentes válidas`);
+    }
+  }
   const m7 = cls.missions.find(m => m.parts);
   if (m7) {
     const ks = context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m7.id, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, conf: {}, confWhy: {} });

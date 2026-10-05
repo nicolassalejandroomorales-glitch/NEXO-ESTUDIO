@@ -720,3 +720,18 @@ body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour
   .cr-vars td:nth-child(2) { grid-column: 2; }
   .cr-vars td:nth-child(3) { grid-column: 2; color: var(--ink-soft); font-size: .85rem; }
 }
+
+/* ── Más ayuda: mini clase y a profundidad ── */
+.cr-more { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.cr-lesson > .cr-more { justify-content: center; }
+.cr-ghost-dark { background: rgb(29 26 22 / .82); color: #ffe7b0; border-color: rgb(232 192 106 / .6); }
+.cr-mini, .cr-deepclass { display: grid; gap: 12px; color: var(--ink); }
+.cr-mini-big { font-size: 1.15rem; line-height: 1.6; margin: 0; }
+.cr-mini-steps { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
+.cr-mini-steps li { line-height: 1.55; opacity: .7; }
+.cr-mini-steps li.is-now { opacity: 1; font-weight: 600; animation: cr-seal .35s ease-out both; }
+.cr-mini-nav { justify-content: space-between; display: flex; gap: 8px; }
+.cr-deepclass section { padding: 10px 12px; border-radius: 10px; background: rgb(255 255 255 / .55); }
+.cr-deepclass h3 { margin: 0 0 4px; font-family: Georgia, 'Times New Roman', serif; color: var(--gold-deep); }
+.cr-deepclass p { margin: 0; line-height: 1.6; }
+.cr-deep-challenge { border: 1px solid var(--parch-edge); }
