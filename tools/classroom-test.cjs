@@ -189,6 +189,48 @@ for (const [id, file] of Object.entries(catalog)) {
     const wrongPre = { [m7.parts[0].pretest.id]: { choice: 1, correct: false } };
     assert.ok(!context.window.NexoClassroom.beats(cls, { path: 'misiones', mission: m7.id, answers: wrongPre, hints: {}, retries: {}, revealed: {}, skipExplain: {} }).some(b => b.kind === 'rescue'), 'Equivocarse en "adivina antes" no abre el rescate');
   }
+  // Etapa 7: ronda del alba, simulacro PEP y su puntaje.
+  {
+    const NX = context.window.NexoClassroom;
+    const base = { answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {}, conf: {}, confWhy: {}, rounds: {}, far: {} };
+    assert.deepEqual(NX.roundPick(cls, base, null, 4), [], 'Sin nada visto, la ronda queda vacía');
+    const seenSt = { ...base, answers: {} };
+    for (const m of cls.missions.slice(0, 5)) { const it = NX.itemsOf(m).find(x => x.stage === 'practice').item; seenSt.answers[it.id] = { correct: true }; }
+    const ids = NX.roundPick(cls, seenSt, null, 4);
+    assert.ok(ids.length === 4 && new Set(ids.map(i => NX.findItem(cls, i).concept)).size === 4, 'La ronda trae una pregunta por concepto ya visto');
+    const mis = ids.map(i => cls.missions.find(m => NX.itemsOf(m).some(x => x.item.id === i)).id);
+    assert.ok(mis.every((m, i) => i === 0 || m !== mis[i - 1] || new Set(mis).size === 1), 'La ronda intercala misiones');
+    const key = '2026-10-06:4', st = { ...seenSt, path: 'alba', albaKey: key, rounds: { [key]: ids } };
+    const qs = NX.beats(cls, st).filter(b => b.kind === 'question');
+    assert.ok(qs.length === 4 && qs.every(b => b.stage === 'review' && b.item.id.endsWith(`@a${key}`) && b.m), 'La ronda muestra copias de las preguntas, con su misión');
+    const copy = qs[0].item, baseItem = NX.findItem(cls, ids[0]);
+    assert.ok(copy.prompt === baseItem.prompt && copy.id !== baseItem.id, 'La copia es la misma pregunta con otra respuesta');
+    // Simulacro
+    const mini = NX.simBuild(cls, base, 'mini'), full = NX.simBuild(cls, base, 'full');
+    const goalMissions = [...new Set(cls.goal.questions.flatMap(q => q.missions))];
+    assert.equal(mini.ids.length, goalMissions.length, 'El mini simulacro trae un caso por misión que da puntos');
+    assert.equal(full.ids.length, goalMissions.reduce((a, id) => a + cls.missions.find(m => m.id === id).stages.transfer.length, 0), 'El simulacro completo trae todos los casos estilo prueba');
+    const simSt = { ...base, path: 'simulacro', sim: full };
+    const kinds2 = NX.beats(cls, simSt).map(b => b.kind);
+    assert.ok(kinds2[1] === 'simstart' && kinds2.filter(k => k === 'question').length === full.ids.length && kinds2[kinds2.length - 1] === 'simresult', 'Simulacro: inicio, preguntas y corrección');
+    const perfect = {};
+    for (const id of full.ids) { const it = NX.findItem(cls, id); perfect[id] = it.type === 'write' ? { correct: true, value: { text: it.model, checks: it.rubric.map(() => true) } } : { correct: true }; }
+    const top = NX.simScore(cls, { ...simSt, answers: perfect });
+    assert.ok(Math.abs(top.got - top.max) < 1e-9 && top.max > 0 && top.nota === 7, 'Todo correcto da el puntaje máximo y nota 7');
+    const perItem = full.ids.reduce((a, id) => a + top.rows.filter(r => r.ids.includes(id)).reduce((x, r) => x + r.points / r.ids.length, 0), 0);
+    assert.ok(Math.abs(perItem - top.max) < 1e-9, 'Lo que vale cada caso suma el total del simulacro');
+    const zero = NX.simScore(cls, simSt);
+    assert.ok(zero.got === 0 && zero.nota === 1, 'Sin responder: 0 puntos y nota 1');
+    const w = full.ids.find(id => NX.findItem(cls, id).type === 'write');
+    if (w) { const it = NX.findItem(cls, w); const half = NX.simScore(cls, { ...simSt, answers: { [w]: { correct: false, value: { checks: it.rubric.map((_, i) => i === 0) } } } }); assert.ok(half.got > 0, 'Una escrita a medias da puntaje parcial, como en la pauta'); }
+    const ended = { ...simSt, sim: { ...full, ended: true }, answers: { [full.ids[0]]: { correct: true } } };
+    assert.equal(NX.beats(cls, ended).filter(b => b.kind === 'question').length, 1, 'Si se acaba el tiempo, solo quedan las respondidas');
+    const g0 = NX.goalOf(cls, base).earned, g1 = NX.goalOf(cls, { ...base, answers: { [full.ids[0]]: { correct: true } } }).earned;
+    assert.ok(g1 > g0, 'Un acierto en el simulacro cuenta en el Camino al 7');
+    // Escrita en papel: cuenta si te autocorriges con la pauta
+    const wi = cls.missions.flatMap(m => NX.itemsOf(m)).find(x => x.item.type === 'write').item;
+    assert.ok(NX.isCorrect(wi, { paper: true, text: '(Resuelto en papel)', checks: wi.rubric.map(() => true) }), 'Resuelta en papel y autocorregida, cuenta');
+  }
   // Meta de la clase: cada pregunta de la prueba apunta a misiones que tienen caso estilo prueba.
   if (cls.goal) {
     const sum = cls.goal.questions.reduce((a, q) => a + q.points, 0) + (cls.goal.rest || []).reduce((a, r) => a + r.points, 0);

@@ -5,11 +5,16 @@
   'use strict';
   const PATHS = {
     diagnostico: { name: '¿Por dónde empiezo?', tag: 'Diagnóstico · 5 min', text: 'Unas 7 preguntas que se adaptan a ti y te dicen dónde partir.' },
+    tiempo: { name: 'Tengo X minutos', tag: 'Plan del día', text: 'Dime cuánto tiempo tienes y te armo la sesión por bloques.' },
+    alba: { name: 'Ronda del alba', tag: 'Repaso · 5 min', text: 'Preguntas mezcladas de lo que ya viste, sin mirar apuntes. Lo que no se repasa, se olvida.' },
+    simulacro: { name: 'Simulacro PEP', tag: 'Con tiempo', text: 'Como la prueba: con cronómetro, sin pistas ni formulario. Al final, cómo te corrige el profe.' },
     misiones: { name: 'Misiones', tag: '10–15 min', text: 'Una idea por visita. Se retoma donde la dejaste.' },
     expedicion: { name: 'Expedición', tag: 'Clase larga', text: 'Todas las misiones seguidas, con desafíos extra si vas bien.' },
-    prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.' },
+    prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.', hidden: true },
     base: { name: 'Repaso desde cero', tag: 'Opcional', text: 'Las bases de Orgánica I que usan las aminas.', hidden: true }
   };
+  const PATH_ORDER = ['diagnostico', 'tiempo', 'misiones', 'alba', 'simulacro', 'expedicion'];
+  let TIMER = null; // cronómetro del simulacro
   const SCENES = ['dawn', 'day', 'dusk', 'night'];
   /* Torre del alquimista por momento del día (assets/classroom/README.md). Pinturas HD de Canva entregadas por Niquito. */
   const TOWER = { dawn: 'assets/classroom/torre-amanecer.webp', day: 'assets/classroom/torre-atardecer.webp',
@@ -45,7 +50,7 @@
     ['Los objetos de la torre', 'Sabio: desde cero · Libro: grimorio (glosario, formulario y recetario) · Pizarra: diapositivas · Ventana: hora del día · Frascos: datos curiosos.'],
     ['Camino al 7', 'Los puntos de la PEP que ya demostraste acertando sin ayuda los casos estilo prueba.'],
     ['Las hojas', 'Cada concepto es una hoja: brote (guiado) → verde (lo hiciste solo) → flor (lo recordaste días después).'],
-    ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Misiones: una idea por visita. Expedición: todo seguido. Prueba encima: directo a la PEP.']
+    ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Tengo X minutos: tu plan del día. Misiones: una idea por visita. Ronda del alba: repaso diario. Simulacro PEP: como la prueba, con reloj. Expedición: todo seguido.']
   ];
   function dominantScene() {
     const style = getComputedStyle(document.body);
@@ -59,7 +64,7 @@
     const state = api.getState();
     if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {};
     const s = state.classSessions[id] ||= {};
-    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy', 'detour', 'tips']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
+    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy', 'detour', 'tips', 'rounds', 'far']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
     if (!Number.isInteger(s.beat)) s.beat = 0;
     return s;
   }
@@ -70,12 +75,14 @@
 
   /* Meta de la clase (cls.goal): cuántos puntos de la prueba ya demostraste. Un punto cuenta cuando aciertas
      sin ayuda el caso estilo prueba (transferencia) de las misiones que preparan esa pregunta. */
+  // Un caso estilo prueba está demostrado si lo acertaste sin ayuda en la misión o en algún simulacro (copias "id@sN").
+  const solvedGoal = (s, id) => Object.entries(s.answers).some(([k, r]) => (k === id || k.startsWith(`${id}@s`)) && r?.correct && !r.hint);
   function goalOf(cls, s) {
     const g = cls.goal;
     if (!g) return null;
     const qs = g.questions.map(q => {
       const items = cls.missions.filter(m => q.missions.includes(m.id)).flatMap(m => m.stages.transfer || []);
-      const ok = items.filter(item => s.answers[item.id]?.correct && !s.answers[item.id].hint).length;
+      const ok = items.filter(item => solvedGoal(s, item.id)).length;
       return { ...q, items, ok, earned: items.length ? q.points * ok / items.length : 0 };
     });
     const earned = qs.reduce((sum, q) => sum + q.earned, 0), max = qs.reduce((sum, q) => sum + q.points, 0);
@@ -84,7 +91,7 @@
       return sum + (q.items.length ? q.points * mine / q.items.length : 0);
     }, 0);
     const won = mId => (missionById(cls, mId)?.stages.transfer || []).length
-      ? worth(mId) * (missionById(cls, mId).stages.transfer.filter(item => s.answers[item.id]?.correct && !s.answers[item.id].hint).length / missionById(cls, mId).stages.transfer.length) : 0;
+      ? worth(mId) * (missionById(cls, mId).stages.transfer.filter(item => solvedGoal(s, item.id)).length / missionById(cls, mId).stages.transfer.length) : 0;
     return { ...g, qs, earned, max, worth, won };
   }
 
@@ -105,7 +112,64 @@
   // Actividades fuera de las misiones: clase base, diagnóstico y casos cortos de los errores típicos.
   const extraItems = cls => [...(cls.base || []).flatMap(m => itemsOf(m).map(x => x.item)), ...(cls.diagnosis?.items || []).map(x => x.item),
     ...Object.values(cls.misconceptions || {}).map(mc => mc.check).filter(Boolean)];
-  const findItem = (cls, itemId) => allItems(cls).find(x => x.item.id === itemId)?.item || extraItems(cls).find(item => item.id === itemId);
+  const findBase = (cls, itemId) => allItems(cls).find(x => x.item.id === itemId)?.item || extraItems(cls).find(item => item.id === itemId);
+  // "id@algo" es una copia de una actividad (ronda del alba o simulacro): misma pregunta, respuesta aparte.
+  const findItem = (cls, itemId) => { const base = findBase(cls, String(itemId).split('@')[0]); return base && String(itemId).includes('@') ? { ...base, id: itemId } : base; };
+  const missionOfItem = (cls, itemId) => { const base = String(itemId).split('@')[0]; return cls.missions.find(m => itemsOf(m).some(x => x.item.id === base)); };
+  const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  /* Ronda del alba (docs/etapa-7-prueba/SPEC.md): preguntas mezcladas de conceptos ya vistos; primero los vencidos (FSRS),
+     después los que viste hace más tiempo. Una pregunta por concepto, alternando misiones (práctica intercalada). */
+  function roundPick(cls, s, store, size = 4, now = new Date()) {
+    const recs = store?.records || [];
+    const last = new Map(); for (const r of recs) last.set(r.conceptId, r.at);
+    const seen = [...last.entries()].sort((a, b) => new Date(a[1]) - new Date(b[1])).map(([c]) => c);
+    const dueSet = new Set(Object.values(store?.reviews || {}).filter(r => r?.dueAt && new Date(r.dueAt) <= now).map(r => r.targetId));
+    const fromAnswers = Object.keys(s.answers).map(k => findBase(cls, k.split('@')[0])?.concept).filter(Boolean);
+    const order = [...new Set([...seen.filter(c => dueSet.has(c)), ...seen.filter(c => !dueSet.has(c)), ...fromAnswers])]
+      .filter(c => (cls.concepts || []).some(k => k.id === c));
+    const pool = c => cls.missions.flatMap(m => itemsOf(m).filter(x => ['practice', 'transfer', 'challenge'].includes(x.stage) && x.item.concept === c).map(x => ({ ...x, m })));
+    const hash = t => [...t].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+    const picks = [];
+    for (const c of order) {
+      if (picks.length >= size) break;
+      const all = pool(c); if (!all.length) continue;
+      const fresh = all.filter(x => !s.answers[x.item.id]), wrong = all.filter(x => s.answers[x.item.id] && !s.answers[x.item.id].correct);
+      const list = fresh.length ? fresh : wrong.length ? wrong : all;
+      picks.push(list[hash(today(now) + c) % list.length]);
+    }
+    const out = [], rest = [...picks]; // intercalar: que no queden dos seguidas de la misma misión
+    while (rest.length) { const i = rest.findIndex(x => x.m.id !== out[out.length - 1]?.m.id); out.push(rest.splice(i < 0 ? 0 : i, 1)[0]); }
+    return out.map(x => x.item.id);
+  }
+
+  /* Simulacro PEP: los casos estilo prueba de las misiones que dan puntos. Mini: uno por misión. Completo: todos. */
+  function simBuild(cls, s, size = 'full') {
+    const missions = [...new Set((cls.goal?.questions || []).flatMap(q => q.missions))].map(id => missionById(cls, id)).filter(Boolean);
+    const n = (s.simN || 0) + 1;
+    const ids = size === 'mini' ? missions.map(m => (m.stages.transfer || [])[(n - 1) % Math.max(1, (m.stages.transfer || []).length)]).filter(Boolean).map(i => i.id)
+      : missions.flatMap(m => (m.stages.transfer || []).map(i => i.id));
+    return { n, size, ids: ids.map(id => `${id}@s${n}`), minutes: size === 'mini' ? 12 : 40, start: Date.now(), ended: false };
+  }
+  // Puntaje como en la pauta: cada pregunta de la prueba reparte sus puntos entre sus casos; las escritas dan puntaje parcial por idea.
+  function itemScore(item, rec) {
+    if (!rec || !item) return 0;
+    if (item.type === 'write') return (rec.value?.checks || []).filter(Boolean).length / Math.max(1, item.rubric.length);
+    return rec.correct ? 1 : 0;
+  }
+  function simScore(cls, s, sim = s.sim) {
+    if (!sim) return null;
+    const rows = (cls.goal?.questions || []).map(q => {
+      const mine = sim.ids.filter(id => q.missions.includes(missionOfItem(cls, id)?.id));
+      const scores = mine.map(id => itemScore(findItem(cls, id), s.answers[id]));
+      return { ...q, ids: mine, got: mine.length ? q.points * scores.reduce((a, b) => a + b, 0) / mine.length : 0, max: mine.length ? q.points : 0 };
+    });
+    const got = rows.reduce((a, r) => a + r.got, 0), max = rows.reduce((a, r) => a + r.max, 0);
+    const pct = max ? got / max : 0;
+    const nota = pct < 0.6 ? 1 + 3 * pct / 0.6 : 4 + 3 * (pct - 0.6) / 0.4; // escala chilena con 60 % de exigencia
+    return { rows, got, max, pct, nota: Math.round(nota * 10) / 10 };
+  }
+
 
   /* Diagnóstico "¿Por dónde empiezo?" (docs/etapa-4-diagnostico/SPEC.md): escalera de 3 niveles.
      Si aciertas sube un nivel, si fallas baja; prefiere un concepto relacionado con el anterior. Todo se deduce de las respuestas. */
@@ -198,6 +262,23 @@
       out.push({ kind: 'close' });
       return out;
     }
+    if (s.path === 'tiempo') { out.push({ kind: 'plan' }); return out; }
+    if (s.path === 'alba') {
+      const ids = s.rounds[s.albaKey] || [];
+      if (!ids.length) { out.push({ kind: 'albaclose', empty: true }); return out; }
+      say('Ronda del alba: unas preguntas mezcladas de lo que ya viste. Sin apuntes y sin pistas: recordar es lo que fija la memoria.', null);
+      ids.forEach((id, i, list) => { const copy = `${id}@a${s.albaKey}`; out.push({ kind: 'question', item: findItem(cls, copy), m: missionOfItem(cls, id), stage: 'review', n: i + 1, of: list.length }); });
+      out.push({ kind: 'albaclose' });
+      return out;
+    }
+    if (s.path === 'simulacro') {
+      out.push({ kind: 'simstart' });
+      const sim = s.sim;
+      if (!sim) return out;
+      sim.ids.filter(id => !sim.ended || s.answers[id]).forEach((id, i) => out.push({ kind: 'question', item: findItem(cls, id), m: missionOfItem(cls, id), stage: 'simulacro', n: i + 1, of: sim.ids.length }));
+      out.push({ kind: 'simresult' });
+      return out;
+    }
     if (s.path === 'diagnostico') {
       say('Te haré unas 7 preguntas para saber por dónde empezar. Si aciertas, subo el nivel; si fallas, bajo a las bases. No cuenta para tu nota y no hay pistas: responde con lo que sabes.', null);
       const plan = diagnosisPlan(cls, s), max = cls.diagnosis?.max || 7;
@@ -264,6 +345,7 @@
     if (b.kind === 'offer') return s.skipExplain[b.m.id] !== undefined;
     if (b.kind === 'detour') return s.detour[`${b.m.id}:${b.root}`] !== undefined;
     if (b.kind === 'basepick') return Boolean(s.mission);
+    if (b.kind === 'simstart') return Boolean(s.sim);
     return true;
   }
 
@@ -311,6 +393,7 @@
      choice (alternativas) · order (ordenar tarjetas) · classify (clasificar en calderos)
      match (unir pares) · pick (tocar la parte correcta de una molécula). */
   const MIN_WRITE = 25;
+  const PHOTOS = new Map(); // fotos de la hoja en papel: solo en memoria, nunca se guardan
   const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Ideas clave de una respuesta escrita (solo busca palabras: orienta, no reemplaza la autocorrección).
   const keyIdeas = (item, text) => (item.keywords || []).map(k => ({ label: k.label, hit: k.any.some(word => norm(text).includes(norm(word))) }));
@@ -335,7 +418,7 @@
     if (item.type === 'poe') return Boolean(item.options[value?.pred]?.correct);
     if (item.type === 'recipe') return JSON.stringify(value) === JSON.stringify(item.answer);
     if (item.type === 'spot') return value?.step === item.wrong && Boolean(item.fix.options[value?.fix]?.correct);
-    if (item.type === 'write') return String(value?.text || '').trim().length >= MIN_WRITE && item.rubric.every((_, i) => value?.checks?.[i] === true);
+    if (item.type === 'write') return (value?.paper || String(value?.text || '').trim().length >= MIN_WRITE) && item.rubric.every((_, i) => value?.checks?.[i] === true);
     return Boolean(item.options[value]?.correct);
   }
   function mcKeyOf(item, rec) {
@@ -456,13 +539,17 @@
       if (!done && !w.revealed) return `<div class="cr-write"><p class="cr-act-help">Escríbelo con tus palabras. Después verás la respuesta modelo y marcarás qué ideas tenías.</p>
         <textarea class="cr-textarea" data-cr-text="${esc(item.id)}" data-retry="${retry ? 1 : 0}" rows="5" aria-label="Tu respuesta" placeholder="Explícalo como si se lo contaras a un compañero…">${esc(text)}</textarea>
         ${w.warn ? '<p class="cr-warn">Escribe un poco más antes de comparar: una o dos frases bastan.</p>' : ''}
-        <div class="cr-check">${actBtn(item, retry, 'act-reveal', '', 'Comparar con la respuesta modelo ▸', 'cr-btn cr-primary')}</div></div>`;
+        <div class="cr-check">${actBtn(item, retry, 'act-paper', '', '✎ Lo hice en papel', 'cr-btn')}${actBtn(item, retry, 'act-reveal', '', 'Comparar con la respuesta modelo ▸', 'cr-btn cr-primary')}</div></div>`;
       const checks = done ? rec.value.checks : (w.checks ||= item.rubric.map(() => false));
       const ideas = keyIdeas(item, text);
-      const ideasMarkup = ideas.length ? `<div class="cr-ideas"><p class="cr-eyebrow">${item.teach ? 'Lo que tu compañero entendió' : 'Ideas clave que encontré'}</p>
+      const onPaper = done ? rec.value.paper : w.paper, photo = PHOTOS.get(item.id);
+      const paperMarkup = onPaper ? `<div class="cr-paper-box"><p class="cr-act-help"><b>Lo resolviste en papel.</b> Pon tu hoja al lado de la respuesta modelo y marca, idea por idea, lo que sí escribiste.</p>
+        ${photo ? `<img class="cr-photo" src="${photo}" alt="Foto de tu hoja">` : ''}${done ? '' : `<label class="cr-btn cr-small cr-photo-btn">📷 ${photo ? 'Cambiar la foto' : 'Foto de tu hoja (opcional)'}<input type="file" accept="image/*" capture="environment" data-cr-photo="${esc(item.id)}" hidden></label>
+        <p class="cr-idea-note">La foto no se guarda ni se envía: solo se muestra aquí, mientras te corriges.</p>`}</div>` : '';
+      const ideasMarkup = !onPaper && ideas.length ? `<div class="cr-ideas"><p class="cr-eyebrow">${item.teach ? 'Lo que tu compañero entendió' : 'Ideas clave que encontré'}</p>
         ${ideas.map(k => `<span class="cr-idea ${k.hit ? 'is-hit' : ''}">${k.hit ? '✓' : '○'} ${esc(k.label)}</span>`).join('')}
         <p class="cr-idea-note">${ideas.every(k => k.hit) ? '¡Mencionaste todas las ideas clave!' : 'Las ideas en gris no aparecieron con esas palabras. Revísalas en la respuesta modelo.'} (Solo busco palabras: tu autocorrección manda.)</p></div>` : '';
-      return `<div class="cr-write is-compare">${ideasMarkup}<div class="cr-write-cols">
+      return `<div class="cr-write is-compare">${paperMarkup}${ideasMarkup}<div class="cr-write-cols">
         <div class="cr-write-box"><p class="cr-eyebrow">Tu respuesta</p><p class="cr-write-mine">${esc(text)}</p></div>
         <div class="cr-write-box is-model"><p class="cr-eyebrow">Respuesta modelo</p><p>${md(item.model)}</p></div></div>
         <p class="cr-act-help">${done ? 'Así te autocorregiste.' : 'Marca cada idea que <b>sí</b> estaba en tu respuesta. Sé honesto: esto mide lo que de verdad sabes.'}</p>
@@ -567,7 +654,7 @@
 
     if (b.kind === 'path') {
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
-      center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).filter(([, p]) => !p.hidden).map(([id, p]) =>
+      center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${PATH_ORDER.filter(id => PATHS[id] && !PATHS[id].hidden).map(id => [id, PATHS[id]]).map(([id, p]) =>
         `<button class="cr-path ${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? 'is-recommended' : ''}" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span>${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? '<span class="cr-path-rec">Recomendado para empezar</span>' : ''}<b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
         <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>
         ${cls.goal ? `<p class="cr-soon cr-goal-line">Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>` : ''}`;
@@ -609,10 +696,10 @@
       const weak = [...plan.wrong].map(id => `<li class="is-wrong">✗ ${esc(title(id))}</li>`).join('');
       const n = m => cls.missions.indexOf(m) + 1, listY = l => l.length > 1 ? `${l.slice(0, -1).join(', ')} y ${l[l.length - 1]}` : l.join('');
       sage.text = plan.bases.length ? `Encontré una base que conviene afirmar: **${plan.bases.map(x => x.title).join('** y **')}**. Es opcional, pero con ella todo lo demás se hace más fácil.${plan.start ? ` Después, empieza por la **Misión ${n(plan.start)}**.` : ''}`
-        : plan.start ? `Te recomiendo empezar por la **Misión ${n(plan.start)}: ${plan.start.title}**. Lo anterior parece firme.` : 'Todo lo que medí parece firme. Para asegurarlo, ve a **Prueba encima**: preguntas como las de la PEP, sin ayuda.';
+        : plan.start ? `Te recomiendo empezar por la **Misión ${n(plan.start)}: ${plan.start.title}**. Lo anterior parece firme.` : 'Todo lo que medí parece firme. Para asegurarlo, haz un **Simulacro PEP**: preguntas como las de la prueba, con reloj y sin ayuda.';
       sage.mood = 'proud';
       sage.actions = `${plan.bases.map((x, i) => `<button class="cr-btn ${i ? '' : 'cr-primary'}" data-cr="base" data-mission="${x.id}">Repasar ${esc(x.title)} ▸</button>`).join('')}
-        ${plan.start ? `<button class="cr-btn ${plan.bases.length ? '' : 'cr-primary'}" data-cr="mission" data-mission="${plan.start.id}">Empezar la Misión ${n(plan.start)} ▸</button>` : `<button class="cr-btn cr-primary" data-cr="path" data-path="prueba">Prueba encima ▸</button>`}
+        ${plan.start ? `<button class="cr-btn ${plan.bases.length ? '' : 'cr-primary'}" data-cr="mission" data-mission="${plan.start.id}">Empezar la Misión ${n(plan.start)} ▸</button>` : `<button class="cr-btn cr-primary" data-cr="path" data-path="simulacro">Simulacro PEP ▸</button>`}
         <button class="cr-btn" data-cr="path" data-path="misiones">Ver todas las misiones</button>`;
       center = `<div class="cr-parchment cr-diag"><p class="cr-eyebrow">Tu punto de partida · hipótesis</p><h3>Lo que medí en ${plan.asked.length} preguntas</h3>
         <div class="cr-diag-cols"><div><p class="cr-diag-h">Parece firme</p><ul>${firm || '<li class="is-likely">Todavía nada seguro</li>'}</ul></div>
@@ -635,6 +722,95 @@
       center = `<div class="cr-parchment cr-detour"><p class="cr-eyebrow">Errores que guían · falta una base</p><h3>${esc(b.bm.title)}</h3>
         <p>Estos errores tienen el mismo origen:</p><ul>${b.items.map(it => `<li>${md(it.prompt)}</li>`).join('')}</ul>
         <p class="cr-note"><b>El desvío:</b> ${esc(b.bm.stages.explain[0].title)} → 2 ejercicios fáciles → vuelves a intentar el problema que fallaste.</p></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'plan') {
+      const E = EV(), store = E?.storeFor(api.getState(), cls.id), seen = Boolean(store?.records.length || Object.keys(s.answers).length);
+      const mins = s.planMin;
+      if (!mins) {
+        sage.text = '¿Cuánto tiempo tienes hoy? Te armo la sesión por bloques: primero lo que se te está olvidando, después lo nuevo y, si alcanza, un simulacro.';
+        center = `<div class="cr-parchment cr-plan"><p class="cr-eyebrow">Tengo X minutos</p><h3>¿Cuánto tiempo tienes?</h3>
+          <div class="cr-plan-mins">${[10, 25, 45, 120].map(n => `<button class="cr-btn ${n === 45 ? 'cr-primary' : ''}" data-cr="plan-min" data-min="${n}">${n < 60 ? `${n} min` : '2 horas'}</button>`).join('')}</div></div>`;
+        return { sage, center };
+      }
+      const frac = m => { const it = allItems(cls, m.id); return it.length ? it.filter(({ item }) => s.answers[item.id]).length / it.length : 1; };
+      const dx = cls.diagnosis ? diagnosisPlan(cls, s) : null;
+      const next = (dx?.done && dx.start && frac(dx.start) < 1 ? dx.start : null) || cls.missions.find(m => frac(m) < 1) || cls.missions[cls.missions.length - 1];
+      const albaDone = size => { const k = `${today()}:${size}`, ids = s.rounds[k]; return Boolean(ids?.length) && ids.every(i => s.answers[`${i}@a${k}`]); };
+      const simToday = (s.simHistory || []).some(h => h.at?.startsWith(today()));
+      const n = cls.missions.indexOf(next) + 1;
+      const alba = (size, min, name = 'Ronda del alba', why = 'Lo que se te está olvidando, sin mirar apuntes.') => ({ name, min, why, btn: `<button class="cr-btn cr-small" data-cr="path" data-path="alba" data-size="${size}">Empezar ▸</button>`, done: albaDone(size), skip: !seen });
+      const nuevo = min => ({ name: `Lo nuevo: Misión ${n}`, min, why: `${next.title}. Retomas donde quedaste.`, btn: `<button class="cr-btn cr-small" data-cr="mission" data-mission="${next.id}">Ir ▸</button>`, done: frac(next) >= 1 });
+      const sim = min => ({ name: 'Mini simulacro PEP', min, why: 'Un caso estilo prueba por misión, con cronómetro.', btn: '<button class="cr-btn cr-small" data-cr="path" data-path="simulacro" data-size="mini">Empezar ▸</button>', done: simToday });
+      const pause = min => ({ name: 'Pausa', min, why: 'Levántate, toma agua y mira lejos de la pantalla.', btn: '', done: false });
+      const plan = { 10: [alba(3, 4), nuevo(6)], 25: [alba(3, 5), nuevo(20)], 45: [alba(4, 5), nuevo(25), sim(12)],
+        120: [alba(5, 10), nuevo(40), pause(10), alba(10, 35, 'Práctica mezclada', 'Diez preguntas revueltas de todo lo que has visto.'), sim(20)] }[mins]
+        .filter(x => !x.skip);
+      const total = plan.reduce((a, x) => a + x.min, 0);
+      sage.text = `Tu plan de **${mins < 60 ? `${mins} minutos` : '2 horas'}**. Hazlo en orden: el repaso primero, porque recordar algo que se te está olvidando es lo que más lo fija.${seen ? '' : ' Como todavía no has visto nada, parte directo con lo nuevo.'}`;
+      sage.actions = `<button class="cr-btn" data-cr="plan-min" data-min="0">Cambiar el tiempo</button>`;
+      center = `<div class="cr-parchment cr-plan"><p class="cr-eyebrow">Tu plan de hoy · ≈ ${total} min</p>
+        <ol class="cr-plan-list">${plan.map((x, i) => `<li class="${x.done ? 'is-done' : ''}"><span class="cr-plan-n">${x.done ? '✓' : i + 1}</span>
+          <span class="cr-plan-txt"><b>${esc(x.name)}</b> <small>${x.min} min</small><span>${esc(x.why)}</span></span>${x.done ? '<em>Hecho</em>' : x.btn}</li>`).join('')}</ol>
+        <p class="cr-note">Cuando termines un bloque, vuelve aquí con <b>Volver a mi plan</b>.</p></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'albaclose') {
+      const planBtn = s.planDay === today() ? '<button class="cr-btn" data-cr="path" data-path="tiempo">Volver a mi plan</button>' : '';
+      if (b.empty) {
+        sage.text = 'Todavía no hay nada que repasar: la ronda usa lo que ya viste. Haz una misión y vuelve mañana: ahí empieza lo bueno.';
+        sage.actions = `<button class="cr-btn cr-primary" data-cr="path" data-path="misiones">Ir a las misiones</button>${planBtn}`;
+        center = '<div class="cr-parchment"><p class="cr-eyebrow">Ronda del alba</p><p>Aquí aparecerán, cada día, preguntas mezcladas de lo que se te está olvidando.</p></div>';
+        return { sage, center };
+      }
+      const ids = (s.rounds[s.albaKey] || []).map(i => `${i}@a${s.albaKey}`), ok = ids.filter(i => s.answers[i]?.correct).length;
+      sage.text = ok === ids.length ? `¡${ok} de ${ids.length} sin mirar! Eso es memoria de verdad.` : `${ok} de ${ids.length} sin mirar. Lo que fallaste vuelve antes: así funciona el repaso espaciado.`;
+      sage.mood = ok === ids.length ? 'proud' : 'calm';
+      sage.actions = `${planBtn}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+      center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Ronda del alba · ${esc(today())}</p>
+        <ul class="cr-round">${ids.map(i => { const it = findItem(cls, i), c = (cls.concepts || []).find(k => k.id === it.concept);
+          return `<li class="${s.answers[i]?.correct ? 'is-right' : 'is-wrong'}">${s.answers[i]?.correct ? '✓' : '✗'} <b>${esc(c?.title || '')}</b> <small>${esc(missionOfItem(cls, i)?.title || '')}</small></li>`; }).join('')}</ul>
+        <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas</p>${leafChips(cls, api, cls.id, c => ids.some(i => findItem(cls, i).concept === c.id))}</div>
+        <p class="cr-note">Una hoja <b>florece</b> cuando aciertas sin ayuda, 24 horas o más después de haberla puesto verde. Por eso esta ronda es diaria.</p></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'simstart') {
+      const hist = (s.simHistory || []).slice(-3);
+      const pool = [...new Set((cls.goal?.questions || []).flatMap(q => q.missions))].map(id => missionById(cls, id)).filter(Boolean);
+      const full = pool.reduce((a, m) => a + (m.stages.transfer || []).length, 0);
+      if (s.sim) {
+        sage.text = s.sim.ended ? 'Este simulacro ya terminó. Mira tu corrección o empieza otro.' : `Simulacro ${s.sim.n} en curso. El reloj sigue corriendo.`;
+        sage.actions = cont(s.sim.ended ? 'Ver mi corrección ▸' : 'Seguir ▸');
+        center = `<div class="cr-parchment"><p class="cr-eyebrow">Simulacro PEP ${s.sim.n}</p><p>${s.sim.ids.length} preguntas · ${s.sim.minutes} minutos.</p></div>`;
+        return { sage, center };
+      }
+      sage.text = 'Como en la PEP: con reloj, **sin pistas, sin formulario y sin saber si acertaste** hasta el final. Después te muestro cómo te corregiría el profe.';
+      sage.actions = `<button class="cr-btn cr-primary" data-cr="sim-start" data-size="mini">Mini · ${pool.length} preguntas · 12 min</button><button class="cr-btn" data-cr="sim-start" data-size="full">Completo · ${full} preguntas · 40 min</button>`;
+      center = `<div class="cr-parchment cr-sim-start"><p class="cr-eyebrow">Simulacro PEP · Aminas</p><h3>Las preguntas 3, 4 y 6 de la prueba</h3>
+        <p>Salen de los encargos estilo prueba de las misiones que dan puntos. Las escritas puedes hacerlas <b>en papel</b> y autocorregirte con la pauta.</p>
+        ${hist.length ? `<p class="cr-eyebrow">Tus últimos simulacros</p><ul class="cr-round">${hist.map(h => `<li>${esc(h.at.slice(0, 10))} · <b>${pts(h.got)} de ${pts(h.max)} pts</b> · nota estimada ${String(h.nota).replace('.', ',')}</li>`).join('')}</ul>` : ''}</div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'simresult') {
+      const sc = simScore(cls, s), planBtn = s.planDay === today() ? '<button class="cr-btn" data-cr="path" data-path="tiempo">Volver a mi plan</button>' : '';
+      const nota = String(sc.nota.toFixed(1)).replace('.', ',');
+      sage.text = sc.pct >= 0.6 ? `**${pts(sc.got)} de ${pts(sc.max)} puntos.** Vas bien: revisa abajo qué te habría descontado el profe.` : `**${pts(sc.got)} de ${pts(sc.max)} puntos.** Abajo está cada pregunta con la pauta: así sabes exactamente qué estudiar.`;
+      sage.mood = sc.pct >= 0.6 ? 'proud' : 'calm';
+      sage.actions = `<button class="cr-btn cr-primary" data-cr="sim-new">Otro simulacro</button>${planBtn}<button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+      const row = id => {
+        const it = findItem(cls, id), rec = s.answers[id], sco = itemScore(it, rec);
+        const worth = sc.rows.filter(r => r.ids.includes(id)).reduce((a, r) => a + r.points / r.ids.length, 0); // un caso puede servir a más de una pregunta
+        const rub = it.type === 'write' ? `<ul class="cr-rub-list">${it.rubric.map((r, i) => `<li class="${rec?.value?.checks?.[i] ? 'is-right' : 'is-wrong'}">${rec?.value?.checks?.[i] ? '✓' : '✗'} ${md(r)}</li>`).join('')}</ul>` : '';
+        return `<li class="cr-sim-row ${!rec ? 'is-empty' : sco >= 1 ? 'is-right' : sco > 0 ? 'is-part' : 'is-wrong'}"><p class="cr-q">${md(it.prompt)}</p>
+          <p><b>Tu respuesta:</b> ${rec ? md(answerText(it, rec)) : '<i>sin responder (se acabó el tiempo)</i>'} · <b>${pts(worth * sco)} de ${pts(worth)} pts</b></p>
+          <p class="cr-note"><b>Pauta:</b> ${md(it.explain || '')}</p>${rub}</li>`;
+      };
+      center = `<div class="cr-parchment cr-sim-result"><p class="cr-eyebrow">Simulacro PEP ${s.sim.n} · resultado</p>
+        <div class="cr-sim-score"><b>${pts(sc.got)}</b><span>de ${pts(sc.max)} pts de Aminas</span><em>Nota estimada ${nota}</em></div>
+        <p class="cr-idea-note">Nota estimada con 60 % de exigencia, solo para la parte de Aminas: es una referencia, no tu nota real.</p>
+        <table class="cr-vars"><thead><tr><th>Pregunta de la PEP</th><th>Puntaje</th></tr></thead><tbody>${sc.rows.filter(r => r.max).map(r => `<tr><td>${esc(r.id)} · ${esc(r.label)}</td><td><b>${pts(r.got)}</b> de ${pts(r.max)}</td></tr>`).join('')}</tbody></table>
+        <p class="cr-eyebrow">Cómo te corrige el profe</p><ol class="cr-sim-rows">${s.sim.ids.map(row).join('')}</ol>
+        <p class="cr-note">Los aciertos de este simulacro también cuentan en tu <b>Camino al 7</b> y en tus hojas.</p></div>`;
       return { sage, center };
     }
     if (b.kind === 'say') {
@@ -725,12 +901,15 @@
     }
     if (b.kind === 'question') {
       const item = b.item, record = s.answers[item.id], hint = s.hints[item.id];
-      const pre = b.stage === 'pretest';
-      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final', placement: 'Diagnóstico', fix: 'Caso corto para corregir', detour: 'Repaso de la base' }[b.stage];
+      const pre = b.stage === 'pretest', blind = b.stage === 'simulacro', noConf = pre || blind;
+      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final', review: 'Ronda del alba', simulacro: 'Simulacro PEP', placement: 'Diagnóstico', fix: 'Caso corto para corregir', detour: 'Repaso de la base' }[b.stage];
       if (!record) {
         sage.text = item.teach ? 'Tu compañero se enredó con algo. ¿Se lo explicas tú? Explicar es la mejor forma de aprender.'
           : { diagnostic: 'Responde con lo que sabes.', pretest: 'Adivina sin miedo: esto no cuenta. Solo despierta la curiosidad.', practice: 'Tu turno.', challenge: 'Este es más difícil. Confío en ti.', transfer: 'Un caso nuevo. Piensa como en la prueba.',
+            review: 'Sin mirar apuntes: ¿lo recuerdas?', simulacro: 'Como en la PEP: sin pistas ni formulario.',
             placement: 'Responde con lo que sabes. Si no sabes, marca poca confianza y elige la que te parezca.', fix: 'Un caso corto para corregir esa idea ahora mismo.', detour: 'Un ejercicio fácil de la base. Sin apuro.' }[b.stage];
+      } else if (blind) {
+        sage.text = 'Respuesta guardada. Las correcciones las verás al final, como en una prueba.'; sage.mood = 'calm'; sage.actions = cont('Siguiente ▸');
       } else if (pre) {
         sage.text = record.correct ? `¡Buena intuición! ${item.explain} Ahora verás por qué.` : 'No era esa, y está perfecto: ahora lo vas a descubrir. Fíjate bien en la explicación.';
         sage.mood = record.correct ? 'proud' : 'calm'; sage.actions = cont('A la lección ▸');
@@ -741,18 +920,18 @@
         sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${window.NexoMolEditor?.feedback(item, record) || item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
         sage.mood = 'concerned'; sage.actions = cont();
       }
-      center = `<article class="cr-card ${record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
+      center = `<article class="cr-card ${blind ? 'is-blind' : record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
         <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
         ${b.stage === 'practice' && !record && !hint && s.tips.conf && !s.tips.hint ? tipMarkup('hint', '¿Te trabaste? <b>Toca a tu compañero</b> (abajo, a la derecha) y te dará una pista.') : ''}
         ${item.paper && !record ? '<p class="cr-paper">✎ Si prefieres, resuélvelo en papel como en la prueba y después escribe aquí lo esencial para autocorregirte con la pauta.</p>' : ''}
-        ${record || pre ? '' : confidenceMarkup(item, s)}
-        <fieldset class="cr-gate" ${!pre && !record && s.conf[item.id] === undefined ? 'disabled aria-describedby="gate-note"' : ''}>
-          ${!pre && !record && s.conf[item.id] === undefined ? '<p class="cr-gate-note" id="gate-note">Primero marca tu confianza en la barra.</p>' : ''}
+        ${record || noConf ? '' : confidenceMarkup(item, s)}
+        <fieldset class="cr-gate" ${!noConf && !record && s.conf[item.id] === undefined ? 'disabled aria-describedby="gate-note"' : ''}>
+          ${!noConf && !record && s.conf[item.id] === undefined ? '<p class="cr-gate-note" id="gate-note">Primero marca tu confianza en la barra.</p>' : ''}
           ${activityMarkup(cls, s, item)}</fieldset>
-        ${pre ? '' : confidenceResult(cls, item, record, s.path === 'prueba')}
-        ${!pre && showWhy(record) ? whyOthers(cls, item) : ''}
-        ${item.slide ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
+        ${noConf ? '' : confidenceResult(cls, item, record, s.path === 'prueba' || s.path === 'simulacro')}
+        ${!noConf && showWhy(record) ? whyOthers(cls, item) : ''}
+        ${item.slide && !blind ? `<button class="cr-cite" data-cr="slides" data-slide="${esc(item.slide)}">Ver diapositiva ${esc(item.slide)}</button>` : ''}</article>`;
       return { sage, center };
     }
     if (b.kind === 'rescue') {
@@ -782,7 +961,7 @@
     const nextBase = s.path === 'base' ? cls.base[cls.base.findIndex(m => m.id === s.mission) + 1] : null;
     sage.text = 'Buen trabajo, aprendiz. Lo que acertaste hoy muestra que lo entendiste. Para que sea tuyo de verdad, vuelve en uno o dos días y demuéstralo de nuevo sin ayuda.';
     sage.mood = 'proud';
-    sage.actions = `${next ? `<button class="cr-btn cr-primary" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}${s.path === 'base' ? `${nextBase ? `<button class="cr-btn cr-primary" data-cr="base" data-mission="${nextBase.id}">Siguiente repaso ▸</button>` : ''}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+    sage.actions = `${s.planDay === today() ? '<button class="cr-btn cr-primary" data-cr="path" data-path="tiempo">Volver a mi plan</button>' : ''}${next ? `<button class="cr-btn ${s.planDay === today() ? '' : 'cr-primary'}" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}${s.path === 'base' ? `${nextBase ? `<button class="cr-btn cr-primary" data-cr="base" data-mission="${nextBase.id}">Siguiente repaso ▸</button>` : ''}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
     center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Lo que demostraste</p>
       <dl class="cr-summary"><div><dt>Sin ayuda</dt><dd>${solo}</dd></div><div><dt>Con pista</dt><dd>${withHint}</dd></div><div><dt>Errores corregidos</dt><dd>${fixed}/${wrong.length}</dd></div></dl>
       ${(() => { const goal = goalOf(cls, s); if (!goal) return '';
@@ -836,7 +1015,7 @@
     .map(([id, name]) => `<button class="cr-tab ${(s.gtab || 'glossary') === id ? 'is-on' : ''}" role="tab" aria-selected="${(s.gtab || 'glossary') === id}" data-cr="grimoire" data-tab="${id}">${name}</button>`).join('')}</div>`;
   const sup = html => html.replace(/\^\(([^)]*)\)/g, '<sup>$1</sup>').replace(/\^([^\s,()<]+)/g, '<sup>$1</sup>');
   function formulasMarkup(cls, s) {
-    if (s.path === 'prueba') return '<p class="cr-note">El formulario está <b>cerrado</b> en este camino, como en la PEP. Ábrelo cuando estudies en Misiones o Expedición.</p>';
+    if (s.path === 'prueba' || s.path === 'simulacro') return '<p class="cr-note">El formulario está <b>cerrado</b> en este camino, como en la PEP. Ábrelo cuando estudies en Misiones o Expedición.</p>';
     const cards = cls.formulas || [];
     return `<p class="cr-act-help">Toca una fórmula para abrirla. Cada una trae un ejemplo resuelto y sus fuentes${cards.some(f => f.calc) ? '; algunas, una calculadora para probar' : ''}.</p>
       <div class="cr-formulas">${cards.map(f => {
@@ -978,6 +1157,8 @@
     const list = beats(cls, s);
     s.beat = Math.max(0, Math.min(s.beat, list.length - 1));
     const b = list[s.beat];
+    if (b.kind === 'simresult' && s.sim && !s.sim.logged) { const sc = simScore(cls, s); s.sim.ended = true; s.sim.logged = true; (s.simHistory ||= []).push({ n: s.sim.n, at: new Date().toISOString(), got: sc.got, max: sc.max, nota: sc.nota }); }
+    if (s.path === 'misiones' && s.mission) s.far[s.mission] = Math.max(s.far[s.mission] || 0, s.beat);
     const { sage, center } = moment(cls, api, s, b);
     const hintable = b.kind === 'question' && (b.stage === 'practice' || b.stage === 'challenge') && !s.answers[b.item.id] && !s.hints[b.item.id];
     let progress = Math.round((s.beat / Math.max(1, list.length - 1)) * 100);
@@ -985,7 +1166,7 @@
     if (s.path === 'diagnostico') { const plan = diagnosisPlan(cls, s); progress = plan.done ? 100 : Math.round((plan.asked.length - 1) / (cls.diagnosis?.max || 7) * 100); }
     // En el mapa y la bienvenida, el % es de toda la clase (actividades respondidas); dentro de una misión, de esa misión.
     if (b.kind === 'pick' || b.kind === 'path') { const all = allItems(cls); progress = Math.round(all.filter(({ item }) => s.answers[item.id]).length / Math.max(1, all.length) * 100); }
-    const where = !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
+    const where = s.path === 'tiempo' ? 'Tu plan de hoy' : s.path === 'alba' ? 'Ronda del alba' : s.path === 'simulacro' ? 'Simulacro PEP' : !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
       ? `Misión ${cls.missions.findIndex(m => m.id === s.mission) + 1}` : s.path === 'misiones' ? 'la clase' : PATHS[s.path].name;
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
@@ -995,8 +1176,9 @@
       ${scene(cls, s, b)}
       <header class="cr-top">
         <button class="cr-btn cr-small cr-ghost" data-cr="exit">← Salir</button>
+        ${s.path ? '<button class="cr-btn cr-small cr-ghost cr-paths-btn" data-cr="paths" aria-label="Volver a elegir camino (no pierdes tu avance)">☰ <span>Caminos</span></button>' : ''}
         <div class="cr-progress"><div class="cr-thread" role="progressbar" aria-label="Avance de ${esc(where)}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
-          <span class="cr-progress-label">${esc(where)} · <b>${progress} %</b></span></div>
+          <span class="cr-progress-label">${esc(where)}${s.path === 'tiempo' ? '' : ` · <b>${progress} %</b>`}${s.path === 'simulacro' && s.sim && !s.sim.ended ? ` · <span class="cr-timer" role="timer" data-ends="${s.sim.start + s.sim.minutes * 60000}">⏳ <b>--:--</b></span>` : ''}</span></div>
         ${goal ? `<button class="cr-btn cr-small cr-ghost cr-goal-chip" data-cr="goal" aria-label="Tu camino al 7: ${pts(goal.earned)} de ${goal.total} puntos"><span aria-hidden="true">★</span> <span class="cr-goal-chip-txt">Camino al 7 · </span><b>${pts(goal.earned)}</b>/${goal.total}</button>` : ''}
         <button class="cr-btn cr-small cr-ghost cr-help-btn" data-cr="help" aria-label="¿Cómo funciona la torre?" title="¿Cómo funciona?">?</button>
         <button class="cr-btn cr-small cr-ghost cr-slides-btn" data-cr="slides" data-slide="${esc((b.block?.slide) || (b.item?.slide) || Object.keys(cls.slides || {})[0] || 1)}">Diapositivas</button>
@@ -1035,6 +1217,25 @@
       api.app.querySelector(`[data-cr-conf="${range.dataset.crConf}"]`)?.focus({ preventScroll: true });
     };
     root.addEventListener('change', commit);
+    // Foto de la hoja en papel: solo se muestra (objeto local), nunca se guarda ni se envía.
+    root.addEventListener('change', event => {
+      const input = event.target.closest?.('[data-cr-photo]'); const file = input?.files?.[0];
+      if (!file) return;
+      if (PHOTOS.get(input.dataset.crPhoto)) URL.revokeObjectURL(PHOTOS.get(input.dataset.crPhoto));
+      PHOTOS.set(input.dataset.crPhoto, URL.createObjectURL(file)); render(id, api);
+    });
+    // Cronómetro del simulacro: al llegar a cero, la prueba se cierra y vas a la corrección.
+    clearInterval(TIMER);
+    const timer = root.querySelector('.cr-timer');
+    if (timer) {
+      const tick = () => {
+        const left = Math.max(0, Number(timer.dataset.ends) - Date.now()), m = Math.floor(left / 60000), sec = Math.floor(left / 1000) % 60;
+        timer.querySelector('b').textContent = `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+        timer.classList.toggle('is-low', left < 120000);
+        if (!left && s.sim && !s.sim.ended) { clearInterval(TIMER); s.sim.ended = true; s.beat = beats(cls, s).length - 1; s.mascotSay = '¡Se acabó el tiempo! Vamos a la corrección.'; rerender(id, api); }
+      };
+      tick(); TIMER = setInterval(tick, 1000);
+    }
     // Mecanismo en reproducción: avanza solo cada pocos segundos (se detiene en el último paso)
     clearTimeout(mechTimer);
     const mw = b.kind === 'lesson' && b.block.frames ? s.work[`mech:${b.block.id}`] : null;
@@ -1085,7 +1286,7 @@
     const missionId = b.m?.id || cls.missions.find(m => allItems(cls, m.id).some(x => x.item === item))?.id;
     const state = api.getState();
     const ev = E.record(state, id, { itemId: item.id, conceptId: E.conceptOf(item, missionId), missionId, stage: b.stage || 'rescue',
-      step: E.stepOf(item), correct: rec.correct, hint: Boolean(rec.hint), retry, transfer: b.stage === 'transfer',
+      step: E.stepOf(item), correct: rec.correct, hint: Boolean(rec.hint), retry, transfer: b.stage === 'transfer' || b.stage === 'simulacro',
       confidence: retry ? null : rec.confidence ?? null, why: retry ? null : rec.why || null, misconception: mcKeyOf(item, rec), at: rec.at });
     E.schedule(state, id, ev).then(() => api.saveState()).catch(() => { /* sin repaso programado: la evidencia queda igual */ });
   }
@@ -1104,6 +1305,11 @@
     const action = button.dataset.cr;
     if (action !== 'mascot') { s.mascotSay = ''; }
 
+    if (action === 'exit') { clearInterval(TIMER); }
+    if (action === 'paths') { s.path = null; s.mission = null; s.beat = 0; s.panel = null; clearInterval(TIMER); return rerender(id, api); }
+    if (action === 'plan-min') { s.planMin = Number(button.dataset.min) || null; s.planDay = today(); return rerender(id, api); }
+    if (action === 'sim-start') { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; s.beat += 1; return rerender(id, api); }
+    if (action === 'sim-new') { s.sim = null; s.beat = 1; return rerender(id, api); }
     if (action === 'exit') { document.body.classList.remove('in-classroom'); window.NexoAmbientTime?.stopPreview?.(); s.slideOpen = null; s.panel = null; return api.exit(); }
     if (action === 'panel-close') { s.slideOpen = null; s.panel = null; return rerender(id, api); }
     if (action === 'curio-next') { s.curio = (s.curio || 0) + 1; return rerender(id, api); }
@@ -1125,7 +1331,14 @@
     }
     if (action === 'slides') { if (button.dataset.slide) s.slideOpen = button.dataset.slide; return rerender(id, api); }
     if (action === 'path') {
-      s.path = button.dataset.path; s.mission = null; s.beat = 1; s.mascotMood = 'happy';
+      s.path = button.dataset.path; s.mission = null; s.beat = 1; s.mascotMood = 'happy'; s.panel = null;
+      if (s.path === 'tiempo') s.planDay = s.planDay === today() ? s.planDay : (s.planMin = null, today());
+      if (s.path === 'alba') {
+        const size = Number(button.dataset.size) || 4, key = `${today()}:${size}`;
+        s.albaKey = key;
+        if (!s.rounds[key]) s.rounds[key] = roundPick(cls, s, EV()?.storeFor(api.getState(), id), size);
+      }
+      if (s.path === 'simulacro' && button.dataset.size && !(s.sim && !s.sim.ended)) { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; s.beat = 2; }
       api.track?.('class_started', { class_id: id, path: s.path });
       return rerender(id, api);
     }
@@ -1137,7 +1350,13 @@
     }
     if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
-    if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'mission') {
+      s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission;
+      const far = s.far[s.mission] || 0, n = beats(cls, s).length; // retomar donde quedaste (si no la terminaste)
+      s.beat = far > 1 && far < n - 1 ? far : 1;
+      if (s.beat > 1) s.mascotSay = 'Retomamos donde quedaste la última vez.';
+      return rerender(id, api);
+    }
     if (action === 'grimoire') { s.slideOpen = null; s.panel = 'glossary'; s.gtab = button.dataset.tab; if (button.dataset.card) s.card = button.dataset.card; return rerender(id, api); }
     if (action === 'mini') { s.slideOpen = null; s.panel = 'mini'; s.miniC = button.dataset.concept; s.miniStep = 0; return rerender(id, api); }
     if (action === 'mini-step') { s.miniStep = Math.max(0, (s.miniStep || 0) + Number(button.dataset.dir)); return rerender(id, api); }
@@ -1170,7 +1389,7 @@
       if (canHint && b.item.hint && !s.hints[b.item.id]) {
         s.hints[b.item.id] = true; s.mascotMood = 'think';
         s.mascotSay = 'Te dejé una pista en el pergamino. Esta respuesta contará como "con pista".';
-      } else if (b.kind === 'question' && (b.stage === 'diagnostic' || b.stage === 'transfer' || b.stage === 'placement') && !s.answers[b.item.id]) {
+      } else if (b.kind === 'question' && ['diagnostic', 'transfer', 'placement', 'review', 'simulacro'].includes(b.stage) && !s.answers[b.item.id]) {
         s.mascotMood = 'think'; s.mascotSay = 'Aquí no puedo ayudarte, ¡pero sé que puedes!';
       } else {
         s.mascotMood = 'happy'; s.mascotSay = ['¡Vamos bien!', 'Me encanta esta torre.', '¿Viste ese frasco burbujear?'][s.beat % 3];
@@ -1202,7 +1421,8 @@
     const item = findItem(cls, button.dataset.item);
     if (!item || recordOf(s, item, retry)) return;
     const w = workOf(s, item, retry);
-    if (action === 'act-reveal') {
+    if (action === 'act-paper') { w.paper = true; w.revealed = true; w.warn = false; if (!String(w.text || '').trim()) w.text = '(Resuelto en papel)'; }
+    else if (action === 'act-reveal') {
       const box = button.closest('.cr-write')?.querySelector('textarea');
       if (box) w.text = box.value;
       if (String(w.text || '').trim().length < MIN_WRITE) w.warn = true; else { w.warn = false; w.revealed = true; }
@@ -1230,7 +1450,7 @@
         : action === 'act-spot-fix' ? { step: item.wrong, fix: Number(button.dataset.choice) }
         : item.type === 'recipe' ? [...(w.seq || [])]
         : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign }
-        : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])] }
+        : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])], paper: Boolean(w.paper) }
         : item.type === 'build' ? { graph: JSON.parse(JSON.stringify(w.graph || item.start || { atoms: [], bonds: [] })) }
         : item.type === 'arrows' ? [...(w.arrows || [])] : { ...w.pairs };
       const correct = isCorrect(item, value);
@@ -1247,5 +1467,5 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, PATHS };
+  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS };
 })();

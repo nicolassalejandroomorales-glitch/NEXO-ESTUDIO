@@ -743,3 +743,46 @@ body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour
 .cr-sim.is-ph.is-above .cr-flask-liquid { fill: #7f9ad9; }
 .cr-sim.is-ph .cr-flask-bubble { animation: none !important; opacity: 0; }
 .cr-sim.is-ph, .cr-sim.is-ph.is-above { background: #f3eef6; border-color: #cdbfd9; }
+
+/* ── Etapa 7: plan del día, ronda del alba, simulacro PEP y papel (docs/etapa-7-prueba/SPEC.md) ── */
+.cr-plan h3, .cr-sim-start h3 { margin: 2px 0 12px; font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
+.cr-plan-mins { display: flex; flex-wrap: wrap; gap: 10px; }
+.cr-plan-mins .cr-btn { min-width: 110px; min-height: 52px; font-size: 1.05rem; }
+.cr-plan-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.cr-plan-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border-radius: 12px; background: rgb(255 255 255 / .6); border: 1px solid var(--parch-edge); color: var(--ink); }
+.cr-plan-list li.is-done { background: #e6f3ea; border-color: #9fd1b1; }
+.cr-plan-n { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--gold-deep); color: #fff; font-weight: 700; }
+.cr-plan-list li.is-done .cr-plan-n { background: #2f6b4a; }
+.cr-plan-txt { display: grid; gap: 2px; }
+.cr-plan-txt small { color: var(--gold-deep); font-weight: 700; }
+.cr-plan-txt span { color: var(--ink-soft); font-size: .92rem; }
+.cr-plan-list em { color: #2f6b4a; font-weight: 700; font-style: normal; }
+.cr-round { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 6px; color: var(--ink); }
+.cr-round li { padding: 8px 10px; border-radius: 10px; background: rgb(255 255 255 / .55); }
+.cr-round li.is-right { background: #e6f3ea; } .cr-round li.is-wrong { background: #f8e3dd; }
+.cr-round small { color: var(--ink-soft); }
+.cr-timer { display: inline-flex; gap: 4px; padding: 1px 8px; border-radius: 999px; background: rgb(0 0 0 / .45); color: #ffe7b0; }
+.cr-timer.is-low { background: #9a3426; color: #fff; animation: cr-tour-pulse 1s ease-in-out infinite; }
+/* En el simulacro no se ve si acertaste hasta la corrección, como en una prueba. */
+.cr-card.is-blind :is(.is-right, .is-wrong) { border-color: var(--gold-deep) !important; background: #fff3d6 !important; color: var(--ink) !important; }
+.cr-card.is-blind :is(.mol-status, .cr-solution, details, .cr-ideas) { display: none !important; }
+.cr-card.is-blind .mol-arrow { stroke: #8a5d17 !important; }
+.cr-card.is-blind .mol-electron, .cr-card.is-blind .mol-arrow.is-answer { display: none; }
+.cr-sim-result h3 { margin: 0; }
+.cr-sim-score { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin: 6px 0; color: var(--ink); }
+.cr-sim-score b { font-family: Georgia, 'Times New Roman', serif; font-size: 2.6rem; color: var(--gold-deep); }
+.cr-sim-score em { margin-left: auto; padding: 4px 12px; border-radius: 999px; background: #2f6b4a; color: #fff; font-style: normal; font-weight: 700; }
+.cr-sim-rows { margin: 0; padding-left: 20px; display: grid; gap: 10px; }
+.cr-sim-row { padding: 10px 12px; border-radius: 10px; background: rgb(255 255 255 / .6); border-left: 5px solid #c9ad7a; color: var(--ink); }
+.cr-sim-row.is-right { border-left-color: #2f6b4a; } .cr-sim-row.is-wrong, .cr-sim-row.is-empty { border-left-color: #9a3426; } .cr-sim-row.is-part { border-left-color: #c98a1b; }
+.cr-sim-row .cr-q { font-size: 1rem; margin: 0 0 4px; }
+.cr-sim-row p { margin: 4px 0; }
+.cr-rub-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; font-size: .92rem; }
+.cr-rub-list .is-right { color: #1f4d34; } .cr-rub-list .is-wrong { color: #9a3426; }
+.cr-paper-box { margin-bottom: 10px; padding: 10px 12px; border-radius: 10px; background: #f1ead8; border: 1px dashed #b89a64; }
+.cr-photo { display: block; max-width: 100%; max-height: 360px; margin: 8px 0; border-radius: 8px; border: 1px solid var(--parch-edge); }
+.cr-photo-btn { display: inline-flex; cursor: pointer; }
+.cr-check { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+@media (max-width: 700px) { .cr-plan-list li { grid-template-columns: auto 1fr; } .cr-plan-list li > :last-child { grid-column: 2; justify-self: start; } .cr-sim-score em { margin-left: 0; } }
+@media (max-width: 700px) { .cr-paths-btn { padding-inline: 8px; } }
+@media (max-width: 700px) { .cr-paths-btn span { display: none; } }
