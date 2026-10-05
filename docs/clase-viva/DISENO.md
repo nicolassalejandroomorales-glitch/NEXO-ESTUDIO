@@ -249,6 +249,12 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   para qué, cuándo, ejemplo resuelto, "a fondo", fuentes (cátedra → McMurry en LibreTexts) y 7 calculadoras. **Recetario**: 10 reacciones que se
   completan con tu evidencia (???, vista, aprendida al acertar en su misión, dominada con sello). "No recuerdo la regla" abre la tarjeta del concepto.
   El formulario se cierra en Prueba encima.
+- **Más ayuda (5 oct, a pedido de Niquito):** ver `docs/mas-ayuda/SPEC.md`. Después de "Explícame más simple" aparece la **mini clase** (26 conceptos)
+  y en cada lección **Ver a profundidad** (10 temas, con desafío y fuentes). Fuentes IUPAC agregadas al formulario.
+- **Etapa 6 en curso (5 oct):** **misión 6 (Síntesis) rehecha** al modelo de la misión 7: caso del p-aminofenol (paracetamol), 3 recetas
+  (alquilar sin descontrol: azida y Gabriel · aminación reductiva · reducir amidas y nitroarenos), cada una con "adivina antes", mecanismo con
+  flechas (azida y aminación reductiva), práctica variada (flechas, caldero, aprendiz, dibujo con aviso de "te quedaste en la imina", gemelos,
+  clasificar) y receta guardada; cierre con pregunta escrita para el compañero y encargo estilo PEP en papel. Faltan las misiones 1–5 y 8.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 

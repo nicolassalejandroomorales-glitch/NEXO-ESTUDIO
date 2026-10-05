@@ -409,6 +409,29 @@
   const TRIETHYL = { atoms: [...DIETHYL.atoms, A('e1', 'C', 150, 50), A('e2', 'C', 200, 20)], bonds: [...DIETHYL.bonds, B('n', 'e1'), B('e1', 'e2')] };
   const BROMO = chain([A('br', 'Br', 140, 75)], [B('c2', 'br')]);
 
+  /* Escenas de la misión 6 */
+  const AMINOPHENOL = { atoms: [...benz.atoms, A('oh', 'O', 65, 140), A('n', 'N', 235, 140)], bonds: [...benz.bonds, B('r3', 'oh'), B('r0', 'n')] };
+  const AZ1 = { scene: { atoms: [A('na', 'N', 30, 150, -1), A('nb', 'N', 75, 150, 1), A('nc', 'N', 120, 150, -1), A('c1', 'C', 205, 150), A('br', 'Br', 290, 150), A('c2', 'C', 205, 75), A('c3', 'C', 265, 45)],
+    bonds: [B('na', 'nb', 2), B('nb', 'nc', 2), B('c1', 'br'), B('c1', 'c2'), B('c2', 'c3')] }, lonePairs: { na: 2, nc: 2, br: 3 }, lpAngle: { nc: 0 } };
+  const AZ2 = { atoms: [A('na', 'N', 30, 150, -1), A('nb', 'N', 75, 150, 1), A('nc', 'N', 120, 150), A('c1', 'C', 185, 115), A('c2', 'C', 250, 150), A('c3', 'C', 315, 115), A('br', 'Br', 330, 215, -1)],
+    bonds: [B('na', 'nb', 2), B('nb', 'nc', 2), B('nc', 'c1'), B('c1', 'c2'), B('c2', 'c3')] };
+  const AZ3 = { atoms: [A('n', 'N', 90, 150), A('c1', 'C', 155, 115), A('c2', 'C', 220, 150), A('c3', 'C', 285, 115), A('m1', 'N', 290, 215), A('m2', 'N', 340, 215)],
+    bonds: [B('n', 'c1'), B('c1', 'c2'), B('c2', 'c3'), B('m1', 'm2', 3)] };
+  const RA_BASE = [A('o', 'O', 170, 55), A('c', 'C', 170, 130), A('m1', 'C', 110, 165), A('m2', 'C', 230, 165)];
+  const RA1 = { scene: { atoms: [...RA_BASE, A('n', 'N', 330, 130)], bonds: [B('c', 'o', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, o: 2 }, lpAngle: { n: 180 } };
+  const RA1B = { atoms: [...RA1.scene.atoms, A('me', 'C', 385, 165)], bonds: [...RA1.scene.bonds, B('n', 'me')] };
+  const IMINE = [A('n', 'N', 170, 55), A('c', 'C', 170, 130), A('m1', 'C', 110, 165), A('m2', 'C', 230, 165)];
+  const RA2 = { atoms: [...IMINE, A('w', 'O', 320, 80, 0, { label: 'H₂O' })], bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] };
+  const RA3 = { scene: { atoms: [...IMINE, A('hy', 'H', 320, 150, -1, { label: 'H⁻' })], bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] }, lonePairs: { n: 1, hy: 1 }, lpAngle: { hy: 180 } };
+  const RA4 = { atoms: IMINE, bonds: [B('c', 'n'), B('c', 'm1'), B('c', 'm2')] };
+  const ACETONE = { atoms: [A('c', 'C', 210, 130), A('o', 'O', 210, 60), A('m1', 'C', 150, 165), A('m2', 'C', 270, 165)], bonds: [B('c', 'o', 2), B('c', 'm1'), B('c', 'm2')] };
+  const ISOPROPYLAMINE = { atoms: [A('c', 'C', 210, 130), A('n', 'N', 210, 60), A('m1', 'C', 150, 165), A('m2', 'C', 270, 165)], bonds: [B('c', 'n'), B('c', 'm1'), B('c', 'm2')] };
+  const ACETONE_IMINE = { atoms: ISOPROPYLAMINE.atoms, bonds: [B('c', 'n', 2), B('c', 'm1'), B('c', 'm2')] };
+  const BRPROP = { atoms: [A('c1', 'C', 120, 150), A('c2', 'C', 180, 115), A('c3', 'C', 240, 150), A('br', 'Br', 300, 115)], bonds: [B('c1', 'c2'), B('c2', 'c3'), B('c3', 'br')] };
+  const PROPAMINE = { atoms: [A('c1', 'C', 120, 150), A('c2', 'C', 180, 115), A('c3', 'C', 240, 150), A('n', 'N', 300, 115)], bonds: [B('c1', 'c2'), B('c2', 'c3'), B('c3', 'n')] };
+  const ACETAMIDE = { atoms: [A('c1', 'C', 120, 150), A('c2', 'C', 190, 115), A('o', 'O', 190, 45), A('n', 'N', 260, 150)], bonds: [B('c1', 'c2'), B('c2', 'o', 2), B('c2', 'n')] };
+  const ETHYLAMINE = { atoms: [A('c1', 'C', 120, 150), A('c2', 'C', 190, 115), A('n', 'N', 260, 150)], bonds: [B('c1', 'c2'), B('c2', 'n')] };
+
   cls.missions.push(
   /* ── Misión 2 ── */
   {
@@ -614,50 +637,156 @@
       ]
     }
   },
-  /* ── Misión 6 ── */
+  /* ── Misión 6 (etapa 6: al modelo de la clase viva, como la misión 7) ── */
   {
-    id: 'm6', title: 'Síntesis de aminas', subtitle: 'Alquilación, azida, Gabriel, aminación reductiva y reducciones: las preguntas 4 y 6 de la PEP', minutes: 18, slides: '29–33', pep: 'preguntas 4 y 6',
+    id: 'm6', title: 'Síntesis de aminas', subtitle: 'Tres recetas para fabricar aminas sin perder el control: las preguntas 4 y 6 de la PEP', minutes: 35, slides: '29–33', pep: 'preguntas 4 y 6',
     stages: {
+      hook: { title: 'El paracetamol necesita una amina que hay que fabricar', scene: AMINOPHENOL, smiles: 'Nc1ccc(O)cc1',
+        sage: 'Aprendiz… ¿te acuerdas del paracetamol? Antes de acilarlo, alguien tuvo que fabricar esta amina.',
+        text: 'El paracetamol se hace desde el **p-aminofenol**. ¿De dónde sale ese –NH₂? Se puede obtener **reduciendo un grupo nitro**: p-nitrofenol + H₂ con catalizador (o Fe/HCl) → p-aminofenol. Es la receta 3 de hoy. Las recetas 1 y 2 te enseñan a poner un N en una cadena de carbonos **sin que se descontrole**.' },
       diagnostic: [
-        q('m6-d1', '¿Qué problema tiene preparar una amina primaria con NH₃ + R–X?', [{ text: 'Sigue reaccionando y da mezcla de aminas', correct: true }, { text: 'El NH₃ no reacciona con haluros', note: 'Sí reacciona: es nucleófilo.' }, { text: 'Solo funciona con anillos aromáticos', note: 'Funciona con haluros de alquilo (SN2).' }], { explain: 'La amina formada también ataca al R–X: se forma una mezcla de 1°, 2°, 3° y sal cuaternaria (polialquilación).', slide: 30 }),
-        q('m6-d2', '¿Qué hace el LiAlH₄?', [{ text: 'Reduce (agrega H)', correct: true }, { text: 'Oxida', note: 'Es justo lo contrario: es un reductor fuerte.' }, { text: 'Deshidrata alcoholes', note: 'Eso lo hace un ácido fuerte con calor.' }], { explain: 'LiAlH₄ es un reductor fuerte: convierte azidas y amidas en aminas.', slide: 31 })
+        q('m6-d1', '¿Qué problema tiene preparar una amina primaria con NH₃ + R–X?', [{ text: 'Sigue reaccionando y da mezcla de aminas', correct: true }, { text: 'El NH₃ no reacciona con haluros', note: 'Sí reacciona: es nucleófilo.' }, { text: 'Solo funciona con anillos aromáticos', note: 'Funciona con haluros de alquilo (SN2), no con anillos.' }], { explain: 'La amina formada también ataca al R–X: polialquilación.', slide: 30, concept: 'am.alquilacion' }),
+        q('m6-d2', '¿Qué hace el LiAlH₄?', [{ text: 'Reduce (agrega H)', correct: true }, { text: 'Oxida', note: 'Es justo lo contrario: es un reductor fuerte.' }, { text: 'Deshidrata alcoholes', note: 'Eso lo hace un ácido fuerte con calor.' }], { explain: 'LiAlH₄ es un reductor fuerte: convierte azidas y amidas en aminas.', slide: 31, concept: 'am.reduccion' }),
+        q('m6-d3', 'Una cetona + NH₃ + NaBH₃CN da…', [{ text: 'Una amina primaria', correct: true }, { text: 'Una amida', note: 'No se forma C=O nuevo: el C=O pasa a C–N.' }, { text: 'Un alcohol solamente', note: 'El NaBH₃CN es suave: reduce la imina que se forma, no tanto la cetona.' }], { explain: 'Aminación reductiva: con NH₃ sale una amina 1°.', slide: 32, concept: 'am.reduccion' })
       ],
       fundamentals: [
-        { id: 'f61', title: 'Desde cero: SN2 en un minuto', body: 'Un **nucleófilo** ataca al C unido a un grupo saliente (Cl, Br, I) por el lado opuesto y lo desplaza **en un solo paso**. Funciona mejor en carbonos primarios.', deeper: 'Ejemplo: N₃⁻ + CH₃CH₂CH₂Br → CH₃CH₂CH₂N₃ + Br⁻. El nucleófilo entra y el bromuro sale al mismo tiempo.' },
-        { id: 'f62', deeper: 'Truco para reconocer una reducción: **cuenta los H y los O**. Si la molécula ganó H o perdió O, se redujo. R–C≡N → R–CH₂–NH₂ ganó 4 H; Ar–NO₂ → Ar–NH₂ perdió 2 O y ganó 2 H. Los reactivos que hacen eso son los **reductores**: LiAlH₄, NaBH₃CN, H₂/Pt, Fe/HCl, Sn/HCl.', title: 'Desde cero: reducir', body: 'En orgánica, **reducir** es agregar H o quitar O. Reductores típicos: **LiAlH₄**, **NaBH₃CN**, **H₂ con catalizador (Pt)** y metales en ácido (**Fe/HCl**, **Sn/HCl**).' }
+        { id: 'f61', title: 'Desde cero: SN2 en un minuto', body: 'Un **nucleófilo** ataca al C unido a un grupo saliente (Cl, Br, I) por el lado opuesto y lo desplaza **en un solo paso**. Funciona mejor en carbonos primarios.', deeper: 'Ejemplo: N₃⁻ + CH₃CH₂CH₂Br → CH₃CH₂CH₂N₃ + Br⁻. El nucleófilo entra por un lado y el Br sale por el otro, al mismo tiempo. Con carbonos muy tapados (3°) no se puede: gana la eliminación.', slide: 30 },
+        { id: 'f62', title: 'Desde cero: reducir', body: '**Reducir** es agregar H o quitar O. Los reductores que vas a usar: **LiAlH₄** (fuerte), **NaBH₃CN** (suave), **H₂ con catalizador** y **Fe o Sn con HCl**.', deeper: 'Truco para reconocer una reducción: **cuenta los H y los O**. Si la molécula ganó H o perdió O, se redujo. Ar–NO₂ → Ar–NH₂ perdió 2 O y ganó 2 H. R–CO–NH₂ → R–CH₂–NH₂ perdió el O y ganó 2 H.', slide: 33 }
       ],
-      explain: [
-        { id: 'b61', deeper: 'El NH₃ ataca al R–X y forma R–NH₂. El problema: esa amina nueva **también tiene par libre**, y es mejor nucleófila que el NH₃ (el R le dona electrones). Entonces compite por el R–X que queda y forma R₂NH, después R₃N y al final R₄N⁺. Para que gane la primaria se usa **mucho NH₃**: así el R–X choca casi siempre con NH₃.', title: 'Alquilación del amoníaco', slide: 30, body: 'NH₃ + R–X → R–NH₂, pero la amina producto también es nucleófila (incluso más) y vuelve a atacar: se obtiene una **mezcla** de 1°, 2°, 3° y sal cuaternaria. Un gran exceso de NH₃ favorece la primaria.' },
-        { id: 'b62', deeper: 'La azida (N₃⁻) ataca una vez y queda como R–N₃, que **ya no es nucleófila**: no puede volver a atacar. Entra un solo R. Después el LiAlH₄ reduce el R–N₃ a R–NH₂ y se libera N₂. Resultado: **amina primaria limpia**.', title: 'Síntesis de azida', slide: 31, body: '**R–X + NaN₃ → R–N₃** (SN2) y luego **LiAlH₄ → R–NH₂**. La azida entra una sola vez: no hay polialquilación.' },
-        { id: 'b63', title: 'Síntesis de Gabriel', slide: 31, body: 'Ftalimida + KOH → **N⁻** (nucleófilo). + R–X (SN2) → **N-alquilftalimida**. + hidrazina (H₂N–NH₂) o hidrólisis → **R–NH₂** (amina primaria).',
-          deeper: 'Por qué no sobrealquila: en la N-alquilftalimida el N ya no tiene H y su par está deslocalizado entre los dos C=O. No ataca a otro R–X. Al final la hidrazina corta los enlaces C–N del anillo y libera R–NH₂.' },
-        { id: 'b64', deeper: '**Paso 1:** el N ataca al C=O y, al perder agua, se forma una **imina** (C=N). **Paso 2:** el reductor convierte el C=N en C–N. Para predecir el producto: el C del carbonilo queda unido al N, y el N gana **un grupo más** del que tenía (NH₃ → 1°, 1° → 2°, 2° → 3°).', title: 'Aminación reductiva', slide: 32, body: 'Aldehído o cetona + NH₃ o una amina, con un reductor (NaBH₃CN o H₂/catalizador). Se forma una imina que se reduce a amina. El tipo de producto depende de lo que pongas.',
-          rows: [['Con NH₃', 'amina 1°'], ['Con amina 1°', 'amina 2°'], ['Con amina 2°', 'amina 3°']] },
-        { id: 'b65', deeper: 'Dos caminos más. Con una **amida**, el LiAlH₄ convierte el C=O en CH₂ y el N se queda donde estaba: R–CO–NH₂ → R–CH₂–NH₂. Con un **nitrobenceno**, la reducción le quita los O al NO₂ y le pone H: Ar–NO₂ → Ar–NH₂. Es la forma típica de poner un NH₂ en un anillo.', title: 'Otras rutas: amidas y nitroarenos', slide: 29, body: 'Una **amida + LiAlH₄** da R–CH₂–NH₂ (el C=O se vuelve CH₂). Un **nitrobenceno** se reduce a **anilina** con H₂/Pt, Fe/HCl o Sn/HCl.' }
-      ],
-      worked: {
-        prompt: 'PEP 1 2025, pregunta 6b: ftalimida + 1) KOH, 2) CH₃CH₂CH₂Br, 3) H₂NNH₂. ¿Producto?',
-        steps: [
-          { text: 'El KOH le quita el H al N de la ftalimida: queda un **N⁻ nucleófilo**.' },
-          { text: 'El N⁻ ataca al CH₃CH₂CH₂Br por SN2: se forma la **N-propilftalimida**.', ask: '¿Qué hace el N⁻ con el bromuro de propilo?' },
-          { text: 'La hidrazina libera la amina: **CH₃CH₂CH₂NH₂, propilamina**. Es la respuesta de la pauta.', ask: '¿Qué libera la hidrazina?' }
-        ]
-      },
-      practice: [
-        q('m6-p1', '¿Por qué NH₃ + R–X da mezcla de aminas?', [{ text: 'La amina formada también es nucleófila y sigue reaccionando', correct: true }, { text: 'El NH₃ se descompone', note: 'No se descompone: actúa como nucleófilo.' }, { text: 'Se forma un alqueno', note: 'La eliminación puede competir, pero no explica la mezcla de aminas.' }], { explain: 'Cada amina formada ataca de nuevo al haluro: polialquilación.', slide: 30, hint: '¿El producto todavía tiene un par libre?' }),
-        match('m6-p2', 'Une cada reactivo con lo que logra.', [['NaN₃, luego LiAlH₄', 'R–X → R–NH₂ (vía azida)'], ['Ftalimida/KOH, R–X, luego H₂NNH₂', 'Gabriel: amina primaria'], ['Cetona + NH₃ + NaBH₃CN', 'Aminación reductiva'], ['Fe/HCl sobre nitrobenceno', 'Anilina'], ['LiAlH₄ sobre una amida', 'R–CO–NH₂ → R–CH₂–NH₂']],
-          { explain: 'Haluros: azida o Gabriel. Carbonilos: aminación reductiva. Amidas y nitroarenos: reducción.', slide: 33, hint: 'Parte por los nombres que conoces: Gabriel y aminación reductiva.' }),
-        order('m6-p3', 'Ordena los pasos de la síntesis de Gabriel.', [['koh', 'Ftalimida + KOH (forma el N⁻)'], ['sn2', 'N⁻ + R–Br (SN2)'], ['hyd', 'Hidrazina (libera R–NH₂)']], ['koh', 'sn2', 'hyd'],
-          { direction: 'Del primer al último paso.', explain: 'Primero se genera el nucleófilo, luego la alquilación y al final se libera la amina.', slide: 31, hint: '¿Qué necesitas antes de poder atacar al R–Br?' })
-      ],
+      explain: [],
       challenge: [
-        q('m6-c1', 'Benzaldehído + metilamina + NaBH₃CN. ¿Producto?', [{ text: 'N-Metilbencilamina, C₆H₅CH₂–NH–CH₃', correct: true }, { text: 'Bencilamina, C₆H₅CH₂–NH₂', note: 'Para la primaria se usaría NH₃.' }, { text: 'N,N-Dimetilbencilamina', note: 'Se necesitaría dimetilamina.' }], { explain: 'Aminación reductiva con una amina primaria: se obtiene una amina secundaria.', slide: 32, hint: 'Con amina 1° se obtiene…' })
+        q('m6-c1', 'Benzaldehído + metilamina + NaBH₃CN. ¿Producto?', [{ text: 'N-Metilbencilamina, C₆H₅CH₂–NH–CH₃', correct: true }, { text: 'Bencilamina, C₆H₅CH₂–NH₂', note: 'Para la primaria se usaría NH₃.' }, { text: 'N,N-Dimetilbencilamina', note: 'Se necesitaría dimetilamina.' }], { explain: 'El N gana un grupo más del que tenía: de 1° (metilamina) a 2°.', slide: 32, hint: 'El C del aldehído queda unido al N, y el N gana un grupo.', concept: 'am.reduccion' })
       ],
       transfer: [
-        q('m6-t1', 'Ftalimida + 1) KOH, 2) CH₃CH₂CH₂Br, 3) H₂NNH₂. ¿Producto?', [{ text: 'Propilamina', correct: true }, { text: 'Dipropilamina', misconception: 'gabriel-poly' }, { text: 'N-Propilftalimida', misconception: 'gabriel-stop' }], { explain: 'Gabriel da solo la amina primaria: CH₃CH₂CH₂NH₂.', slide: 31 }),
-        q('m6-t2', 'Estilo PEP (pregunta 4b): ¿cómo preparas C₆H₅–CH₂–N(CH₃)₂?', [{ text: 'Cloruro de benzoílo + dimetilamina, luego LiAlH₄', correct: true }, { text: 'Bencilamina + CH₃I en exceso', misconception: 'overalkylation' }, { text: 'Benceno + dimetilamina', note: 'El benceno no reacciona así con aminas.' }], { explain: 'La amida C₆H₅–CO–N(CH₃)₂ se reduce con LiAlH₄: el C=O pasa a CH₂. Es la ruta de la pauta 2025.', slide: 33 })
+        q('m6-t1', 'Ftalimida + 1) KOH, 2) CH₃CH₂CH₂Br, 3) H₂NNH₂. ¿Producto?', [{ text: 'Propilamina', correct: true }, { text: 'Dipropilamina', misconception: 'gabriel-poly' }, { text: 'N-Propilftalimida', misconception: 'gabriel-stop' }], { explain: 'Gabriel da solo la amina primaria: CH₃CH₂CH₂NH₂.', slide: 31, concept: 'am.alquilacion' }),
+        q('m6-t2', 'Estilo PEP (pregunta 4b): ¿cómo preparas C₆H₅–CH₂–N(CH₃)₂?', [{ text: 'Benzaldehído + dimetilamina + NaBH₃CN', correct: true }, { text: 'Bencilamina + CH₃I en exceso', misconception: 'overalkylation' }, { text: 'Benceno + dimetilamina', note: 'El benceno no reacciona así con aminas: no hay grupo saliente.' }], { explain: 'Aminación reductiva: el C del aldehído queda unido al N de la dimetilamina, que pasa de 2° a 3°.', slide: 32, concept: 'am.reduccion' }),
+        write('m6-w1', 'Tu compañero pregunta: «¿por qué no hago propilamina mezclando 1-bromopropano con NH₃, si es lo más directo?». Explícaselo y dile qué hacer.',
+          'Porque la propilamina que se forma también tiene par libre y ataca a otro 1-bromopropano: se forma una mezcla de propilamina, dipropilamina, tripropilamina y sal cuaternaria. Para obtenerla pura conviene la síntesis de Gabriel (ftalimida con KOH, el bromuro y después hidrazina) o la vía azida (NaN₃ y luego LiAlH₄), que ponen el N una sola vez.',
+          ['Dije que la amina producto también es nucleófila y sigue reaccionando', 'Dije que se obtiene una mezcla de aminas', 'Propuse Gabriel o la vía azida'],
+          { explain: 'Sobrealquilación: la amina producto compite por el R–X. Gabriel o azida la evitan.', slide: 31, concept: 'am.alquilacion', teach: true,
+            keywords: [{ label: 'Sigue reaccionando', any: ['sigue', 'vuelve a atacar', 'tambien ataca', 'tambien es nucleofil', 'otra vez', 'compite'] }, { label: 'Mezcla', any: ['mezcla', 'dipropil', 'tripropil', 'secundaria', 'terciaria', 'cuaternari'] }, { label: 'Gabriel o azida', any: ['gabriel', 'ftalimida', 'azida', 'nan3', 'nan₃'] }] }),
+        write('m6-t3', 'Estilo PEP (pregunta 4): propón cómo obtener anilina partiendo de benceno. Escribe los reactivos de cada paso y qué se forma.',
+          'Paso 1: nitración del benceno con HNO₃ y H₂SO₄, que da nitrobenceno. Paso 2: reducción del grupo nitro con Fe/HCl (o Sn/HCl, o H₂/Pt), que da la sal de anilinio; con NaOH se libera la anilina, C₆H₅–NH₂. No se puede hacer con NH₃ directo porque el benceno no hace SN2.',
+          ['Nitré el benceno con HNO₃ / H₂SO₄ (nitrobenceno)', 'Reduje con Fe/HCl, Sn/HCl o H₂/Pt', 'Llegué a la anilina (y mencioné liberarla con base o por qué no sirve el NH₃)'],
+          { explain: 'Nitrar y reducir: la forma típica de poner un NH₂ en un anillo.', slide: 33, concept: 'am.reduccion', paper: true,
+            keywords: [{ label: 'Nitrar', any: ['hno3', 'hno₃', 'nitra', 'nitrobenceno'] }, { label: 'Reducir', any: ['fe', 'sn', 'h2', 'h₂', 'reduc'] }, { label: 'Anilina', any: ['anilina', 'c6h5nh2', 'c₆h₅–nh₂', 'nh2', 'nh₂'] }] })
       ]
-    }
+    },
+    parts: [
+      { id: 'r1', intro: 'Receta 1: **poner un N en una cadena sin que se descontrole**. El camino directo (NH₃) se descontrola; la azida y Gabriel no.',
+        pretest: q('m6-pre1', 'Mezclas bromoetano con un poco de NH₃ y calientas. ¿Qué crees que obtienes?', [{ text: 'Una mezcla: etilamina, dietilamina, trietilamina y sal cuaternaria', correct: true }, { text: 'Solo etilamina, limpia', note: 'Eso sería lo ideal, pero la etilamina también ataca al bromoetano.' }, { text: 'Nada: el NH₃ no reacciona', note: 'Sí reacciona: tiene un par libre.' }],
+          { explain: 'La amina que se forma también es nucleófila y sigue atacando.', slide: 30, concept: 'am.alquilacion' }),
+        explain: [
+          { id: 'b61', title: 'Alquilación del amoníaco', slide: 30, body: 'NH₃ + R–X → R–NH₂, pero la amina producto también es nucleófila (incluso más) y vuelve a atacar: se obtiene una **mezcla** de 1°, 2°, 3° y sal cuaternaria. Un gran exceso de NH₃ favorece la primaria.',
+            deeper: 'El NH₃ ataca al R–X y forma R–NH₂. El problema: esa amina nueva **también tiene par libre**, y es mejor nucleófila que el NH₃ (el R le dona electrones). Entonces compite por el R–X que queda y forma R₂NH, después R₃N y al final R₄N⁺. Para que gane la primaria se usa **mucho NH₃**: así es más probable que el R–X choque con NH₃ que con la amina.' },
+          { id: 'b62', title: 'Síntesis de azida', slide: 31, body: '**R–X + NaN₃ → R–N₃** (SN2) y luego **LiAlH₄ → R–NH₂**. La azida entra una sola vez: no hay polialquilación.',
+            deeper: 'La azida (N₃⁻) ataca una vez y queda como R–N₃, que **ya no es nucleófila**: no puede volver a atacar. Entra un solo R. Después el LiAlH₄ reduce el R–N₃ a R–NH₂ y se libera N₂. Resultado: **amina primaria limpia**.' },
+          { id: 'b62m', title: 'La azida, paso a paso', slide: 31, body: 'Mira cómo entra el N una sola vez.',
+            deeper: 'La azida es como un gancho con tres N. El N de la punta ataca al carbono del bromuro (SN2) y el Br se va. El R–N₃ que queda ya no tiene un par "con ganas" de atacar otra vez. Al final, el LiAlH₄ rompe la azida: sale N₂ (gas) y queda R–NH₂.',
+            frames: [
+              { ...AZ1, arrows: [['lp:nc', 'a:c1'], ['b:2', 'a:br']], caption: '**Paso 1 (SN2).** El N de la punta de la azida ataca al carbono unido al Br, por el lado opuesto. Al mismo tiempo, el enlace C–Br se rompe y sale Br⁻.' },
+              { scene: AZ2, arrows: [], caption: '**Resultado del paso 1.** Queda la propilazida, CH₃CH₂CH₂–N₃. Ya no es nucleófila: no ataca a otro bromuro. No hay mezcla.' },
+              { scene: AZ3, arrows: [], caption: '**Paso 2 (LiAlH₄).** La azida se reduce: se libera N₂ (gas) y queda la **propilamina**, CH₃CH₂CH₂–NH₂, limpia.' }
+            ] },
+          { id: 'b63', title: 'Síntesis de Gabriel', slide: 31, body: 'Ftalimida + KOH → **N⁻** (nucleófilo). + R–X (SN2) → **N-alquilftalimida**. + hidrazina (H₂N–NH₂) o hidrólisis → **R–NH₂** (amina primaria).',
+            deeper: 'Por qué no sobrealquila: en la N-alquilftalimida el N ya no tiene H y su par está deslocalizado entre los dos C=O. No ataca a otro R–X. Al final la hidrazina corta los enlaces C–N del anillo y libera R–NH₂.' }
+        ],
+        practice: [
+          { id: 'm6-a1', type: 'arrows', source: SRC, concept: 'am.alquilacion', slide: 31, ...AZ1, answer: [['lp:nc', 'a:c1'], ['b:2', 'a:br']],
+            prompt: 'Dibuja las 2 flechas de la SN2: la azida ataca al 1-bromopropano.',
+            notes: { 'lp:nc>a:br': 'La azida no ataca al Br: el Br ya tiene sus electrones. Ataca al carbono unido al Br (δ+).', 'b:2>a:c1': 'El enlace C–Br se rompe hacia el Br, que se lleva los electrones como Br⁻.',
+              'lp:na>a:c1': 'Casi: ataca el N de la punta que está más cerca del carbono, el del lado derecho.', 'lp:nc>a:c2': 'El carbono que recibe el ataque es el que tiene el Br, no su vecino.' },
+            explain: 'El par del N terminal ataca al C unido al Br y, al mismo tiempo, el enlace C–Br se rompe: sale Br⁻. Un solo paso (SN2).',
+            hint: 'Una flecha nace en un par libre de la azida y llega al carbono δ+. La otra rompe el enlace con el grupo saliente.' },
+          q('m6-p1', '¿Por qué NH₃ + R–X da mezcla de aminas?', [{ text: 'La amina formada también es nucleófila y sigue reaccionando', correct: true }, { text: 'El NH₃ se descompone', note: 'No se descompone: actúa como nucleófilo.' }, { text: 'Se forma un alqueno', note: 'La eliminación puede competir, pero no explica la mezcla de aminas.' }],
+            { explain: 'Sobrealquilación: cada amina formada vuelve a atacar al R–X.', slide: 30, hint: 'Piensa en lo que tiene la amina recién formada: ¿le queda par libre?', concept: 'am.alquilacion' }),
+          order('m6-p3', 'Ordena los pasos de la síntesis de Gabriel.', [['koh', 'Ftalimida + KOH (forma el N⁻)'], ['sn2', 'N⁻ + R–Br (SN2)'], ['hyd', 'Hidrazina (libera R–NH₂)']], ['koh', 'sn2', 'hyd'],
+            { direction: 'Del primer al último paso.', explain: 'Primero se genera el nucleófilo, luego la alquilación y al final se libera la amina.', slide: 31, hint: '¿Qué necesitas antes de poder atacar al R–Br?', concept: 'am.alquilacion' }),
+          { id: 'm6-rc1', type: 'recipe', source: SRC, concept: 'am.alquilacion', slide: 31,
+            prompt: 'El caldero pide **propilamina pura** por la vía de **Gabriel**. Elige los ingredientes en orden.', base: '1-Bromopropano (CH₃CH₂CH₂Br)', target: 'propilamina pura',
+            ingredients: [{ id: 'ftk', label: 'Ftalimida + KOH' }, { id: 'hyd', label: 'Hidrazina (H₂N–NH₂)' }, { id: 'nh3', label: 'NH₃' }, { id: 'lah', label: 'LiAlH₄' }, { id: 'mei', label: 'CH₃I' }, { id: 'nab', label: 'NaBH₃CN' }],
+            answer: ['ftk', 'hyd'],
+            notes: { nh3: 'Con NH₃ directo vuelves al problema: mezcla de aminas.', lah: 'El LiAlH₄ es para la vía azida (reduce R–N₃) o para amidas; en Gabriel la amina se libera con hidrazina.', mei: 'El CH₃I metila: no es parte de Gabriel.', nab: 'El NaBH₃CN es de la aminación reductiva (necesita un C=O).' },
+            orderNote: 'Primero el N⁻ de la ftalimida ataca al bromuro; recién después la hidrazina libera la amina.',
+            explain: 'Ftalimida/KOH hace la SN2 con el bromuro y la hidrazina libera CH₃CH₂CH₂NH₂.', hint: 'Paso 1: el nucleófilo que entra una sola vez. Paso 2: el que libera la amina.' },
+          { id: 'm6-fx1', type: 'spot', source: SRC, concept: 'am.alquilacion', slide: 30,
+            prompt: 'Un aprendiz quiso preparar propilamina pura. Revisa su hoja: ¿en qué paso se equivocó?',
+            steps: ['Toma 1-bromopropano', 'Le agrega 1 equivalente de NH₃ y calienta', 'Separa el producto', 'Espera obtener propilamina pura'], wrong: 1,
+            stepNotes: { 0: 'Ese paso está bien: es el haluro que necesita.', 2: 'Separar está bien; el problema es lo que hay en el matraz.', 3: 'Eso es lo que esperaba; el error está antes.' },
+            fix: { question: '¿Qué debió hacer en ese paso?', options: [{ text: 'Usar Gabriel (ftalimida/KOH y luego hidrazina) o la vía azida', correct: true }, { text: 'Agregar más 1-bromopropano', note: 'Más R–X empeora la sobrealquilación.' }, { text: 'Agregar HCl', note: 'El HCl protona al NH₃ y le quita el par: no reacciona.' }] },
+            explain: 'Con 1 equivalente de NH₃ la propilamina compite por el bromuro y sale una mezcla. Gabriel o azida lo evitan.', hint: '¿Qué hace la propilamina recién formada con el bromuro que queda?' },
+          { id: 'm6-b1', type: 'build', source: SRC, concept: 'am.alquilacion', slide: 31, smiles: 'CCCN',
+            prompt: 'Dibuja el producto de Gabriel con 1-bromopropano. Ya tienes el bromuro: cambia lo que corresponde.',
+            start: BRPROP, target: PROPAMINE,
+            explain: 'El N reemplaza al Br: CH₃CH₂CH₂–NH₂, propilamina.', hint: 'Elige N en las herramientas y toca dos veces el Br para cambiarlo.' }
+        ] },
+      { id: 'r2', intro: 'Receta 2: **del C=O al C–N**. Un aldehído o una cetona + una amina + un reductor suave: la aminación reductiva.',
+        pretest: q('m6-pre2', 'Acetona + NH₃ + un reductor. ¿Dónde crees que queda el N?', [{ text: 'En el carbono que tenía el C=O', correct: true }, { text: 'En un CH₃ de la punta', note: 'Los CH₃ no reaccionan: el que tiene δ+ es el C del C=O.' }, { text: 'No se une: el NH₃ no reacciona con cetonas', note: 'Sí: el par del N ataca al C del C=O.' }],
+          { explain: 'El N ataca al C del C=O; al final ese carbono queda unido al N.', slide: 32, concept: 'am.reduccion' }),
+        explain: [
+          { id: 'b64', title: 'Aminación reductiva', slide: 32, body: 'Aldehído o cetona + NH₃ o una amina, con un reductor (NaBH₃CN o H₂/catalizador). Se forma una imina que se reduce a amina. El tipo de producto depende de lo que pongas.',
+            deeper: '**Paso 1:** el N ataca al C=O y, al perder agua, se forma una **imina** (C=N). **Paso 2:** el reductor convierte el C=N en C–N. Para predecir el producto: el C del carbonilo queda unido al N, y el N gana **un grupo más** del que tenía (NH₃ → 1°, 1° → 2°, 2° → 3°).',
+            rows: [['Con NH₃', 'amina 1°'], ['Con amina 1°', 'amina 2°'], ['Con amina 2°', 'amina 3°']] },
+          { id: 'b64m', title: 'Aminación reductiva, paso a paso', slide: 32, body: 'Mira cómo el C=O termina como C–N.',
+            deeper: 'Primero el N se "casa" con el carbono del C=O y el O se va como agua: queda una imina (C=N). Después el reductor le entrega un H⁻ (hidruro) a ese carbono y el doble enlace C=N se vuelve simple. Resultado: el carbono que era C=O ahora lleva el N.',
+            frames: [
+              { ...RA1, arrows: [['lp:n', 'a:c'], ['b:0', 'a:o']], caption: '**Paso 1.** El par del N ataca al carbono δ+ del C=O; los electrones del C=O suben al oxígeno.' },
+              { scene: RA2, arrows: [], caption: '**Paso 2.** Tras unos cambios de H⁺, sale una molécula de **agua** y queda la **imina** (C=N).' },
+              { ...RA3, arrows: [['lp:hy', 'a:c'], ['b:0', 'a:n']], caption: '**Paso 3.** El reductor (NaBH₃CN) entrega un hidruro, H⁻, al carbono de la imina; los electrones del C=N pasan al N.' },
+              { scene: RA4, arrows: [], caption: '**Resultado.** Isopropilamina (propan-2-amina): el C que era C=O ahora lleva el NH₂.' }
+            ] }
+        ],
+        practice: [
+          q('m6-tw1', 'Casos gemelos: la misma acetona, distinta amina. ¿Qué amina sale en cada caso (con NaBH₃CN)?', [{ text: 'A da una amina 1° y B una amina 2°', correct: true }, { text: 'Las dos dan amina 1°', note: 'El CH₃ de la metilamina se queda en el N: B gana un grupo.' }, { text: 'Las dos dan amina 2°', note: 'Con NH₃ el N solo gana el grupo del carbonilo: queda 1°.' }],
+            { figures: [{ scene: RA1.scene, lonePairs: { n: 1 }, lpAngle: { n: -90 }, caption: 'A: acetona + NH₃' }, { scene: RA1B, lonePairs: { n: 1 }, lpAngle: { n: -90 }, caption: 'B: acetona + CH₃NH₂' }],
+              explain: 'El N gana un grupo más del que tenía: NH₃ → 1° (isopropilamina); CH₃NH₂ → 2° (N-metilisopropilamina).', slide: 32, hint: 'Cuenta los grupos de carbono del N antes y después.', concept: 'am.reduccion' }),
+          classify('m6-cl1', '¿Qué tipo de amina sale de cada aminación reductiva (con NaBH₃CN)?', [['p', 'Amina 1°'], ['s', 'Amina 2°'], ['t', 'Amina 3°']],
+            [['c1', 'Acetona + NH₃', 'p'], ['c2', 'Benzaldehído + CH₃NH₂', 's'], ['c3', 'Ciclohexanona + (CH₃)₂NH', 't'], ['c4', 'Benzaldehído + NH₃', 'p'], ['c5', 'Acetona + etilamina', 's']],
+            { explain: 'El N gana un grupo: NH₃ → 1°, amina 1° → 2°, amina 2° → 3°.', slide: 32, hint: 'Mira cuántos carbonos tiene el N al principio y súmale uno.', concept: 'am.reduccion' }),
+          { id: 'm6-rc2', type: 'recipe', source: SRC, concept: 'am.reduccion', slide: 32,
+            prompt: 'El caldero pide **N-metilciclohexilamina** desde ciclohexanona. Elige los ingredientes en orden.', base: 'Ciclohexanona', target: 'N-metilciclohexilamina',
+            ingredients: [{ id: 'mna', label: 'CH₃NH₂ (metilamina)' }, { id: 'nab', label: 'NaBH₃CN' }, { id: 'nh3', label: 'NH₃' }, { id: 'mei', label: 'CH₃I' }, { id: 'hcl', label: 'HCl concentrado' }],
+            answer: ['mna', 'nab'],
+            notes: { nh3: 'Con NH₃ saldría ciclohexilamina (1°), sin el metilo en el N.', mei: 'Metilar después con CH₃I se descontrola (sobrealquilación).', hcl: 'El HCl protonaría la amina y la dejaría sin par para atacar.' },
+            orderNote: 'Primero la amina forma la imina con la cetona; recién después el reductor la convierte en amina.',
+            explain: 'Ciclohexanona + metilamina → imina; NaBH₃CN la reduce a N-metilciclohexilamina.', hint: 'Paso 1: la amina que aporta el grupo del N. Paso 2: el reductor suave.' },
+          { id: 'm6-b2', type: 'build', source: SRC, concept: 'am.reduccion', slide: 32, smiles: 'CC(C)N',
+            prompt: 'Dibuja el producto de acetona + NH₃ + NaBH₃CN. Ya tienes la acetona: transfórmala.',
+            start: ACETONE, target: ISOPROPYLAMINE,
+            near: [{ graph: ACETONE_IMINE, note: 'Esa es la imina, el intermediario. Falta reducirla: el C=N pasa a C–N.' }],
+            explain: 'El C=O termina como C–NH₂: isopropilamina, (CH₃)₂CH–NH₂.', hint: 'Cambia el O por un N (elige N y toca el O dos veces) y deja el enlace simple (toca el enlace hasta que quede de una línea).' }
+        ] },
+      { id: 'r3', intro: 'Receta 3: **reducir para llegar a la amina**. Una amida pierde su C=O; un nitrobenceno se vuelve anilina. Así se puede hacer el p-aminofenol del paracetamol.',
+        pretest: q('m6-pre3', 'Si a un grupo –NO₂ le quitas los O y le pones H, ¿qué queda?', [{ text: '–NH₂', correct: true }, { text: '–OH', note: 'El N se queda: lo que se van son los O.' }, { text: '–N₂⁺', note: 'Ese es el diazonio, de la misión 7.' }],
+          { explain: 'Reducir el nitro: –NO₂ → –NH₂.', slide: 33, concept: 'am.reduccion' }),
+        explain: [
+          { id: 'b65', title: 'Otras rutas: amidas y nitroarenos', slide: 33, body: 'Una **amida + LiAlH₄** da R–CH₂–NH₂ (el C=O se vuelve CH₂). Un **nitrobenceno** se reduce a **anilina** con H₂/Pt, Fe/HCl o Sn/HCl.',
+            deeper: 'Dos caminos más. Con una **amida**, el LiAlH₄ convierte el C=O en CH₂ y el N se queda donde estaba: R–CO–NH₂ → R–CH₂–NH₂. Con un **nitrobenceno**, la reducción le quita los O al NO₂ y le pone H: Ar–NO₂ → Ar–NH₂. Es la forma típica de poner un NH₂ en un anillo.' }
+        ],
+        practice: [
+          q('m6-p4', 'Benzamida (C₆H₅–CO–NH₂) + LiAlH₄, luego agua. ¿Producto?', [{ text: 'Bencilamina, C₆H₅–CH₂–NH₂', correct: true }, { text: 'Ácido benzoico', note: 'Eso sería una hidrólisis, no una reducción.' }, { text: 'Anilina, C₆H₅–NH₂', note: 'El carbono del C=O no se pierde: queda como CH₂ entre el anillo y el N.' }],
+            { explain: 'El C=O de la amida se vuelve CH₂: C₆H₅–CH₂–NH₂.', slide: 33, hint: 'El N se queda; el O se va y en su lugar entran 2 H.', concept: 'am.reduccion' }),
+          { id: 'm6-rc3', type: 'recipe', source: SRC, concept: 'am.reduccion', slide: 33,
+            prompt: 'El caldero pide **anilina** partiendo de **benceno**. Elige los ingredientes en orden.', base: 'Benceno', target: 'anilina',
+            ingredients: [{ id: 'nit', label: 'HNO₃ / H₂SO₄' }, { id: 'fe', label: 'Fe / HCl' }, { id: 'naoh', label: 'NaOH' }, { id: 'diaz', label: 'NaNO₂ / HCl, 0–5 °C' }, { id: 'lah', label: 'LiAlH₄' }, { id: 'nh3', label: 'NH₃' }],
+            answer: ['nit', 'fe', 'naoh'],
+            notes: { diaz: 'La diazotación es para una anilina que ya existe (misión 7).', lah: 'Con nitroarenos el LiAlH₄ da compuestos azo, no anilina.', nh3: 'El benceno no hace SN2: el NH₃ no puede reemplazar un H del anillo.' },
+            orderNote: 'Primero hay que poner el N (nitrar), después reducirlo y al final liberar la amina de su sal.',
+            explain: 'Nitrar (HNO₃/H₂SO₄) → nitrobenceno; reducir (Fe/HCl) → sal de anilinio; NaOH → anilina.', hint: 'Paso 1: poner el N en el anillo. Paso 2: reducirlo. Paso 3: sacarlo de la sal.' },
+          { id: 'm6-fx2', type: 'spot', source: SRC, concept: 'am.reduccion', slide: 33,
+            prompt: 'Un aprendiz quiso preparar etilamina desde acetamida. Revisa su hoja: ¿en qué paso se equivocó?',
+            steps: ['Toma acetamida, CH₃–CO–NH₂', 'Le agrega NaBH₄', 'Agrega agua', 'Espera obtener etilamina, CH₃–CH₂–NH₂'], wrong: 1,
+            stepNotes: { 0: 'La acetamida sirve: tiene el N y los 2 carbonos.', 2: 'El agua al final está bien (destruye el exceso de reductor).', 3: 'El producto esperado es correcto; el error está antes.' },
+            fix: { question: '¿Qué reductor necesitaba?', options: [{ text: 'LiAlH₄', correct: true }, { text: 'NaBH₃CN', note: 'Ese reduce iminas, no amidas.' }, { text: 'Fe / HCl', note: 'Ese reduce nitrocompuestos.' }] },
+            explain: 'El NaBH₄ es muy suave para una amida: se necesita LiAlH₄.', hint: 'Las amidas son difíciles de reducir: ¿qué reductor es el fuerte?' },
+          { id: 'm6-b3', type: 'build', source: SRC, concept: 'am.reduccion', slide: 33, smiles: 'CCN',
+            prompt: 'Dibuja el producto de acetamida + LiAlH₄. Ya tienes la acetamida: transfórmala.',
+            start: ACETAMIDE, target: ETHYLAMINE,
+            explain: 'El C=O se vuelve CH₂: CH₃–CH₂–NH₂, etilamina.', hint: 'Elige "Borrar" y toca el O: el carbono completa sus enlaces con H.' },
+          match('m6-p2', 'Repaso de la misión: une cada reactivo con lo que logra.', [['NaN₃, luego LiAlH₄', 'R–X → R–NH₂ (vía azida)'], ['Ftalimida/KOH, R–X, luego H₂NNH₂', 'Gabriel: amina primaria'], ['Cetona + NH₃ + NaBH₃CN', 'Aminación reductiva'], ['Fe/HCl sobre nitrobenceno', 'Anilina'], ['LiAlH₄ sobre una amida', 'R–CH₂–NH₂']],
+            { explain: 'Haluros: azida o Gabriel. Carbonilos: aminación reductiva. Amidas y nitroarenos: reducción.', slide: 33, hint: 'Parte por los nombres que conoces: Gabriel y aminación reductiva.', concept: 'am.reduccion' })
+        ] }
+    ]
   },
   /* ── Misión 7 ── */
   {
@@ -1174,6 +1303,8 @@
     { id: 'rc-hofmann', mission: 'm7', concept: 'am.hofmann', slide: 35, ...mission('m7').parts.find(p => p.id === 'r3').recipe }
   ];
 
+  for (const [part, rid] of [['r1', 'rc-gabriel'], ['r2', 'rc-aminred'], ['r3', 'rc-nitro']]) mission('m6').parts.find(p => p.id === part).recipe = cls.recipes.find(r => r.id === rid);
+
   /* ── Más ayuda (a pedido de Niquito, 5 oct): si la explicación simple no alcanza → mini clase; si quieres más → a profundidad.
      Cada bloque de lección sabe de qué concepto es (BLOCK_CONCEPT); las mini clases y las clases a fondo van por concepto. ── */
   const BLOCK_CONCEPT = {
@@ -1182,7 +1313,7 @@
     f31: 'am.fisicas', f32: 'am.fisicas', b31: 'am.fisicas', b32: 'am.fisicas', b33: 'am.fisicas', b34: 'am.sales',
     f41: 'base.acido-base', f42: 'am.equilibrio', f43: 'am.pka', b41: 'am.pka', b42: 'am.equilibrio', b43: 'am.pka',
     f51: 'am.resonancia', f52: 'am.heterociclos', f53: 'am.resonancia', b51: 'am.resonancia', b52: 'am.resonancia', b53: 'am.resonancia', b54: 'am.heterociclos', b55: 'am.heterociclos', b56: 'am.orden',
-    f61: 'base.sn-e', f62: 'am.reduccion', b61: 'am.alquilacion', b62: 'am.alquilacion', b63: 'am.alquilacion', b64: 'am.reduccion', b65: 'am.reduccion',
+    f61: 'base.sn-e', f62: 'am.reduccion', b61: 'am.alquilacion', b62: 'am.alquilacion', b62m: 'am.alquilacion', b63: 'am.alquilacion', b64: 'am.reduccion', b64m: 'am.reduccion', b65: 'am.reduccion',
     f69: 'base.lewis', f70: 'am.acilacion', f71: 'base.sn-e', f72: 'base.sn-e', b71: 'am.acilacion', b71m: 'am.acilacion', b73: 'am.diazonio', b74: 'am.diazonio', b72: 'am.hofmann', b72m: 'am.hofmann',
     f81: 'am.espectro', f82: 'am.espectro', b81: 'am.espectro', b82: 'am.espectro', b83: 'am.espectro'
   };

@@ -84,6 +84,8 @@ for (const [id, file] of Object.entries(catalog)) {
     assert.ok(p.intro && (p.explain || []).length && (p.practice || []).length >= 3 && p.recipe?.title, `${m.id}/${p.id}: la receta necesita intro, lección, 3+ actividades y receta guardada`);
     assert.ok(new Set(p.practice.map(i => i.type || 'choice')).size >= 3, `${m.id}/${p.id}: al menos 3 tipos de actividad distintos`);
     for (const blk of p.explain) if (blk.frames) for (const f of blk.frames) assert.ok(f.scene?.atoms?.length && f.caption, `${blk.id}: cada cuadro del mecanismo necesita escena y texto`);
+    for (const blk of p.explain) if (blk.frames) assert.ok(blk.frames.some(f => (f.arrows || []).length), `${blk.id}: un mecanismo sin ninguna flecha no muestra cómo se mueven los electrones`);
+    for (const blk of p.explain) for (const f of blk.frames || []) for (const [from, to] of f.arrows || []) { const ok = k => k.startsWith('b:') ? f.scene.bonds[Number(k.slice(2))] : f.scene.atoms.some(x => x.id === k.slice(k.indexOf(':') + 1)); assert.ok(ok(from) && ok(to), `${blk.id}: flecha ${from} → ${to} apunta a algo que no existe`); if (from.startsWith('lp:')) assert.ok(f.lonePairs?.[from.slice(3)], `${blk.id}: ${from} sin par libre dibujado`); }
   }
   // Etapa 4: diagnóstico adaptativo, errores que guían y clase base.
   if (cls.diagnosis) {
