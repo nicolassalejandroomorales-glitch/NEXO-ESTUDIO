@@ -933,6 +933,159 @@
       target: { atoms: [atom('c', 'C', 150, 130), atom('n', 'N', 240, 130, 1)], bonds: [{ a: 'c', b: 'n', o: 1 }] },
       explain: 'Al atrapar el H⁺, el N queda con 4 enlaces (3 H y el C) y sin par libre. Carga formal: 5 − 0 − 4 = +1. Se escribe CH₃–NH₃⁺.',
       hint: 'Con 4 enlaces el N queda con carga. Elige el botón ± y toca el N.' });
+  /* ── Etapa 4 (docs/etapa-4-diagnostico/SPEC.md) ── */
+  // Receta 2 sin pregunta escrita no podía pasar de brote: ahora tiene una.
+  mission('m7').parts.find(p => p.id === 'r2').practice.push(
+    write('m7-w2', 'Explícalo con tus palabras: ¿por qué la diazotación se hace en hielo (0–5 °C)?',
+      'La sal de diazonio es inestable: si se calienta pierde N₂, un gas muy estable que sale con mucha facilidad, y el agua entra en su lugar formando fenol. En frío la sal dura lo suficiente para usarla después con CuCl, CuBr, KI u otro reactivo.',
+      ['Dije que la sal de diazonio se descompone si se calienta', 'Dije que sale N₂ (un gas)', 'Dije que con agua caliente se forma fenol, o que en frío la sal se puede usar después'],
+      { explain: 'En frío la sal de diazonio aguanta; con calor suelta N₂ y el agua la convierte en fenol.', slide: 39, concept: 'am.diazonio',
+        hint: 'Recuerda el termómetro: ¿qué burbujeaba sobre 5 °C?',
+        keywords: [{ label: 'Se descompone con calor', any: ['descompone', 'inestable', 'se rompe', 'calor', 'calienta', 'temperatura'] }, { label: 'Sale N₂ (gas)', any: ['n2', 'n₂', 'nitrogeno gaseoso', 'gas', 'burbuj'] }, { label: 'Fenol', any: ['fenol', 'agua entra', 'ar-oh', 'c6h5oh'] }] }));
+
+  /* Clase base "Repaso desde cero" (opcional): las raíces del árbol. Material propio de Orgánica I, sin diapositivas de cátedra. */
+  const BASE = 'repaso-base';
+  cls.sources[BASE] = { title: 'Repaso desde cero', author: 'Nexo', detail: 'Bases de Química Orgánica I', authority: 'Texto propio; valores de pKa de tabla habituales' };
+  const bq = (id, concept, prompt, options, extra) => q(id, prompt, options, { source: BASE, concept, ...extra });
+  const bw = (id, concept, prompt, model, rubric, extra) => write(id, prompt, model, rubric, { source: BASE, concept, ...extra });
+  const E2 = { scene: { atoms: [A('h', 'H', 140, 80), A('c1', 'C', 140, 150), A('c2', 'C', 230, 150), A('br', 'Br', 230, 230), A('o', 'O', 45, 60, -1)],
+    bonds: [B('h', 'c1'), B('c1', 'c2'), B('c2', 'br')] }, lonePairs: { o: 3, br: 3 }, lpAngle: { o: 0 } };
+  cls.base = [
+    { id: 'z1', concept: 'base.lewis', title: 'Lewis y par libre', subtitle: 'Cuántos enlaces hace cada átomo y qué es un par libre', minutes: 6,
+      stages: {
+        explain: [
+          { id: 'z1b1', title: 'Cuántos enlaces hace cada átomo', body: 'Cada átomo busca completar **8 electrones** (el H, solo 2). Por eso, en una molécula neutra: **C hace 4 enlaces**, **N hace 3** y guarda **1 par libre**, **O hace 2** y guarda **2 pares**, el **H** y los **halógenos** (Cl, Br) hacen **1** (los halógenos guardan 3 pares).',
+            deeper: 'Cuenta así: el N trae 5 electrones de valencia. Usa 3 para sus 3 enlaces y le sobran 2: esos 2 juntos son el par libre. El O trae 6: usa 2 en enlaces y le sobran 4, o sea 2 pares.' },
+          { id: 'z1b2', title: 'El par libre: lo que hace a la amina', body: 'Un **par libre** son 2 electrones que no forman enlace. Están "disponibles": con ellos el N de una amina **atrapa un H⁺** (actúa como base) o **ataca a un carbono** (actúa como nucleófilo). Casi toda la química de las aminas sale de ese par.',
+            deeper: 'Imagina el par libre como una mano libre del N. Con esa mano puede agarrar un H⁺ o a un carbono que tenga carga parcial positiva. Si la mano está ocupada (por ejemplo, en el ion amonio), ya no puede.' }
+        ],
+        practice: [
+          bq('z1-p1', 'base.lewis', '¿Cuántos pares libres tiene el N del amoníaco, NH₃?', [{ text: '1', correct: true }, { text: '0', note: 'El N tiene 5 electrones de valencia: 3 van en los enlaces N–H y le quedan 2, que forman 1 par libre.' }, { text: '2', note: 'Ese es el O del agua. El N, con 3 enlaces, se queda con 1 solo par.' }],
+            { explain: '5 electrones de valencia − 3 usados en enlaces = 2 electrones = 1 par libre.', hint: 'El N trae 5 electrones. ¿Cuántos usa en sus 3 enlaces?' }),
+          bq('z1-p2', 'base.lewis', '¿Cuántos pares libres tiene el O del agua, H₂O?', [{ text: '2', correct: true }, { text: '1', note: 'El O trae 6 electrones: usa 2 en los enlaces O–H y le quedan 4, o sea 2 pares.' }, { text: '3', note: 'Con 3 pares y 1 enlace sería un O⁻, como en el hidróxido.' }],
+            { explain: '6 − 2 = 4 electrones sin compartir = 2 pares libres.', hint: 'El O trae 6 electrones de valencia.' }),
+          { id: 'z1-b1', type: 'build', source: BASE, concept: 'base.lewis', smiles: 'CN',
+            prompt: 'Dibuja la metilamina, CH₃–NH₂. Ya tienes el carbono: agrégale el nitrógeno (los H van solos).',
+            start: { atoms: [A('c', 'C', 150, 130)], bonds: [] }, target: { atoms: [A('c', 'C', 150, 130), A('n', 'N', 240, 130)], bonds: [B('c', 'n')] },
+            explain: 'Un C unido a un N. El C completa sus 4 enlaces con 3 H y el N sus 3 enlaces con 2 H; al N le queda un par libre.',
+            hint: 'Elige N en las herramientas, toca el C y después un espacio vacío al lado.' }
+        ],
+        transfer: [
+          bw('z1-w1', 'base.lewis', '¿Por qué el N de una amina puede atrapar un H⁺? Explícalo con tus palabras.',
+            'Porque el N tiene un par libre: dos electrones que no están en ningún enlace. Con ese par forma un enlace nuevo con el H⁺, que no trae electrones. Por eso la amina es una base.',
+            ['Dije que el N tiene un par libre', 'Dije que con ese par forma el enlace con el H⁺', 'Dije que eso la hace una base'],
+            { explain: 'El par libre es lo que se "presta" para formar el enlace con el H⁺.',
+              keywords: [{ label: 'Par libre', any: ['par libre', 'par de electrones', 'par electronico', 'electrones libres', 'par no enlazante'] }, { label: 'Forma un enlace con el H⁺', any: ['enlace', 'une', 'atrapa', 'acepta', 'capta', 'comparte'] }, { label: 'Es una base', any: ['base', 'basica', 'basico'] }] })
+        ]
+      } },
+    { id: 'z2', concept: 'base.carga', title: 'Cargas formales', subtitle: 'De dónde sale el + del ion amonio', minutes: 6,
+      stages: {
+        explain: [
+          { id: 'z2b1', title: 'La cuenta de la carga formal', body: '**Carga formal = electrones de valencia − (electrones de sus pares libres + número de enlaces).** Ejemplo, el N del ion amonio NH₄⁺: 5 − (0 + 4) = **+1**. El N del amoníaco NH₃: 5 − (2 + 3) = **0**.',
+            deeper: 'Piensa que cada enlace es "mitad tuyo": te toca 1 electrón por enlace. Los pares libres son enteros tuyos. Si te tocan menos electrones de los que traías, quedas positivo; si te tocan más, negativo.' },
+          { id: 'z2b2', title: 'Atajos que vas a usar siempre', body: '**N**: 3 enlaces + 1 par → 0 · **4 enlaces, sin par → +1**. **O**: 2 enlaces + 2 pares → 0 · **1 enlace + 3 pares → −1** · 3 enlaces + 1 par → +1. **C**: 4 enlaces → 0 · 3 enlaces y sin par → +1 (carbocatión).',
+            deeper: 'No hace falta memorizar la tabla: si un átomo tiene un enlace de más que lo normal (N con 4), lleva +; si tiene uno de menos y un par extra (O con 1), lleva −.' }
+        ],
+        practice: [
+          bq('z2-p1', 'base.carga', '¿Qué carga formal tiene el N del ion amonio, NH₄⁺?', [{ text: '+1', correct: true }, { text: '0', note: 'Con 4 enlaces y sin par libre: 5 − (0 + 4) = +1.' }, { text: '−1', note: 'Al revés: le tocan 4 electrones y traía 5, así que quedó con uno de menos: positivo.' }],
+            { explain: '5 − (0 + 4) = +1.', hint: 'Cuenta sus enlaces y sus pares libres.' }),
+          bq('z2-p2', 'base.carga', '¿Qué carga formal tiene el O del ion hidróxido, OH⁻?', [{ text: '−1', correct: true }, { text: '0', note: 'Tiene 1 enlace y 3 pares: 6 − (6 + 1) = −1.' }, { text: '+1', note: 'Le tocan 7 electrones y traía 6: tiene uno de más, así que es negativo.' }],
+            { explain: '6 − (6 + 1) = −1.', hint: 'El O trae 6. En el OH⁻ tiene 1 enlace y 3 pares libres.' }),
+          bq('z2-p3', 'base.carga', 'En el ion metilamonio, CH₃–NH₃⁺, ¿qué átomo lleva la carga +?', [{ text: 'El N', correct: true }, { text: 'El C', note: 'El C tiene sus 4 enlaces normales: 4 − (0 + 4) = 0.' }, { text: 'Un H', note: 'Cada H tiene su único enlace: carga 0.' }],
+            { explain: 'El N tiene 4 enlaces y ningún par libre: 5 − (0 + 4) = +1.', hint: '¿Qué átomo tiene un enlace más de lo normal?' })
+        ],
+        transfer: [
+          bw('z2-w1', 'base.carga', 'Explica por qué el N del ion metilamonio, CH₃–NH₃⁺, tiene carga +1.',
+            'El N trae 5 electrones de valencia. En el metilamonio tiene 4 enlaces (3 con H y 1 con el C) y ningún par libre, así que le tocan 4 electrones: 5 − (0 + 4) = +1. Usó su par libre para atrapar el H⁺.',
+            ['Dije que el N trae 5 electrones de valencia', 'Dije que tiene 4 enlaces y ningún par libre', 'Hice la cuenta 5 − 4 = +1 (o dije que usó su par libre en el H⁺)'],
+            { explain: 'Valencia 5, le tocan 4: carga +1.',
+              keywords: [{ label: '5 electrones de valencia', any: ['5 electrones', 'cinco electrones', 'valencia'] }, { label: '4 enlaces', any: ['4 enlaces', 'cuatro enlaces'] }, { label: 'Sin par libre', any: ['sin par', 'ningun par', 'no tiene par', 'no le queda', 'uso su par', 'usa su par', 'uso el par'] }] })
+        ]
+      } },
+    { id: 'z3', concept: 'base.acido-base', title: 'Ácido-base y pKa', subtitle: 'Quién suelta el H⁺ y hacia dónde va el equilibrio', minutes: 7,
+      stages: {
+        explain: [
+          { id: 'z3b1', title: 'Ácido, base y pKa', body: 'Un **ácido** entrega un H⁺; una **base** lo recibe usando un par libre. El **pKa** mide qué tanto suelta un ácido su H⁺: **menor pKa, ácido más fuerte**. Ácido acético: pKa ≈ 4,8. Agua: pKa ≈ 15,7. Ion metilamonio CH₃NH₃⁺: pKa ≈ 10,6.',
+            deeper: 'El pKa es como la "resistencia" a soltar el H⁺. Un pKa chico es poca resistencia: lo suelta fácil, o sea, es un ácido fuerte. Un pKa grande es mucha resistencia: ácido débil.' },
+          { id: 'z3b2', title: 'Para bases: mira el ácido conjugado', body: 'Para comparar **bases** se mira el pKa de su **ácido conjugado** (el que se forma al atrapar el H⁺). **Mayor pKa del conjugado, base más fuerte**: le cuesta más soltar el H⁺ que atrapó. Y en una reacción ácido-base, el equilibrio va hacia el lado del **ácido más débil** (mayor pKa).',
+            deeper: 'Si una base atrapa el H⁺ y después no lo quiere soltar (su conjugado tiene pKa alto), es una base fuerte. Por eso la metilamina (conjugado con pKa 10,6) es mucho más básica que la anilina (conjugado con pKa 4,6).' }
+        ],
+        practice: [
+          bq('z3-p1', 'base.acido-base', '¿Cuál es el ácido más fuerte?', [{ text: 'Ácido acético, pKa 4,8', correct: true }, { text: 'Ion metilamonio, pKa 10,6', note: 'Menor pKa es ácido más fuerte: 4,8 es menor que 10,6.' }, { text: 'Agua, pKa 15,7', note: 'El agua es el ácido más débil de los tres: su pKa es el mayor.' }],
+            { explain: 'Menor pKa, más fácil suelta el H⁺.', hint: 'En el pKa, el número chico gana como ácido.' }),
+          bq('z3-p2', 'base.acido-base', '¿Cuál es la base conjugada del ion metilamonio, CH₃NH₃⁺?', [{ text: 'CH₃NH₂', correct: true }, { text: 'CH₃NH₄²⁺', note: 'Eso sería agregar otro H⁺. La base conjugada es lo que queda al quitarle un H⁺.' }, { text: 'CH₃⁻', note: 'Se quita un H⁺ del N, no se rompe el enlace C–N.' }],
+            { explain: 'Quitar un H⁺: CH₃NH₃⁺ → CH₃NH₂.', hint: 'Base conjugada = el ácido sin un H⁺.' }),
+          bq('z3-p3', 'base.acido-base', 'CH₃COOH + CH₃NH₂ ⇌ CH₃COO⁻ + CH₃NH₃⁺. Con pKa 4,8 (ácido acético) y 10,6 (metilamonio), ¿hacia dónde va el equilibrio?', [{ text: 'Hacia la derecha: queda el ácido más débil, CH₃NH₃⁺', correct: true }, { text: 'Hacia la izquierda: queda el ácido acético', misconception: 'strong-side' }, { text: 'Queda justo en la mitad', note: 'Los pKa son muy distintos (casi 6 unidades): el equilibrio está muy desplazado.' }],
+            { explain: 'El equilibrio favorece al ácido más débil (mayor pKa): el metilamonio, a la derecha.', hint: 'Busca de qué lado está el ácido con pKa mayor.' })
+        ],
+        transfer: [
+          bw('z3-w1', 'base.acido-base', '¿Cómo usas el pKa para decidir cuál de dos aminas es más básica? Explícalo con tus palabras.',
+            'Miro el pKa del ácido conjugado de cada amina, o sea, del ion amonio que se forma al atrapar el H⁺. La amina cuyo conjugado tiene el pKa mayor es la más básica, porque a ese ion le cuesta más soltar el H⁺.',
+            ['Dije que se mira el pKa del ácido conjugado (ion amonio)', 'Dije que mayor pKa del conjugado es base más fuerte', 'Expliqué que le cuesta más soltar el H⁺'],
+            { explain: 'Base más fuerte = conjugado con pKa más alto.',
+              keywords: [{ label: 'Ácido conjugado', any: ['conjugado', 'ion amonio', 'amonio', 'protonada'] }, { label: 'Mayor pKa', any: ['mayor', 'mas alto', 'alto'] }, { label: 'Más básica', any: ['basica', 'base mas fuerte', 'mas fuerte'] }] })
+        ]
+      } },
+    { id: 'z4', concept: 'base.sn-e', title: 'SN2, E2 y el solvente', subtitle: 'Sustituir o eliminar: la ruta de decisión', minutes: 8,
+      stages: {
+        explain: [
+          { id: 'z4b1', title: 'SN2 y E2: un solo paso', body: '**SN2**: el nucleófilo ataca al **carbono** por atrás mientras sale el grupo saliente, todo en un paso. Le gustan los carbonos **metilo o primarios**. **E2**: una base saca un **H del carbono vecino** mientras sale el grupo saliente y se forma un **C=C**, también en un paso. Le gustan las **bases fuertes**, las **voluminosas** y el **calor**. Normalmente gana el alqueno más sustituido (Zaitsev).',
+            deeper: 'Misma pelea, distinto blanco: en la SN2 el atacante va al carbono y lo reemplaza; en la E2 va al H de al lado y deja un doble enlace. Si el carbono está muy tapado o la base es grande, le cuesta llegar al carbono y prefiere el H: gana la E2.' },
+          { id: 'z4b2', title: 'El solvente', body: '**Polar aprótico** (DMSO, DMF, acetona): no tiene H unidos a O o N, deja al nucleófilo "desnudo" y **acelera la SN2**. **Polar prótico** (agua, alcoholes): rodea al nucleófilo con puentes de hidrógeno, lo frena y estabiliza iones, favoreciendo **SN1/E1** con carbonos terciarios.',
+            deeper: 'Un solvente prótico es como abrazar al nucleófilo: lo deja sin brazos para atacar. El aprótico no lo abraza, así que ataca rápido. Por eso para una SN2 se elige DMSO o acetona.' }
+        ],
+        practice: [
+          bq('z4-p1', 'base.sn-e', 'En una SN2, ¿qué ocurre?', [{ text: 'El nucleófilo ataca al carbono mientras sale el grupo saliente, en un solo paso', correct: true }, { text: 'Primero sale el grupo saliente y se forma un carbocatión', note: 'Eso es SN1: dos pasos, con carbocatión.' }, { text: 'Una base saca un H y se forma un doble enlace', note: 'Eso es una eliminación (E2), no una sustitución.' }],
+            { explain: 'SN2: sustitución, nucleofílica, bimolecular, en un paso y con ataque por atrás.', hint: 'La "S" es de sustitución y el "2" dice que participan dos especies a la vez.' }),
+          bq('z4-p2', 'base.sn-e', '¿Qué solvente acelera una SN2?', [{ text: 'DMSO (polar aprótico)', correct: true }, { text: 'Agua (polar prótico)', note: 'El agua rodea al nucleófilo con puentes de H y lo frena.' }, { text: 'Hexano (apolar)', note: 'No disuelve bien las sales que traen al nucleófilo.' }],
+            { explain: 'El polar aprótico deja al nucleófilo libre para atacar.', hint: '¿Cuál no tiene H unidos a O que "abracen" al nucleófilo?' }),
+          { id: 'z4-a1', type: 'arrows', source: BASE, concept: 'base.sn-e', ...E2, answer: [['lp:o', 'a:h'], ['b:0', 'b:1'], ['b:2', 'a:br']],
+            prompt: 'E2 del bromoetano con OH⁻. Dibuja las 3 flechas: la base saca el H, se forma el C=C y sale el Br⁻.',
+            notes: { 'lp:o>a:c1': 'En una E2 la base no ataca al carbono (eso sería SN2): saca el H del carbono vecino.', 'lp:o>a:c2': 'Atacar al carbono con el Br es una SN2. En la E2 la base va por el H del otro carbono.',
+              'b:2>a:c2': 'El enlace C–Br se rompe hacia el Br, que se lleva los electrones y sale como Br⁻.', 'b:0>a:c1': 'Los electrones del C–H no se quedan en el C: van a formar el doble enlace C=C.' },
+            explain: 'El OH⁻ saca el H; los electrones del C–H forman el enlace π del C=C; el enlace C–Br se rompe y sale Br⁻. Todo a la vez.',
+            hint: 'Tres flechas: del par del O al H, del enlace C–H al enlace C–C, y del enlace C–Br al Br.' }
+        ],
+        transfer: [
+          bw('z4-w1', 'base.sn-e', '¿En qué se diferencian una SN2 y una E2? Explícalo con tus palabras.',
+            'En la SN2 el nucleófilo ataca al carbono que tiene el grupo saliente y lo reemplaza: es una sustitución. En la E2 la base saca un H del carbono vecino y se forma un doble enlace C=C: es una eliminación. Las dos ocurren en un solo paso; una base voluminosa o un carbono muy sustituido favorecen la E2.',
+            ['Dije que en la SN2 el nucleófilo ataca al carbono y sustituye', 'Dije que en la E2 la base saca un H y se forma un C=C', 'Dije que ambas son en un paso o qué favorece a cada una'],
+            { explain: 'SN2 reemplaza en el carbono; E2 saca un H vecino y deja un doble enlace.',
+              keywords: [{ label: 'Ataca al carbono / sustituye', any: ['sustitu', 'reemplaza', 'ataca al carbono'] }, { label: 'Saca un H', any: ['saca un h', 'quita un h', 'saca el h', 'quita el h', 'hidrogeno'] }, { label: 'Doble enlace', any: ['doble enlace', 'c=c', 'alqueno'] }] })
+        ]
+      } }
+  ];
+
+  /* Errores que guían: de qué raíz viene cada error y un caso corto para corregirlo en el momento. */
+  const check = (key, base, item) => Object.assign(cls.misconceptions[key], { base, check: { source: SRC, ...item } });
+  check('nh-acid', 'base.lewis', q('fix-nh-acid', 'Caso corto: en la reacción NH₃ + H⁺ → NH₄⁺, ¿qué forma el enlace nuevo con el H⁺?', [{ text: 'El par libre del N', correct: true }, { text: 'Un enlace N–H que ya existía', note: 'Los N–H ya están ocupados: el enlace nuevo lo pone el par libre.' }, { text: 'Los electrones del H⁺', note: 'El H⁺ no trae electrones: es solo un protón.' }],
+    { explain: 'El H⁺ no trae electrones: los pone el par libre del N.', slide: 5, concept: 'am.par-libre', hint: 'El H⁺ llega sin electrones. ¿Quién los pone?' }));
+  check('tertiary-acylation', 'base.lewis', q('fix-tert-acyl', 'Caso corto: ¿cuál de estas aminas tiene H en el N?', [{ text: 'CH₃–NH–CH₃', correct: true }, { text: '(CH₃)₃N', note: 'Tres grupos CH₃ en el N y ningún H: es terciaria.' }, { text: '(CH₃)₄N⁺', note: 'Sal cuaternaria: cuatro grupos, ningún H.' }],
+    { explain: 'Solo la dimetilamina (2°) tiene un H en el N, y por eso puede acilarse.', slide: 34, concept: 'am.acilacion', hint: 'Cuenta qué hay unido a cada N.' }));
+  check('zaitsev-hofmann', 'base.sn-e', q('fix-hofmann', 'Caso corto: el grupo saliente es –N(CH₃)₃⁺, muy voluminoso. ¿Qué H prefiere sacar la base?', [{ text: 'El del CH₃ de la punta, el más accesible', correct: true }, { text: 'El del CH₂ interior, para formar el alqueno más sustituido', note: 'Ese H queda tapado por el grupo voluminoso: la base llega peor.' }, { text: 'Ninguno: el grupo voluminoso impide la eliminación', note: 'La eliminación ocurre igual; solo cambia qué H se saca.' }],
+    { explain: 'El H más accesible es el del CH₃: por eso Hofmann da el alqueno menos sustituido.', slide: 36, concept: 'am.hofmann', hint: 'Piensa en cuál H está más lejos del grupo grande.' }));
+  check('pka-inverted', 'base.acido-base', q('fix-pka', 'Caso corto: el ion A tiene pKa 10,6 y el ion B tiene pKa 4,6. ¿A cuál le cuesta más soltar su H⁺?', [{ text: 'Al de pKa 10,6', correct: true }, { text: 'Al de pKa 4,6', note: 'Menor pKa es soltar el H⁺ con más facilidad.' }],
+    { explain: 'Mayor pKa, más le cuesta soltar el H⁺: su amina es la base más fuerte.', slide: 20, concept: 'am.pka', hint: 'Recuerda: pKa chico = ácido fuerte = suelta fácil.' }));
+  for (const [key, base] of [['count-groups', 'base.lewis'], ['carbon-rule', 'base.lewis'], ['strong-side', 'base.acido-base'], ['e1-not-e2', 'base.sn-e'], ['overalkylation', 'base.sn-e']])
+    if (cls.misconceptions[key]) cls.misconceptions[key].base ||= base;
+
+  /* Diagnóstico "¿Por dónde empiezo?": escalera de 3 niveles (1 bases, 2 aminas, 3 reacciones). Preguntas propias. */
+  const dx = (id, concept, prompt, options, extra = {}) => q(id, prompt, options, { concept, ...extra });
+  cls.diagnosis = { start: 2, max: 7, items: [
+    { level: 1, item: dx('dx-lewis', 'base.lewis', '¿Cuántos pares libres tiene el N del amoníaco, NH₃?', [{ text: '1', correct: true }, { text: '0', note: 'El N trae 5 electrones: 3 en enlaces y 2 en un par libre.' }, { text: '2', note: 'Ese es el O del agua.' }], { explain: '5 − 3 = 2 electrones: un par libre.', slide: 5 }) },
+    { level: 1, item: dx('dx-carga', 'base.carga', '¿Qué carga formal tiene el N del ion amonio, NH₄⁺?', [{ text: '+1', correct: true }, { text: '0', note: '4 enlaces y sin par: 5 − 4 = +1.' }, { text: '−1', note: 'Le falta un electrón respecto a los 5 que trae: es +.' }], { explain: '5 − (0 + 4) = +1.', slide: 5 }) },
+    { level: 1, item: dx('dx-acido', 'base.acido-base', 'Entre un ácido de pKa 4,8 y otro de pKa 10,6, ¿cuál es más fuerte?', [{ text: 'El de pKa 4,8', correct: true }, { text: 'El de pKa 10,6', note: 'Al revés: menor pKa, suelta el H⁺ con más facilidad.' }, { text: 'Son iguales', note: 'Casi 6 unidades de pKa son un millón de veces de diferencia.' }], { explain: 'Menor pKa, ácido más fuerte.', slide: 20 }) },
+    { level: 1, item: dx('dx-sne', 'base.sn-e', 'En una E2, ¿qué ocurre?', [{ text: 'En un paso, la base saca un H vecino, se forma el C=C y sale el grupo saliente', correct: true }, { text: 'Primero sale el grupo saliente y después la base saca el H', misconception: 'e1-not-e2' }, { text: 'La base reemplaza al grupo saliente en el carbono', note: 'Eso es una SN2.' }], { explain: 'E2: eliminación en un solo paso.', slide: 35 }) },
+    { level: 2, item: dx('dx-parlibre', 'am.par-libre', '¿Qué usa una amina para atrapar un H⁺?', [{ text: 'El par libre del N', correct: true }, { text: 'Los H unidos al N', misconception: 'nh-acid' }, { text: 'El enlace C–N', note: 'Ese enlace no se rompe: lo que se usa es el par libre.' }], { explain: 'El par libre del N forma el enlace con el H⁺.', slide: 5 }) },
+    { level: 2, item: dx('dx-clasif', 'am.clasificacion', 'La dimetilamina, (CH₃)₂NH, es una amina…', [{ text: 'Secundaria', correct: true }, { text: 'Primaria', misconception: 'count-groups' }, { text: 'Terciaria', misconception: 'count-groups' }], { explain: 'Dos grupos de carbono unidos al N: secundaria.', slide: 8 }) },
+    { level: 2, item: dx('dx-pka', 'am.pka', 'Metilamina (pKa del conjugado 10,6) y anilina (pKa del conjugado 4,6): ¿cuál es más básica?', [{ text: 'La metilamina', correct: true }, { text: 'La anilina', misconception: 'pka-inverted' }, { text: 'Son iguales', note: 'Sus conjugados difieren en 6 unidades de pKa.' }], { explain: 'Mayor pKa del conjugado, base más fuerte.', slide: 17 }) },
+    { level: 3, item: dx('dx-reson', 'am.resonancia', '¿Por qué la anilina es mucho menos básica que la ciclohexilamina?', [{ text: 'Su par libre se deslocaliza en el anillo aromático', correct: true }, { text: 'El anillo le entrega electrones al N y lo satura', note: 'Es al revés: el par del N se reparte hacia el anillo.' }, { text: 'Porque tiene menos H en el N', note: 'Las dos tienen NH₂: la diferencia es la resonancia.' }], { explain: 'El par del N entra en resonancia con el anillo y queda menos disponible.', slide: 22 }) },
+    { level: 3, item: dx('dx-alquil', 'am.alquilacion', 'Si haces reaccionar NH₃ con bromoetano, ¿qué problema aparece?', [{ text: 'Una mezcla: la amina que se forma vuelve a reaccionar', correct: true }, { text: 'Se obtiene solo etilamina pura', misconception: 'overalkylation' }, { text: 'No reacciona: el NH₃ no es nucleófilo', note: 'Sí lo es: tiene un par libre.' }], { explain: 'Sobrealquilación: la amina producto también es nucleófila.', slide: 30 }) },
+    { level: 3, item: dx('dx-acil', 'am.acilacion', '¿Cuál de estas aminas NO forma amida con cloruro de acetilo?', [{ text: 'Trietilamina', correct: true }, { text: 'Dietilamina', misconception: 'tertiary-acylation' }, { text: 'Metilamina', note: 'Es primaria: tiene dos H en el N y se acila sin problema.' }], { explain: 'La terciaria no tiene H en el N para cambiarlo por el acilo.', slide: 34 }) },
+    { level: 3, item: dx('dx-hofmann', 'am.hofmann', 'Eliminación de Hofmann de la 2-butanamina: ¿producto principal?', [{ text: '1-Buteno', correct: true }, { text: '2-Buteno', misconception: 'zaitsev-hofmann' }, { text: 'Butano', note: 'Es una eliminación: se forma un alqueno.' }], { explain: 'Hofmann da el alqueno menos sustituido.', slide: 36 }) },
+    { level: 3, item: dx('dx-diaz', 'am.diazonio', 'Para pasar de anilina a clorobenceno se usa…', [{ text: 'NaNO₂/HCl en frío y después CuCl', correct: true }, { text: 'CuCl directamente', note: 'Primero hay que convertir el –NH₂ en un buen grupo saliente (sal de diazonio).' }, { text: 'HCl concentrado y calor', note: 'Eso solo protona la amina: forma una sal, no clorobenceno.' }], { explain: 'Diazotación y después Sandmeyer con CuCl.', slide: 40 }) }
+  ] };
+
   for (const m of cls.missions) for (const stage of ['diagnostic', 'practice', 'challenge', 'transfer'])
     for (const item of m.stages[stage] || []) item.concept ||= CONCEPT_OF[item.id];
 })();

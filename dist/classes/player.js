@@ -4,9 +4,11 @@
 (() => {
   'use strict';
   const PATHS = {
+    diagnostico: { name: '¿Por dónde empiezo?', tag: 'Diagnóstico · 5 min', text: 'Unas 7 preguntas que se adaptan a ti y te dicen dónde partir.' },
     misiones: { name: 'Misiones', tag: '10–15 min', text: 'Una idea por visita. Se retoma donde la dejaste.' },
     expedicion: { name: 'Expedición', tag: 'Clase larga', text: 'Todas las misiones seguidas, con desafíos extra si vas bien.' },
-    prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.' }
+    prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.' },
+    base: { name: 'Repaso desde cero', tag: 'Opcional', text: 'Las bases de Orgánica I que usan las aminas.', hidden: true }
   };
   const SCENES = ['dawn', 'day', 'dusk', 'night'];
   /* Torre del alquimista por momento del día (assets/classroom/README.md). Pinturas HD de Canva entregadas por Niquito. */
@@ -37,12 +39,13 @@
     const state = api.getState();
     if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {};
     const s = state.classSessions[id] ||= {};
-    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
+    for (const key of ['answers', 'hints', 'revealed', 'skipExplain', 'retries', 'work', 'conf', 'confWhy', 'detour']) if (!s[key] || typeof s[key] !== 'object') s[key] = {};
     if (!Number.isInteger(s.beat)) s.beat = 0;
     return s;
   }
 
-  const missionById = (cls, id) => cls.missions.find(m => m.id === id);
+  const baseById = (cls, id) => (cls.base || []).find(m => m.id === id);
+  const missionById = (cls, id) => cls.missions.find(m => m.id === id) || baseById(cls, id);
   const pts = n => (Math.round(n * 10) / 10).toLocaleString('es-CL');
 
   /* Meta de la clase (cls.goal): cuántos puntos de la prueba ya demostraste. Un punto cuenta cuando aciertas
@@ -78,7 +81,47 @@
     ...(m.stages.diagnostic || []).map(item => ({ item, stage: 'diagnostic' })),
     ...partsOf(m).flatMap(p => [...(p.pretest ? [{ item: p.pretest, stage: 'pretest' }] : []), ...(p.practice || []).map(item => ({ item, stage: 'practice' }))]),
     ...['practice', 'challenge', 'transfer'].flatMap(stage => (m.stages[stage] || []).map(item => ({ item, stage })))];
-  const allItems = (cls, mId) => cls.missions.filter(m => !mId || m.id === mId).flatMap(m => itemsOf(m).map(x => ({ ...x, mission: m })));
+  const allItems = (cls, mId) => (mId ? [...cls.missions, ...(cls.base || [])] : cls.missions).filter(m => !mId || m.id === mId).flatMap(m => itemsOf(m).map(x => ({ ...x, mission: m })));
+  // Actividades fuera de las misiones: clase base, diagnóstico y casos cortos de los errores típicos.
+  const extraItems = cls => [...(cls.base || []).flatMap(m => itemsOf(m).map(x => x.item)), ...(cls.diagnosis?.items || []).map(x => x.item),
+    ...Object.values(cls.misconceptions || {}).map(mc => mc.check).filter(Boolean)];
+  const findItem = (cls, itemId) => allItems(cls).find(x => x.item.id === itemId)?.item || extraItems(cls).find(item => item.id === itemId);
+
+  /* Diagnóstico "¿Por dónde empiezo?" (docs/etapa-4-diagnostico/SPEC.md): escalera de 3 niveles.
+     Si aciertas sube un nivel, si fallas baja; prefiere un concepto relacionado con el anterior. Todo se deduce de las respuestas. */
+  function diagnosisPlan(cls, s) {
+    const dx = cls.diagnosis;
+    if (!dx) return { asked: [], next: null, done: true };
+    const conceptOf = id => (cls.concepts || []).find(c => c.id === id);
+    const related = (a, b) => (conceptOf(a)?.needs || []).includes(b) || (conceptOf(b)?.needs || []).includes(a);
+    const used = new Set(), asked = [];
+    let level = dx.start || 2;
+    while (asked.length < (dx.max || 7)) {
+      const free = l => dx.items.filter(x => x.level === l && !used.has(x.item.id));
+      let pool = [];
+      for (const l of [level, level - 1, level + 1, level - 2, level + 2]) if (l >= 1 && l <= 3 && (pool = free(l)).length) break;
+      if (!pool.length) break;
+      const last = asked[asked.length - 1];
+      const pick = (last && pool.find(x => related(x.item.concept, last.item.concept))) || pool[0];
+      used.add(pick.item.id);
+      const rec = s.answers[pick.item.id];
+      asked.push({ ...pick, rec });
+      if (!rec) return { asked, next: pick, done: false };
+      level = rec.correct ? Math.min(3, pick.level + 1) : Math.max(1, pick.level - 1);
+    }
+    // Resultado (hipótesis): lo acertado, y sus prerrequisitos como "probables" si no se fallaron.
+    const right = new Set(asked.filter(x => x.rec?.correct).map(x => x.item.concept));
+    const wrong = new Set(asked.filter(x => x.rec && !x.rec.correct).map(x => x.item.concept));
+    const likely = new Set();
+    const walk = id => (conceptOf(id)?.needs || []).forEach(n => { if (!likely.has(n) && !wrong.has(n) && !right.has(n)) { likely.add(n); walk(n); } });
+    right.forEach(walk);
+    const known = id => right.has(id) || likely.has(id);
+    const measured = new Set(dx.items.map(x => x.item.concept));
+    const start = cls.missions.find(m => (cls.concepts || []).some(c => c.mission === m.id && measured.has(c.id) && !known(c.id))) || null;
+    const unmeasured = cls.missions.filter(m => !(cls.concepts || []).some(c => c.mission === m.id && measured.has(c.id)));
+    const bases = [...wrong].map(id => (cls.base || []).find(b => b.concept === id)).filter(Boolean);
+    return { asked, next: null, done: true, right, wrong, likely, start, unmeasured, bases };
+  }
 
   /* La clase como secuencia de momentos. Se recalcula en cada vista: lo ya respondido no cambia,
      y lo que viene se adapta (saltar la lección, desafíos extra, rescate solo si hubo errores). */
@@ -86,11 +129,45 @@
     const out = [{ kind: 'path' }];
     if (!s.path) return out;
     const say = (text, m, extra = {}) => out.push({ kind: 'say', text, m, ...extra });
-    const questions = (m, stage) => (m.stages[stage] || []).forEach((item, i, list) => out.push({ kind: 'question', item, m, stage, n: i + 1, of: list.length }));
-    const rescue = mId => {
-      const wrong = allItems(cls, mId).filter(({ item, stage }) => stage !== 'pretest' && s.answers[item.id] && !s.answers[item.id].correct);
+    /* Errores que guían: un error típico con caso corto lo muestra al tiro; 2 errores de la misma base ofrecen un desvío
+       (base + 2 ejercicios fáciles + vuelta al problema), una vez por misión. */
+    const conceptRoots = id => { const c = (cls.concepts || []).find(k => k.id === id); return !c ? [] : c.root ? [c.id] : (c.needs || []).filter(n => n.startsWith('base.')); };
+    const rescued = new Set(), fixShown = new Set();
+    let wrongs = {}, detoured = false;
+    const ask = (item, m, stage, n, of) => {
+      out.push({ kind: 'question', item, m, stage, n, of });
+      const rec = s.answers[item.id];
+      if (!rec || rec.correct || !['practice', 'challenge', 'transfer'].includes(stage) || s.path === 'base') return;
+      const mc = mcOf(cls, item, rec);
+      if (mc?.check && !fixShown.has(mc.check.id)) {
+        fixShown.add(mc.check.id);
+        say('Probemos un caso corto para corregir esa idea ahora mismo.', m, { mood: 'calm' });
+        out.push({ kind: 'question', item: mc.check, m, stage: 'fix', n: 1, of: 1 });
+      }
+      if (detoured || !m) return;
+      for (const root of mc?.base ? [mc.base] : conceptRoots(item.concept)) {
+        const list = (wrongs[root] ||= []); list.push(item);
+        const bm = (cls.base || []).find(x => x.concept === root);
+        if (list.length < 2 || !bm) continue;
+        detoured = true;
+        out.push({ kind: 'detour', root, bm, items: [...list], item, m });
+        if (s.detour[`${m.id}:${root}`]) {
+          out.push({ kind: 'lesson', block: bm.stages.explain[0], m: bm });
+          bm.stages.practice.filter(x => (x.type || 'choice') === 'choice').slice(0, 2)
+            .forEach((x, i, l) => out.push({ kind: 'question', item: x, m: bm, stage: 'detour', n: i + 1, of: l.length }));
+          say('Con esa base fresca, volvamos al problema que te costó.', m, { mood: 'proud' });
+          out.push({ kind: 'rescue', item, m }); rescued.add(item.id);
+        }
+        break;
+      }
+    };
+    const questions = (m, stage) => (m.stages[stage] || []).forEach((item, i, list) => ask(item, m, stage, i + 1, list.length));
+    // El rescate solo revisa lo que ya pasó: si incluyera errores de más adelante, se metería antes de tu posición y te movería de lugar.
+    const rescue = (mId, only = null) => {
+      const wrong = allItems(cls, mId).filter(({ item, stage }) => stage !== 'pretest' && (!only || only.includes(stage)) && (only || stage !== 'transfer' || !mId)
+        && !rescued.has(item.id) && s.answers[item.id] && !s.answers[item.id].correct);
       if (!wrong.length) return;
-      say('Revisemos tus errores. Equivocarse también es parte del oficio del alquimista.', null, { mood: 'calm' });
+      say(only ? 'El encargo final tuvo un tropiezo. Revisémoslo antes de cerrar.' : 'Revisemos tus errores. Equivocarse también es parte del oficio del alquimista.', null, { mood: 'calm' });
       wrong.forEach(({ item, mission }) => out.push({ kind: 'rescue', item, m: mission }));
     };
     if (s.path === 'prueba') {
@@ -101,10 +178,19 @@
       out.push({ kind: 'close' });
       return out;
     }
-    if (s.path === 'misiones' && !missionById(cls, s.mission)) { out.push({ kind: 'pick' }); return out; }
-    const missions = s.path === 'misiones' ? [missionById(cls, s.mission)] : cls.missions;
+    if (s.path === 'diagnostico') {
+      say('Te haré unas 7 preguntas para saber por dónde empezar. Si aciertas, subo el nivel; si fallas, bajo a las bases. No cuenta para tu nota y no hay pistas: responde con lo que sabes.', null);
+      const plan = diagnosisPlan(cls, s), max = cls.diagnosis?.max || 7;
+      plan.asked.forEach((x, i) => out.push({ kind: 'question', item: x.item, m: null, stage: 'placement', n: i + 1, of: max }));
+      if (plan.done) out.push({ kind: 'diagresult', plan });
+      return out;
+    }
+    if (s.path === 'base' && !baseById(cls, s.mission)) { out.push({ kind: 'basepick' }); return out; }
+    if (s.path === 'misiones' && !cls.missions.some(m => m.id === s.mission)) { out.push({ kind: 'pick' }); return out; }
+    const missions = s.path === 'misiones' || s.path === 'base' ? [missionById(cls, s.mission)] : cls.missions;
     missions.forEach(m => {
-      say(`Hoy estudiaremos **${m.title}**: ${m.subtitle.charAt(0).toLowerCase()}${m.subtitle.slice(1)}.`, m);
+      wrongs = {}; detoured = false;
+      say(`Hoy estudiaremos **${m.title}**: ${m.subtitle.charAt(0).toLowerCase()}${m.subtitle.slice(1)}.`, m, { intro: true });
       if (m.stages.hook) out.push({ kind: 'hook', m });
       say('Antes de enseñarte, muéstrame qué sabes. En este reto no hay pistas.', m);
       questions(m, 'diagnostic');
@@ -129,7 +215,7 @@
           (p.explain || []).forEach(block => out.push({ kind: 'lesson', block, m }));
           say('Ahora tú. Si te trabas, toca a tu compañero en la mesa: te dará una pista.', m);
         }
-        (p.practice || []).forEach((item, i, list) => out.push({ kind: 'question', item, m, stage: 'practice', n: i + 1, of: list.length }));
+        (p.practice || []).forEach((item, i, list) => ask(item, m, 'practice', i + 1, list.length));
         if (p.recipe) out.push({ kind: 'lesson', block: { ...p.recipe, kind: 'recipe', id: `${p.id}-recipe` }, m });
       });
       if ((m.stages.practice || []).length) { say('Ahora tú. Si te trabas, toca a tu compañero en la mesa: te dará una pista.', m); questions(m, 'practice'); }
@@ -141,6 +227,7 @@
       rescue(m.id);
       say('Último encargo: un caso nuevo, como en la prueba. Esta vez, sin ayuda.', m);
       questions(m, 'transfer');
+      rescue(m.id, ['transfer']);
     });
     out.push({ kind: 'close' });
     return out;
@@ -153,6 +240,8 @@
     if (b.kind === 'rescue') return Boolean(s.retries[b.item.id]);
     if (b.kind === 'step') return !b.step.ask || Boolean(s.revealed[`${b.m.id}-w${b.i}`]);
     if (b.kind === 'offer') return s.skipExplain[b.m.id] !== undefined;
+    if (b.kind === 'detour') return s.detour[`${b.m.id}:${b.root}`] !== undefined;
+    if (b.kind === 'basepick') return Boolean(s.mission);
     return true;
   }
 
@@ -227,12 +316,13 @@
     if (item.type === 'write') return String(value?.text || '').trim().length >= MIN_WRITE && item.rubric.every((_, i) => value?.checks?.[i] === true);
     return Boolean(item.options[value]?.correct);
   }
-  function mcOf(cls, item, rec) {
+  function mcKeyOf(item, rec) {
     if (!rec || rec.correct) return null;
-    if (!item.type || item.type === 'choice') return cls.misconceptions[item.options[rec.choice]?.misconception];
-    if (item.type === 'pick') return cls.misconceptions[item.targets[rec.value]?.misconception] || cls.misconceptions[item.misconception];
-    return cls.misconceptions[item.misconception];
+    if (!item.type || item.type === 'choice') return item.options[rec.choice]?.misconception || null;
+    if (item.type === 'pick') return item.targets[rec.value]?.misconception || item.misconception || null;
+    return item.misconception || null;
   }
+  function mcOf(cls, item, rec) { const key = mcKeyOf(item, rec); return key ? cls.misconceptions[key] || null : null; }
   function answerText(item, rec) {
     if (!item.type || item.type === 'choice') return item.options[rec.choice]?.text;
     if (item.type === 'pick') return item.targets[rec.value]?.label;
@@ -451,7 +541,7 @@
 
     if (b.kind === 'path') {
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
-      center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).map(([id, p]) =>
+      center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${Object.entries(PATHS).filter(([, p]) => !p.hidden).map(([id, p]) =>
         `<button class="cr-path" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span><b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
         <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>
         ${cls.goal ? `<p class="cr-soon cr-goal-line">Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>` : ''}`;
@@ -462,6 +552,9 @@
       const goal = goalOf(cls, s);
       center = `${goal ? `<button class="cr-goal-card" data-cr="goal"><span><b>Tu camino al 7</b><small>${esc(goal.text)}</small></span>
         <span class="cr-goal-num"><b>${pts(goal.earned)}</b>/${goal.total} pts</span>${goalMeter(goal)}</button>` : ''}
+        ${(() => { if (!cls.diagnosis) return ''; const plan = diagnosisPlan(cls, s);
+          if (!plan.done) return `<button class="cr-tip-card" data-cr="path" data-path="diagnostico"><b>¿No sabes por dónde partir?</b><span>Diagnóstico de 5 minutos: te digo qué misión te conviene.</span></button>`;
+          return plan.start ? `<button class="cr-tip-card is-done" data-cr="mission" data-mission="${plan.start.id}"><b>Según tu diagnóstico, empieza por la Misión ${cls.missions.indexOf(plan.start) + 1}</b><span>${esc(plan.start.title)} ▸</span></button>` : ''; })()}
         <ol class="cr-mission-map">${cls.missions.map((m, i) => {
         const items = allItems(cls, m.id), done = items.filter(({ item }) => s.answers[item.id]).length;
         const worth = goal ? goal.worth(m.id) : 0;
@@ -469,11 +562,63 @@
           <span class="cr-mission-n">${i + 1}</span><span class="cr-mission-txt"><b>${esc(m.title)}</b><small>${esc(m.subtitle)}</small></span>
           <span class="cr-mission-meta"><span>≈ ${m.minutes} min${m.pep ? ` · ${esc(m.pep)}` : ''}</span><span>${done}/${items.length} respondidas${done === items.length && items.length ? ' ✓' : ''}</span>
           ${worth ? `<em class="cr-mission-pts">${pts(goal.won(m.id))}/${pts(worth)} pts PEP</em>` : '<em class="cr-mission-pts is-base">base</em>'}</span></button></li>`;
+      }).join('')}</ol>
+        ${cls.base?.length ? `<button class="cr-tip-card is-base" data-cr="path" data-path="base"><b>Repaso desde cero (opcional)</b><span>${cls.base.map(m => esc(m.title)).join(' · ')}</span></button>` : ''}`;
+      return { sage, center };
+    }
+    if (b.kind === 'basepick') {
+      sage.text = 'El repaso desde cero es **opcional**: úsalo si una base te está costando. Cada uno dura unos minutos y termina con una pregunta escrita.';
+      sage.actions = `<button class="cr-btn" data-cr="path" data-path="misiones">◂ Volver a las misiones</button>`;
+      center = `<ol class="cr-mission-map">${cls.base.map((m, i) => {
+        const items = allItems(cls, m.id), done = items.filter(({ item }) => s.answers[item.id]).length;
+        return `<li><button class="cr-mission-card ${done === items.length ? 'is-done' : ''}" data-cr="base" data-mission="${m.id}">
+          <span class="cr-mission-n">${String.fromCharCode(65 + i)}</span><span class="cr-mission-txt"><b>${esc(m.title)}</b><small>${esc(m.subtitle)}</small></span>
+          <span class="cr-mission-meta"><span>≈ ${m.minutes} min</span><span>${done}/${items.length} respondidas${done === items.length ? ' ✓' : ''}</span><em class="cr-mission-pts is-base">base</em></span></button></li>`;
       }).join('')}</ol>`;
+      return { sage, center };
+    }
+    if (b.kind === 'diagresult') {
+      const { plan } = b, title = id => (cls.concepts || []).find(c => c.id === id)?.title || id;
+      const firm = [...plan.right].map(id => `<li class="is-right">✓ ${esc(title(id))}</li>`).join('') + [...plan.likely].map(id => `<li class="is-likely">· ${esc(title(id))} <small>(lo deduzco)</small></li>`).join('');
+      const weak = [...plan.wrong].map(id => `<li class="is-wrong">✗ ${esc(title(id))}</li>`).join('');
+      const n = m => cls.missions.indexOf(m) + 1, listY = l => l.length > 1 ? `${l.slice(0, -1).join(', ')} y ${l[l.length - 1]}` : l.join('');
+      sage.text = plan.bases.length ? `Encontré una base que conviene afirmar: **${plan.bases.map(x => x.title).join('** y **')}**. Es opcional, pero con ella todo lo demás se hace más fácil.${plan.start ? ` Después, empieza por la **Misión ${n(plan.start)}**.` : ''}`
+        : plan.start ? `Te recomiendo empezar por la **Misión ${n(plan.start)}: ${plan.start.title}**. Lo anterior parece firme.` : 'Todo lo que medí parece firme. Para asegurarlo, ve a **Prueba encima**: preguntas como las de la PEP, sin ayuda.';
+      sage.mood = 'proud';
+      sage.actions = `${plan.bases.map((x, i) => `<button class="cr-btn ${i ? '' : 'cr-primary'}" data-cr="base" data-mission="${x.id}">Repasar ${esc(x.title)} ▸</button>`).join('')}
+        ${plan.start ? `<button class="cr-btn ${plan.bases.length ? '' : 'cr-primary'}" data-cr="mission" data-mission="${plan.start.id}">Empezar la Misión ${n(plan.start)} ▸</button>` : `<button class="cr-btn cr-primary" data-cr="path" data-path="prueba">Prueba encima ▸</button>`}
+        <button class="cr-btn" data-cr="path" data-path="misiones">Ver todas las misiones</button>`;
+      center = `<div class="cr-parchment cr-diag"><p class="cr-eyebrow">Tu punto de partida · hipótesis</p><h3>Lo que medí en ${plan.asked.length} preguntas</h3>
+        <div class="cr-diag-cols"><div><p class="cr-diag-h">Parece firme</p><ul>${firm || '<li class="is-likely">Todavía nada seguro</li>'}</ul></div>
+          <div><p class="cr-diag-h">Por reforzar</p><ul>${weak || '<li class="is-likely">Nada de lo que medí</li>'}</ul></div></div>
+        <p class="cr-note">Con ${plan.asked.length} preguntas no se puede saber todo: es una <b>hipótesis</b> que las misiones van corrigiendo solas.
+          ${plan.unmeasured.length ? `No medí ${listY(plan.unmeasured.map(m => `la Misión ${n(m)} (${esc(m.title)})`))}: ${plan.unmeasured.length > 1 ? 'revísalas' : 'revísala'} cuando quieras.` : ''}</p>
+        <button class="cr-link" data-cr="diag-redo">Volver a hacer el diagnóstico</button></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'detour') {
+      const key = `${b.m.id}:${b.root}`, d = s.detour[key];
+      if (d === undefined) {
+        sage.text = `Fallaste dos veces algo que se apoya en la misma base: **${b.bm.title}**. No es falta de esfuerzo; es una base que conviene afirmar. ¿Hacemos un repaso corto y volvemos a tu problema?`;
+        sage.mood = 'calm';
+        sage.actions = `<button class="cr-btn cr-primary" data-cr="detour" data-key="${esc(key)}" data-go="1">Sí, repasemos ▸</button><button class="cr-btn" data-cr="detour" data-key="${esc(key)}" data-go="0">Ahora no, sigo</button>`;
+      } else {
+        sage.text = d ? 'Vamos al repaso: una explicación, dos ejercicios fáciles y de vuelta al problema.' : 'Seguimos. Cuando quieras, el repaso está en el mapa de misiones: "Repaso desde cero".';
+        sage.actions = cont();
+      }
+      center = `<div class="cr-parchment cr-detour"><p class="cr-eyebrow">Errores que guían · falta una base</p><h3>${esc(b.bm.title)}</h3>
+        <p>Estos errores tienen el mismo origen:</p><ul>${b.items.map(it => `<li>${md(it.prompt)}</li>`).join('')}</ul>
+        <p class="cr-note"><b>El desvío:</b> ${esc(b.bm.stages.explain[0].title)} → 2 ejercicios fáciles → vuelves a intentar el problema que fallaste.</p></div>`;
       return { sage, center };
     }
     if (b.kind === 'say') {
       sage.text = b.text; sage.mood = b.mood || 'calm'; sage.actions = cont();
+      // El sabio recuerda: un error típico de esta misión de otro día.
+      const memo = b.intro && b.m && (() => { const E = EV(); if (!E) return null;
+        const today = new Date(); today.setHours(0, 0, 0, 0);
+        const recs = E.storeFor(api.getState(), cls.id).records.filter(r => r.misconception && r.missionId === b.m.id && new Date(r.at) < today);
+        return cls.misconceptions[recs[recs.length - 1]?.misconception] || null; })();
+      if (memo) sage.text += ` La última vez caíste en esto: **${memo.label}**. Hoy fíjate bien en eso.`;
       return { sage, center };
     }
     if (b.kind === 'offer') {
@@ -525,6 +670,12 @@
         ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}
         ${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>` : '';
       center = `<div class="cr-lesson">${blk.slide ? projection(cls, blk.slide) : ''}${parchment}</div>`;
+      // Sin diapositiva (clase base): la explicación va escrita en el pergamino del centro y el sabio solo la presenta.
+      if (!blk.slide && !blk.svg && !blk.rows) {
+        sage.text = `**${blk.title}.** Léelo con calma en el pergamino. Si algo no queda claro, pídeme la explicación simple.`;
+        center = `<div class="cr-parchment cr-base-card"><p class="cr-eyebrow">${b.m?.concept ? 'Repaso desde cero' : b.zero ? 'Desde cero' : 'Lección'}</p><h3>${esc(blk.title.replace(/^Desde cero: /, ''))}</h3><p>${md(blk.body)}</p>
+          ${blk.note ? `<p class="cr-note">${md(blk.note)}</p>` : ''}${deep ? `<div class="cr-deeper"><p class="cr-eyebrow">Más simple, paso a paso</p><p>${md(blk.deeper)}</p></div>` : ''}</div>`;
+      }
       return { sage, center };
     }
     if (b.kind === 'step') {
@@ -542,10 +693,11 @@
     if (b.kind === 'question') {
       const item = b.item, record = s.answers[item.id], hint = s.hints[item.id];
       const pre = b.stage === 'pretest';
-      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final' }[b.stage];
+      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final', placement: 'Diagnóstico', fix: 'Caso corto para corregir', detour: 'Repaso de la base' }[b.stage];
       if (!record) {
         sage.text = item.teach ? 'Tu compañero se enredó con algo. ¿Se lo explicas tú? Explicar es la mejor forma de aprender.'
-          : { diagnostic: 'Responde con lo que sabes.', pretest: 'Adivina sin miedo: esto no cuenta. Solo despierta la curiosidad.', practice: 'Tu turno.', challenge: 'Este es más difícil. Confío en ti.', transfer: 'Un caso nuevo. Piensa como en la prueba.' }[b.stage];
+          : { diagnostic: 'Responde con lo que sabes.', pretest: 'Adivina sin miedo: esto no cuenta. Solo despierta la curiosidad.', practice: 'Tu turno.', challenge: 'Este es más difícil. Confío en ti.', transfer: 'Un caso nuevo. Piensa como en la prueba.',
+            placement: 'Responde con lo que sabes. Si no sabes, marca poca confianza y elige la que te parezca.', fix: 'Un caso corto para corregir esa idea ahora mismo.', detour: 'Un ejercicio fácil de la base. Sin apuro.' }[b.stage];
       } else if (pre) {
         sage.text = record.correct ? `¡Buena intuición! ${item.explain} Ahora verás por qué.` : 'No era esa, y está perfecto: ahora lo vas a descubrir. Fíjate bien en la explicación.';
         sage.mood = record.correct ? 'proud' : 'calm'; sage.actions = cont('A la lección ▸');
@@ -593,9 +745,10 @@
     const wrong = scope.filter(({ item }) => !s.answers[item.id].correct);
     const fixed = wrong.filter(({ item }) => s.retries[item.id]?.correct).length;
     const next = s.path === 'misiones' ? cls.missions[cls.missions.findIndex(m => m.id === s.mission) + 1] : null;
+    const nextBase = s.path === 'base' ? cls.base[cls.base.findIndex(m => m.id === s.mission) + 1] : null;
     sage.text = 'Buen trabajo, aprendiz. Lo que acertaste hoy muestra que lo entendiste. Para que sea tuyo de verdad, vuelve en uno o dos días y demuéstralo de nuevo sin ayuda.';
     sage.mood = 'proud';
-    sage.actions = `${next ? `<button class="cr-btn cr-primary" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+    sage.actions = `${next ? `<button class="cr-btn cr-primary" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}${s.path === 'base' ? `${nextBase ? `<button class="cr-btn cr-primary" data-cr="base" data-mission="${nextBase.id}">Siguiente repaso ▸</button>` : ''}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
     center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Lo que demostraste</p>
       <dl class="cr-summary"><div><dt>Sin ayuda</dt><dd>${solo}</dd></div><div><dt>Con pista</dt><dd>${withHint}</dd></div><div><dt>Errores corregidos</dt><dd>${fixed}/${wrong.length}</dd></div></dl>
       ${(() => { const goal = goalOf(cls, s); if (!goal) return '';
@@ -603,8 +756,8 @@
         return `<div class="cr-goal-close"><p class="cr-eyebrow">Camino al 7</p>${goalMeter(goal)}
           <p>${here ? `${s.path === 'misiones' ? 'Esta misión' : 'Esta clase'} vale <b>${pts(here)} pts</b> de la PEP y demostraste <b>${pts(got)}</b>.` : 'Esta misión es <b>base</b>: no da puntos directos, pero sin ella no se puede responder lo que sí los da.'}
           En total llevas <b>${pts(goal.earned)} de ${goal.total}</b>.</p><button class="cr-link" data-cr="goal">Ver qué me falta para el 7</button></div>`; })()}
-      <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas${s.path === 'misiones' ? ' en esta misión' : ''}</p>
-        ${leafChips(cls, api, cls.id, c => s.path !== 'misiones' ? !c.root : c.mission === s.mission)}${calibrationLine(cls, api, cls.id)}
+      <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas${s.path === 'misiones' || s.path === 'base' ? ' en esta misión' : ''}</p>
+        ${leafChips(cls, api, cls.id, c => s.path === 'base' ? c.id === missionById(cls, s.mission)?.concept : s.path !== 'misiones' ? !c.root : c.mission === s.mission)}${calibrationLine(cls, api, cls.id)}
         <p class="cr-note">Las hojas se ponen <b>verdes</b> solo cuando produces la respuesta tú solo (escalón 5), por ejemplo al escribirla. Elegir entre alternativas deja un <b>brote</b>.</p></div>
       <p class="cr-note">Todavía no es dominio: cuenta como <b>retenido</b> cuando lo recuerdas sin ayuda 24 horas o más después.</p></div>`;
     return { sage, center };
@@ -680,7 +833,7 @@
     const goal = goalOf(cls, s);
     // En el mapa y la bienvenida, el % es de toda la clase (actividades respondidas); dentro de una misión, de esa misión.
     if (b.kind === 'pick' || b.kind === 'path') { const all = allItems(cls); progress = Math.round(all.filter(({ item }) => s.answers[item.id]).length / Math.max(1, all.length) * 100); }
-    const where = !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'misiones' && missionById(cls, s.mission)
+    const where = !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
       ? `Misión ${cls.missions.findIndex(m => m.id === s.mission) + 1}` : s.path === 'misiones' ? 'la clase' : PATHS[s.path].name;
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
@@ -731,15 +884,15 @@
       rerender(id, api);
     }, 3800);
     // Editor de moléculas y flechas: maneja sus propios toques y guarda en el trabajo de la actividad.
-    window.NexoMolEditor?.mount(root, { work: (itemId, retry) => workOf(s, allItems(cls).find(x => x.item.id === itemId).item, retry),
-      item: itemId => allItems(cls).find(x => x.item.id === itemId)?.item, commit: () => rerender(id, api) });
+    window.NexoMolEditor?.mount(root, { work: (itemId, retry) => workOf(s, findItem(cls, itemId), retry),
+      item: itemId => findItem(cls, itemId), commit: () => rerender(id, api) });
     root.addEventListener('pointerup', commit);
     root.addEventListener('input', event => {
       const range = event.target.closest('[data-cr-conf]');
       if (range) { range.style.setProperty('--v', `${range.value}%`); const b = range.previousElementSibling?.querySelector('b'); if (b) b.textContent = `${range.value} %`; return; }
       const sim = event.target.closest('[data-cr-sim]');
       if (sim) {
-        const it = allItems(cls).find(x => x.item.id === sim.dataset.crSim)?.item; if (!it) return;
+        const it = findItem(cls, sim.dataset.crSim); if (!it) return;
         const w = workOf(s, it, sim.dataset.retry === '1'), v = Number(sim.value), above = v > it.sim.threshold, box2 = sim.closest('[data-sim]');
         w.sim = v; w.moved = true;
         box2.classList.toggle('is-above', above);
@@ -749,7 +902,7 @@
         return;
       }
       const box = event.target.closest('[data-cr-text]');
-      if (box) { const it = allItems(cls).find(x => x.item.id === box.dataset.crText)?.item; if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
+      if (box) { const it = findItem(cls, box.dataset.crText); if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
     });
     root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
     (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
@@ -766,7 +919,7 @@
     const state = api.getState();
     const ev = E.record(state, id, { itemId: item.id, conceptId: E.conceptOf(item, missionId), missionId, stage: b.stage || 'rescue',
       step: E.stepOf(item), correct: rec.correct, hint: Boolean(rec.hint), retry, transfer: b.stage === 'transfer',
-      confidence: retry ? null : rec.confidence ?? null, why: retry ? null : rec.why || null, at: rec.at });
+      confidence: retry ? null : rec.confidence ?? null, why: retry ? null : rec.why || null, misconception: mcKeyOf(item, rec), at: rec.at });
     E.schedule(state, id, ev).then(() => api.saveState()).catch(() => { /* sin repaso programado: la evidencia queda igual */ });
   }
   const withConfidence = (s, item, rec) => {
@@ -817,6 +970,12 @@
     if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
     if (action === 'mission') { s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'base') { s.panel = null; s.path = 'base'; s.mission = button.dataset.mission; s.beat = 1; return rerender(id, api); }
+    if (action === 'detour') { s.detour[button.dataset.key] = button.dataset.go === '1'; s.beat += 1; s.mascotMood = 'happy'; return rerender(id, api); }
+    if (action === 'diag-redo') {
+      for (const { item } of cls.diagnosis?.items || []) for (const key of ['answers', 'conf', 'confWhy', 'work']) delete s[key][item.id];
+      s.beat = 1; return rerender(id, api);
+    }
     if (action === 'restart') { s.path = null; s.mission = null; s.beat = 0; s.mascotMood = 'idle'; return rerender(id, api); }
     if (action.startsWith('act-')) return onActivity(action, button, cls, s, b, id, api);
     if (action === 'next') { if (beatDone(s, b)) { s.beat += 1; s.mascotMood = 'idle'; } return rerender(id, api); }
@@ -827,7 +986,7 @@
       if (canHint && b.item.hint && !s.hints[b.item.id]) {
         s.hints[b.item.id] = true; s.mascotMood = 'think';
         s.mascotSay = 'Te dejé una pista en el pergamino. Esta respuesta contará como "con pista".';
-      } else if (b.kind === 'question' && (b.stage === 'diagnostic' || b.stage === 'transfer') && !s.answers[b.item.id]) {
+      } else if (b.kind === 'question' && (b.stage === 'diagnostic' || b.stage === 'transfer' || b.stage === 'placement') && !s.answers[b.item.id]) {
         s.mascotMood = 'think'; s.mascotSay = 'Aquí no puedo ayudarte, ¡pero sé que puedes!';
       } else {
         s.mascotMood = 'happy'; s.mascotSay = ['¡Vamos bien!', 'Me encanta esta torre.', '¿Viste ese frasco burbujear?'][s.beat % 3];
@@ -836,7 +995,7 @@
     }
     if (action === 'answer') {
       const itemId = button.dataset.item, choice = Number(button.dataset.choice), retry = button.dataset.retry === '1';
-      const item = allItems(cls).find(entry => entry.item.id === itemId)?.item;
+      const item = findItem(cls, itemId);
       if (!item) return;
       const correct = Boolean(item.options[choice]?.correct);
       if (retry) {
@@ -856,7 +1015,7 @@
 
   function onActivity(action, button, cls, s, b, id, api) {
     const retry = button.dataset.retry === '1';
-    const item = allItems(cls).find(entry => entry.item.id === button.dataset.item)?.item;
+    const item = findItem(cls, button.dataset.item);
     if (!item || recordOf(s, item, retry)) return;
     const w = workOf(s, item, retry);
     if (action === 'act-reveal') {
@@ -904,5 +1063,5 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, PATHS };
+  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, PATHS };
 })();

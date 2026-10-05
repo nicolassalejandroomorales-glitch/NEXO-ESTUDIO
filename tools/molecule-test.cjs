@@ -46,7 +46,7 @@ assert.equal(M.diff(propylamine, amideA).kind, 'formula');
   assert.equal(RDKit.get_mol(M.toMolblock(pentavalent)), null, 'RDKit también rechaza el C con 5 enlaces');
   // Moléculas de las clases
   let checked = 0;
-  for (const cls of Object.values(context.window.NexoClasses)) for (const m of cls.missions) {
+  for (const cls of Object.values(context.window.NexoClasses)) for (const m of [...cls.missions, ...(cls.base || [])]) {
     if (m.stages.hook?.scene) { const got = smiles(m.stages.hook.scene); if (m.stages.hook.smiles) assert.equal(got, canon(m.stages.hook.smiles), `${m.id}: el caso de farmacia no dibuja ${m.stages.hook.smiles}`); checked++; }
     for (const p of m.parts || []) for (const blk of p.explain || []) for (const f of blk.frames || []) { smiles(f.scene); checked++; }
     const items = [...['diagnostic', 'practice', 'challenge', 'transfer'].flatMap(st => m.stages[st] || []), ...(m.parts || []).flatMap(p => [p.pretest, ...(p.practice || [])].filter(Boolean))];

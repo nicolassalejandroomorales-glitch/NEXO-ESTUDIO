@@ -10,7 +10,8 @@ for (const [id, file] of Object.entries(catalog)) {
   const cls = context.window.NexoClasses[id];
   assert.ok(cls && cls.id === id, `${id}: la clase no se registró`);
   const ids = new Set();
-  for (const m of cls.missions) {
+  for (const m of [...cls.missions, ...(cls.base || [])]) {
+    const isBase = (cls.base || []).includes(m);
     const NXM = context.window.NexoClassroom;
     const blocks = new Set(NXM.blocksOf(m).filter(b => !(m.stages.fundamentals || []).includes(b)).map(b => b.id));
     for (const { item, stage } of NXM.itemsOf(m)) {
@@ -40,12 +41,13 @@ for (const [id, file] of Object.entries(catalog)) {
       const NX = context.window.NexoClassroom;
       const solution = type === 'order' ? item.answer : type === 'classify' ? Object.fromEntries(item.cards.map(c => [c.id, c.bucket])) : type === 'match' ? Object.fromEntries(item.pairs.map((_, i) => [i, i])) : type === 'pick' ? item.answer : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : type === 'build' ? { graph: item.target } : type === 'arrows' ? item.answer : type === 'poe' ? { pred: item.options.findIndex(o => o.correct) } : type === 'recipe' ? item.answer : type === 'spot' ? { step: item.wrong, fix: item.fix.options.findIndex(o => o.correct) } : item.options.findIndex(o => o.correct);
       assert.ok(NX.isCorrect(item, solution), `${item.id}: la solución propia no se corrige como correcta`);
+      if (!['build', 'arrows'].includes(type)) assert.equal(context.window.NexoMolEditor.feedback(item, { correct: false, value: type === 'write' ? { text: 'x', checks: [] } : solution }), '', `${item.id}: el aviso de dibujo no aplica a esta actividad`);
       if (type === 'build') assert.ok(!NX.isCorrect(item, { graph: item.start }), `${item.id}: la base sin completar no debe contar como correcta`);
       if (type === 'arrows') assert.ok(!NX.isCorrect(item, item.answer.slice(1)), `${item.id}: faltando una flecha no debe contar como correcta`);
       if (type === 'recipe') assert.ok(!NX.isCorrect(item, [...item.answer].reverse()), `${item.id}: el orden al revés no debe contar`);
       if (type === 'spot') assert.ok(!NX.isCorrect(item, { step: (item.wrong + 1) % item.steps.length }), `${item.id}: tocar un paso bueno no debe contar`);
       if (type === 'write') assert.ok(!NX.isCorrect(item, { text: item.model, checks: item.rubric.map((_, i) => i > 0) }) && !NX.isCorrect(item, { text: 'no sé', checks: item.rubric.map(() => true) }), `${item.id}: la escrita no debe contar sin todas las ideas o sin texto`);
-      assert.ok(item.explain && item.slide, `${item.id}: falta explicación o diapositiva`);
+      assert.ok(item.explain && (item.slide || isBase), `${item.id}: falta explicación o diapositiva`);
       assert.ok(cls.sources[item.source], `${item.id}: fuente inexistente`);
       if (stage === 'practice' || stage === 'challenge') assert.ok(item.hint, `${item.id}: la práctica necesita pista`);
       for (const o of [...(item.options || []), ...Object.values(item.targets || {}), item]) if (o.misconception) {
@@ -55,7 +57,8 @@ for (const [id, file] of Object.entries(catalog)) {
       }
     }
     assert.ok(blocks.size, `${m.id}: sin explicación`);
-    if (cls.concepts) assert.ok(cls.concepts.some(c => c.mission === m.id), `${m.id}: la misión no tiene conceptos (rama del árbol)`);
+    if (cls.concepts && !isBase) assert.ok(cls.concepts.some(c => c.mission === m.id), `${m.id}: la misión no tiene conceptos (rama del árbol)`);
+    if (isBase) assert.ok(cls.concepts.some(c => c.id === m.concept && c.root) && NXM.blocksOf(m).every(b => b.deeper) && NXM.itemsOf(m).some(x => x.item.type === 'write'), `${m.id}: la misión base necesita su raíz, explicaciones simples y una pregunta escrita`);
   }
   const kinds = st => context.window.NexoClassroom.beats(cls, { answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, ...st }).map(b => b.kind);
   const m1 = cls.missions[0];
@@ -81,6 +84,61 @@ for (const [id, file] of Object.entries(catalog)) {
     assert.ok(p.intro && (p.explain || []).length && (p.practice || []).length >= 3 && p.recipe?.title, `${m.id}/${p.id}: la receta necesita intro, lección, 3+ actividades y receta guardada`);
     assert.ok(new Set(p.practice.map(i => i.type || 'choice')).size >= 3, `${m.id}/${p.id}: al menos 3 tipos de actividad distintos`);
     for (const blk of p.explain) if (blk.frames) for (const f of blk.frames) assert.ok(f.scene?.atoms?.length && f.caption, `${blk.id}: cada cuadro del mecanismo necesita escena y texto`);
+  }
+  // Etapa 4: diagnóstico adaptativo, errores que guían y clase base.
+  if (cls.diagnosis) {
+    const NX = context.window.NexoClassroom;
+    for (const { level, item } of cls.diagnosis.items) {
+      assert.ok(!ids.has(item.id), `${item.id}: id repetido`); ids.add(item.id);
+      assert.ok([1, 2, 3].includes(level) && cls.concepts.some(c => c.id === item.concept) && item.explain && item.options.filter(o => o.correct).length === 1, `${item.id}: pregunta de diagnóstico inválida`);
+    }
+    for (const [key, mc] of Object.entries(cls.misconceptions)) {
+      if (mc.base) assert.ok(cls.concepts.some(c => c.id === mc.base && c.root), `${key}: "base" debe ser una raíz del árbol`);
+      if (mc.check) { assert.ok(!ids.has(mc.check.id) && mc.check.options.filter(o => o.correct).length === 1 && mc.check.explain && cls.concepts.some(c => c.id === mc.check.concept), `${key}: caso corto inválido`); ids.add(mc.check.id); }
+    }
+    const answerAll = (st, pick) => { for (let k = 0; k < 20; k++) { const plan = NX.diagnosisPlan(cls, st); if (plan.done) return plan; const it = plan.next.item; st.answers[it.id] = { choice: it.options.findIndex(o => pick(it) === Boolean(o.correct)), correct: pick(it) }; } };
+    const good = answerAll({ answers: {} }, () => true), bad = answerAll({ answers: {} }, () => false);
+    assert.ok(good.asked.length >= 6 && good.asked.length <= cls.diagnosis.max, 'El diagnóstico hace entre 6 y 7 preguntas');
+    assert.ok(good.asked[1].level === 3 && bad.asked[1].level === 1, 'Si aciertas sube de nivel; si fallas baja a las bases');
+    assert.ok(bad.bases.length >= 2 && bad.start === cls.missions[0], 'Fallando todo sugiere la clase base y empezar por la Misión 1');
+    assert.ok(good.bases.length === 0 && (!good.start || cls.missions.indexOf(good.start) > 0), 'Acertando todo no sugiere la base ni la Misión 1');
+    assert.equal(bad.asked[1].item.concept, 'base.lewis', 'Al fallar baja a una base relacionada con lo que falló');
+    const kb = st => NX.beats(cls, { path: 'diagnostico', answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {}, ...st }).map(b => b.kind);
+    assert.ok(kb({}).filter(k => k === 'question').length === 1 && !kb({}).includes('diagresult'), 'El diagnóstico muestra una pregunta a la vez');
+    // Errores que guían, en la misión de reacciones: E2 mal + Hofmann mal (misma base SN2/E2) → caso corto y desvío.
+    const m7x = cls.missions.find(m => m.id === 'm7'), it = id => NX.itemsOf(m7x).find(x => x.item.id === id).item;
+    const wrongOn = id => { const item = it(id); return { choice: item.options.findIndex(o => !o.correct), correct: false }; };
+    const st = { path: 'misiones', mission: 'm7', answers: { 'm7-e2': wrongOn('m7-e2'), 'm7-tw2': wrongOn('m7-tw2') }, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {} };
+    st.answers['m7-tw2'].choice = it('m7-tw2').options.findIndex(o => o.misconception === 'zaitsev-hofmann');
+    const bs = NX.beats(cls, st);
+    assert.ok(bs.some(b => b.stage === 'fix' && b.item.id === 'fix-hofmann'), 'Un error típico con caso corto lo muestra al tiro');
+    const d = bs.findIndex(b => b.kind === 'detour');
+    assert.ok(d > bs.findIndex(b => b.item?.id === 'm7-tw2') && bs[d].bm.concept === 'base.sn-e', 'Dos errores con la misma base ofrecen el desvío a esa base');
+    const go = NX.beats(cls, { ...st, detour: { 'm7:base.sn-e': true } });
+    const dd = go.findIndex(b => b.kind === 'detour');
+    assert.deepEqual(go.slice(dd + 1, dd + 6).map(b => b.kind), ['lesson', 'question', 'question', 'say', 'rescue'], 'El desvío: base, 2 ejercicios y vuelta al problema');
+    assert.equal(go.filter(b => b.kind === 'rescue' && b.item.id === 'm7-tw2').length, 1, 'El problema ya rescatado no se repite al final');
+    assert.ok(!NX.beats(cls, { ...st, detour: { 'm7:base.sn-e': false } }).some(b => b.stage === 'detour'), '"Ahora no" respeta tu decisión');
+    // Invariante: responder (aunque sea mal) nunca cambia los momentos que ya pasaste; si cambiaran, te moverías de lugar.
+    for (const [path, mission] of [['misiones', 'm1'], ['misiones', 'm7'], ['base', 'z2'], ['prueba', null], ['diagnostico', null]]) {
+      const st = { path, mission, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {}, conf: {}, confWhy: {} };
+      const sig = b => `${b.kind}:${b.item?.id || b.block?.id || b.root || b.text || ''}`;
+      for (let guard = 0; guard < 200; guard++) {
+        const list = NX.beats(cls, st);
+        const i = list.findIndex(b => (b.kind === 'question' && !st.answers[b.item.id]) || (b.kind === 'rescue' && !st.retries[b.item.id]) || (b.kind === 'detour' && st.detour[`${b.m.id}:${b.root}`] === undefined) || (b.kind === 'offer' && st.skipExplain[b.m.id] === undefined));
+        if (i < 0) break;
+        const b = list[i], before = list.slice(0, i + 1).map(sig);
+        if (b.kind === 'question') { const it = b.item; st.answers[it.id] = { correct: false, choice: (it.options || []).findIndex(o => !o.correct), value: null }; }
+        else if (b.kind === 'rescue') st.retries[b.item.id] = { correct: true };
+        else if (b.kind === 'detour') st.detour[`${b.m.id}:${b.root}`] = true;
+        else st.skipExplain[b.m.id] = false;
+        assert.deepEqual(NX.beats(cls, st).slice(0, i + 1).map(sig), before, `${path}/${mission}: responder ${sig(b)} cambió momentos anteriores`);
+      }
+    }
+    // Clase base como camino propio
+    const kbase = mission => NX.beats(cls, { path: 'base', mission, answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {} }).map(b => b.kind);
+    assert.deepEqual(kbase(null), ['path', 'basepick'], 'Repaso desde cero parte eligiendo la base');
+    assert.ok(kbase(cls.base[0].id).includes('lesson') && kbase(cls.base[0].id).includes('close'), 'Cada base se recorre sola');
   }
   const m7 = cls.missions.find(m => m.parts);
   if (m7) {

@@ -58,7 +58,7 @@
     const kind = entry.retry ? null : confidenceKind(entry.confidence, entry.correct);
     const rec = {
       id: `${entry.itemId}:${entry.retry ? 'r' : 'a'}:${at.getTime()}`,
-      itemId: entry.itemId, conceptId: entry.conceptId, missionId: entry.missionId || null,
+      itemId: entry.itemId, conceptId: entry.conceptId, missionId: entry.missionId || null, misconception: entry.misconception || null,
       stage: entry.stage || null, step: Number(entry.step) || 2,
       correct: Boolean(entry.correct), hint: Boolean(entry.hint), retry: Boolean(entry.retry),
       transfer: Boolean(entry.transfer), confidence: entry.confidence ?? null, why: entry.why || null, kind,

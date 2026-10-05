@@ -34,6 +34,14 @@ Clase (por ejemplo Aminas, PEP 1)
 
 El **rescate** y el **cierre** no se escriben: el aula los arma solos con tus errores.
 
+Además, a nivel de clase (etapa 4, `docs/etapa-4-diagnostico/SPEC.md`):
+
+- `diagnosis: { start, max, items: [{ level: 1|2|3, item }] }`: preguntas **propias** del diagnóstico "¿Por dónde empiezo?" (nivel 1 = bases,
+  2 = lo básico del tema, 3 = lo difícil). Cada una con su `concept`.
+- `base: [misiones]`: el "Repaso desde cero". Cada misión base declara `concept` (una raíz del árbol, `root: true`), explicaciones con `deeper`,
+  ejercicios de fácil a difícil y una pregunta escrita.
+- En cada error típico (`misconceptions`): `base` (de qué raíz viene, para el desvío) y opcionalmente `check` (un caso corto que aparece justo después).
+
 ### La meta de la clase: el camino al 7
 
 Cada clase declara qué puntos de la prueba prepara (`goal`, sacado de la pauta). Un 7 es tener todos los puntos;

@@ -233,7 +233,7 @@
     return want.size === got.size && [...want].every(k => got.has(k));
   }
   function feedback(item, rec) {
-    if (!rec || rec.correct) return '';
+    if (!rec || rec.correct || !['build', 'arrows'].includes(item.type)) return ''; // solo para dibujos y flechas
     if (item.type === 'build') return (item.near || []).find(n => M().same(rec.value.graph, n.graph))?.note || M().diff(rec.value.graph, item.target).message;
     const wrong = (rec.value || []).find(x => !item.answer.some(y => key(y) === key(x)));
     return wrong ? (item.notes?.[key(wrong)] || 'Revisa de dónde salen los electrones y quién los necesita.') : 'Te faltan flechas.';

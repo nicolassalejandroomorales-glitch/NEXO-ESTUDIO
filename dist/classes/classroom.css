@@ -618,3 +618,30 @@ body[data-nexo-ambient-motion="reduced"] .cr-spot .cr-spot-glow { animation: non
   .cr-recipe-card, .cr-flask-bubble, .cr-caul-bub, .cr-smoke circle { animation: none !important; }
 }
 body[data-nexo-ambient-motion="reduced"] :is(.cr-recipe-card, .cr-flask-bubble, .cr-caul-bub, .cr-smoke circle) { animation: none !important; }
+
+/* ── Etapa 4: diagnóstico, errores que guían y repaso desde cero (docs/etapa-4-diagnostico/SPEC.md) ── */
+.cr-tip-card { width: min(860px, 100%); margin: 0 0 12px; display: grid; gap: 2px; padding: 12px 16px; border-radius: 14px; cursor: pointer; text-align: left; font: inherit;
+  color: var(--chalk); border: 1px dashed rgb(232 192 106 / .7); background: rgb(29 42 39 / .82); box-shadow: 0 10px 26px rgb(0 0 0 / .35); transition: transform .2s, border-color .2s; }
+.cr-tip-card:hover { transform: translateY(-2px); border-color: var(--gold); }
+.cr-tip-card b { font-family: var(--font-title); font-size: 1.05rem; color: var(--gold); }
+.cr-tip-card span { color: #e3dccb; font-size: .92rem; }
+.cr-tip-card.is-done { border-style: solid; border-color: #7fc79d; }
+.cr-tip-card.is-done b { color: #b6f5c0; }
+.cr-tip-card.is-base { margin: 12px 0 0; }
+.cr-diag h3, .cr-detour h3 { margin: 2px 0 10px; font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
+.cr-diag-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 10px; }
+.cr-diag-cols > div { padding: 10px 12px; border-radius: 10px; background: rgb(255 255 255 / .5); }
+.cr-diag-h { margin: 0 0 6px; font-weight: 700; color: var(--gold-deep); }
+.cr-diag ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.cr-diag li { color: var(--ink); }
+.cr-diag li.is-right { color: #1f4d34; font-weight: 600; }
+.cr-diag li.is-wrong { color: var(--wrong); font-weight: 600; }
+.cr-diag li.is-likely { color: var(--ink-soft); }
+.cr-diag li small { color: var(--ink-soft); }
+.cr-detour { border-left: 6px solid var(--gold-deep); }
+.cr-detour ul { margin: 6px 0 10px; padding-left: 20px; color: var(--ink); }
+.cr-detour li { margin: 4px 0; }
+/* Con el diagnóstico son 4 caminos: 2 × 2 en pantalla ancha (el diagnóstico primero). */
+.cr-paths { grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); width: min(720px, 100%); }
+.cr-base-card h3 { margin: 2px 0 10px; font-family: Georgia, 'Times New Roman', serif; color: var(--ink); }
+.cr-base-card > p:not(.cr-eyebrow) { font-size: 1.08rem; line-height: 1.65; color: var(--ink); }

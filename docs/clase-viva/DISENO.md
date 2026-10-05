@@ -203,8 +203,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 1 | Motor de evidencia: escalones, confianza, hojas del árbol; conectado con FSRS | **Hecha** | Opus 5.5 |
 | 2 | Editor de estructuras, flechas de mecanismo y revisor RDKit en las pruebas | **Hecha** | Opus 5.5 |
 | 3 | **Piloto:** misión Reacciones completa con todos sus momentos | **Hecha** (esperando tu prueba) | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
-| 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | **Siguiente** | Opus 5.5 |
-| 5 | Formulario con investigación y recetario de pociones | Pendiente | Opus 5.5 |
+| 4 | Diagnóstico adaptativo, errores que guían y clase base mínima (Lewis, cargas, ácido-base, E2) | **Hecha** (esperando tu prueba) | Opus 5.5 |
+| 5 | Formulario con investigación y recetario de pociones | **Siguiente** | Opus 5.5 |
 | 6 | Las otras misiones de Aminas al modelo nuevo | Pendiente | Opus 5.5 |
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | Pendiente | Sonnet 5.5 |
 | 8 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | Pendiente | Sonnet 5.5 |
@@ -235,6 +235,12 @@ La etapa 3 es la prueba de fuego: si la misión Reacciones te sirve a ti para en
   **el aprendiz que se equivocó** (encontrar y corregir el paso), dibujo del producto con aviso de "casi" (Zaitsev vs Hofmann) y la
   **receta guardada** en el grimorio. Cierre: enséñale a tu compañero (escrito, con ideas clave detectadas) y encargo estilo PEP con opción en papel.
   Tipos nuevos: `poe`, `recipe`, `spot` y `figures` en `choice`. Pruebas: `classroom-test` exige 3+ tipos por receta y cuadros con escena.
+- **Etapa 4 hecha (5 oct):** ver `docs/etapa-4-diagnostico/SPEC.md`. Camino nuevo **"¿Por dónde empiezo?"**: 7 preguntas en escalera de 3 niveles
+  (aciertas → sube, fallas → baja a las bases), resultado como hipótesis con misión recomendada y base sugerida. **Errores que guían**: caso corto
+  justo después de 4 errores típicos; 2 errores con la misma base ofrecen un desvío (explicación + 2 ejercicios + vuelta al problema); el sabio
+  recuerda tu error típico de otro día. **Repaso desde cero**: 4 misiones base (Lewis, cargas formales, ácido-base y pKa, SN2/E2 y solvente), cada una
+  con pregunta escrita. También: pregunta escrita en la receta de diazonio, y dos errores antiguos arreglados (el rescate se metía antes de tu posición
+  al fallar el encargo final; el aviso de flechas aparecía en actividades que no eran de dibujo). Prueba nueva: responder nunca cambia lo que ya pasaste.
 - Nota honesta: el "Camino al 7" todavía cuenta las alternativas de transferencia como puntos; cuando cada misión tenga sus preguntas de producir
   (etapas 4 y 7) se exigirá escalón 5 también ahí.
 
