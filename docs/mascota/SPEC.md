@@ -41,6 +41,17 @@ F tubo de ensayo, G gota de mercurio, H cristal. Esperando su elección. Las esp
   slime avanza a saltitos aplastándose). Botón "Ver puntos del suelo" para calibrar.
 - Cómo interactuar con un fondo PNG: suelo caminable + escala por profundidad + puntos de interés (anclas de `home-scene.js`) + recortes del
   mismo PNG encima de la mascota para que pase "detrás" (técnica de las enredaderas). Falta implementar los recortes (oclusión).
+- **v3 de la demo (4 oct 2026)**: animador por código que mezcla quieto/caminar con suavizado exponencial; **mirada** (grupo `m-gaze`:
+  mira hacia donde va, vistazos al azar, al libro al leer); **anticipación** (se agacha antes de saltar) y **aterrizaje** con polvo; giro con
+  aplastamiento; **gestos sueltos** en reposo (corcho que salta, gota del slime `m-drip`, giro de energía del átomo); páginas que se dan vuelta
+  al leer; **corazones** al tocarla; **aura amarilla translúcida** detrás + 4 **luciérnagas** que orbitan (idea de Niquito); toque cálido
+  (`sepia/saturate`) para integrarse a la luz de velas. Análisis de encaje: colores más fríos que la pintura → toque cálido + aura.
+- **v4 (4 oct 2026)**: **8 expresiones** en `alquimicos.js` (`setExpression`: neutral, feliz, sorpresa, dormida, concentrada, amor, bostezo,
+  idea; ojos y bocas como variantes que se muestran/ocultan) + hoja `/dev/expresiones.html`. Conductas: **baile** con notas ♪, **saludo** "¡!",
+  **bostezo y estirón** (antes/después de la siesta), **idea** con bombilla, runas que salen del libro al leer, sorpresa cuando el libro vuela,
+  amor al tocarla. **Curvas** (Bézier) al caminar e **inclinación** por aceleración. **Luciérnagas en JS** que persiguen con retraso (estela),
+  se calman al dormir y se alborotan al estar feliz. **Libros detallados** (cuero, esquinas de metal, símbolo en relieve, cinta, 3 colores;
+  abierto con letra capital, texto y un benceno con flechas).
 
 ## Fase 3 — Diseñar primero, animar después (4 oct 2026) — reemplazada por la Fase 4
 

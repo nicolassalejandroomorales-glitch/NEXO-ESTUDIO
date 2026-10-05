@@ -21,20 +21,56 @@
 
   // Cara: ojos de varias capas (iris con degradado, reflejo de la ventana, dos brillos, párpado) + mejillas difuminadas + boca.
   function face(id, x, y, gap, r, { mouth = 'smile', blush = '#f48f86', tongue = '#e0675c' } = {}) {
-    const eye = ex => `<g class="m-eye" style="transform-origin:${ex}px ${y}px">` +
+    const eye = ex => `<g class="m-eye" style="transform-origin:${ex}px ${y}px"><g class="m-gaze">` +
       `<ellipse cx="${ex}" cy="${y}" rx="${r * .82}" ry="${r}" fill="url(#${id}iris)" ${S(1.6, '#1a0f08')}/>` +
       `<path d="M${ex - r * .55} ${y + r * .35} C${ex - r * .3} ${y + r * .85} ${ex + r * .35} ${y + r * .85} ${ex + r * .6} ${y + r * .3}" fill="none" stroke="#a07850" stroke-width="${r * .22}" stroke-linecap="round" opacity=".5"/>` +
       `<rect x="${ex + r * .05}" y="${y - r * .72}" width="${r * .5}" height="${r * .55}" rx="${r * .12}" fill="#fff" opacity=".95" transform="rotate(12 ${ex + r * .3} ${y - r * .45})"/>` +
       `<circle cx="${ex - r * .3}" cy="${y + r * .38}" r="${r * .13}" fill="#fff" opacity=".9"/>` +
-      `<path d="M${ex - r * .9} ${y - r * .55} C${ex - r * .45} ${y - r * 1.18} ${ex + r * .45} ${y - r * 1.18} ${ex + r * .9} ${y - r * .55}" fill="none" ${S(2.1)}/></g>`;
-    const m = mouth === 'open'
-      ? `<path d="M${x - r * .62} ${y + r * .95} C${x - r * .48} ${y + r * 1.9} ${x + r * .48} ${y + r * 1.9} ${x + r * .62} ${y + r * .95} C${x + r * .2} ${y + r * 1.1} ${x - r * .2} ${y + r * 1.1} ${x - r * .62} ${y + r * .95} Z" fill="#6e211c" ${S(2.2)}/>` +
-        `<ellipse cx="${x}" cy="${y + r * 1.55}" rx="${r * .34}" ry="${r * .17}" fill="${tongue}"/>`
-      : `<path d="M${x - r * .55} ${y + r * 1.0} C${x - r * .25} ${y + r * 1.5} ${x + r * .25} ${y + r * 1.5} ${x + r * .55} ${y + r * 1.0}" fill="none" ${S(2.6)}/>`;
-    return `<g class="m-face"><g filter="url(#${id}b1)"><ellipse cx="${x - gap - r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/>` +
+      `<path d="M${ex - r * .9} ${y - r * .55} C${ex - r * .45} ${y - r * 1.18} ${ex + r * .45} ${y - r * 1.18} ${ex + r * .9} ${y - r * .55}" fill="none" ${S(2.1)}/></g></g>`;
+    // ——— Variantes de ojos y bocas: todas se dibujan y setExpression() muestra solo las de la expresión activa. ———
+    const both = f => f(x - gap) + f(x + gap);
+    const EYES = {
+      normal: both(eye),
+      feliz: both(ex => `<path d="M${ex - r * .8} ${y + r * .25} Q${ex} ${y - r * 1.05} ${ex + r * .8} ${y + r * .25}" fill="none" ${S(3.2)}/>`),
+      dormido: both(ex => `<path d="M${ex - r * .8} ${y - r * .05} Q${ex} ${y + r * .75} ${ex + r * .8} ${y - r * .05}" fill="none" ${S(3)}/>` +
+        `<path d="M${ex + r * .55} ${y + r * .25} l${r * .25} ${r * .15} M${ex - r * .55} ${y + r * .25} l${-r * .25} ${r * .15}" ${S(1.6)}/>`),
+      sorpresa: both(ex => `<g class="m-gaze"><ellipse cx="${ex}" cy="${y}" rx="${r * .95}" ry="${r * 1.12}" fill="#fffdf6" ${S(2.2)}/>` +
+        `<circle cx="${ex}" cy="${y + r * .1}" r="${r * .42}" fill="url(#${id}iris)"/><circle cx="${ex + r * .14}" cy="${y - r * .08}" r="${r * .14}" fill="#fff"/></g>`),
+      concentrado: both(ex => `<g transform="translate(0 ${y * .28}) scale(1 .72)">${eye(ex)}</g>` +
+        `<path d="M${ex - r * .95} ${y - r * .45} L${ex + r * .95} ${y - r * .6}" ${S(2.4)}/>`),
+      amor: both(ex => `<g transform="translate(${ex} ${y})"><path d="M0 ${r * .9} C${-r * 1.2} 0 ${-r * 1.1} ${-r * 1.05} ${-r * .45} ${-r * .95} C${-r * .15} ${-r * .9} 0 ${-r * .7} 0 ${-r * .5} C0 ${-r * .7} ${r * .15} ${-r * .9} ${r * .45} ${-r * .95} C${r * 1.1} ${-r * 1.05} ${r * 1.2} 0 0 ${r * .9} Z" fill="#ff5d7a" ${S(2)}/>` +
+        `<ellipse cx="${-r * .42}" cy="${-r * .5}" rx="${r * .22}" ry="${r * .14}" fill="#fff" opacity=".85"/></g>`)
+    };
+    const open = (k = 1) => `<path d="M${x - r * .62 * k} ${y + r * .95} C${x - r * .48 * k} ${y + r * (.95 + .95 * k)} ${x + r * .48 * k} ${y + r * (.95 + .95 * k)} ${x + r * .62 * k} ${y + r * .95} C${x + r * .2} ${y + r * 1.1} ${x - r * .2} ${y + r * 1.1} ${x - r * .62 * k} ${y + r * .95} Z" fill="#6e211c" ${S(2.2)}/>` +
+      `<ellipse cx="${x}" cy="${y + r * (.95 + .6 * k)}" rx="${r * .34 * k}" ry="${r * .17 * k}" fill="${tongue}"/>`;
+    const MOUTHS = {
+      sonrisa: `<path d="M${x - r * .55} ${y + r * 1.0} C${x - r * .25} ${y + r * 1.5} ${x + r * .25} ${y + r * 1.5} ${x + r * .55} ${y + r * 1.0}" fill="none" ${S(2.6)}/>`,
+      abierta: open(1),
+      grande: open(1.35),
+      o: `<ellipse cx="${x}" cy="${y + r * 1.35}" rx="${r * .3}" ry="${r * .38}" fill="#6e211c" ${S(2.2)}/>`,
+      bostezo: `<ellipse cx="${x}" cy="${y + r * 1.5}" rx="${r * .5}" ry="${r * .62}" fill="#6e211c" ${S(2.2)}/><ellipse cx="${x}" cy="${y + r * 1.85}" rx="${r * .3}" ry="${r * .16}" fill="${tongue}"/>`,
+      plana: `<path d="M${x - r * .35} ${y + r * 1.2} C${x - r * .1} ${y + r * 1.32} ${x + r * .15} ${y + r * 1.32} ${x + r * .38} ${y + r * 1.18}" fill="none" ${S(2.4)}/>`,
+      dormida: `<ellipse cx="${x + r * .1}" cy="${y + r * 1.25}" rx="${r * .18}" ry="${r * .22}" fill="#6e211c" ${S(1.8)}/>`
+    };
+    const base = mouth === 'open' ? 'abierta' : 'sonrisa';
+    const variants = (set, kind, on) => Object.entries(set).map(([k, v]) =>
+      `<g class="m-x" data-${kind}="${k}"${k === on ? '' : ' style="display:none"'}>${v}</g>`).join('');
+    return `<g class="m-face" data-base-mouth="${base}"><g class="m-blush" filter="url(#${id}b1)"><ellipse cx="${x - gap - r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/>` +
       `<ellipse cx="${x + gap + r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/></g>` +
       `<path d="M${x - gap - r * 1.3} ${y + r * 1.2} l2 -3 M${x - gap - r * .9} ${y + r * 1.25} l2 -3 M${x + gap + r * .7} ${y + r * 1.25} l2 -3 M${x + gap + r * 1.1} ${y + r * 1.2} l2 -3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>` +
-      eye(x - gap) + eye(x + gap) + m + '</g>';
+      variants(EYES, 'eyes', 'normal') + variants(MOUTHS, 'mouth', base) + '</g>';
+  }
+  // Expresiones = ojos + boca. "base" usa la boca propia de cada mascota (el slime sonríe con la boca abierta).
+  const EXPRESSIONS = {
+    neutral: ['normal', 'base'], feliz: ['feliz', 'grande'], sorpresa: ['sorpresa', 'o'], dormida: ['dormido', 'dormida'],
+    concentrada: ['concentrado', 'plana'], amor: ['amor', 'abierta'], bostezo: ['dormido', 'bostezo'], idea: ['sorpresa', 'grande']
+  };
+  function setExpression(svgRoot, name) {
+    const face = svgRoot.querySelector('.m-face'), [e, m0] = EXPRESSIONS[name] || EXPRESSIONS.neutral;
+    if (!face) return;
+    const m = m0 === 'base' ? face.dataset.baseMouth : m0;
+    face.querySelectorAll('[data-eyes]').forEach(g => { g.style.display = g.dataset.eyes === e ? '' : 'none'; });
+    face.querySelectorAll('[data-mouth]').forEach(g => { g.style.display = g.dataset.mouth === m ? '' : 'none'; });
   }
 
   // ——— MATRAZ ———
@@ -166,7 +202,7 @@
           </g>
           <ellipse cx="112" cy="136" rx="22" ry="14" fill="#fff" opacity=".6" transform="rotate(-28 112 136)"/><ellipse cx="96" cy="162" rx="5" ry="6.5" fill="#fff" opacity=".55"/>
           <path d="M214 150 C222 166 228 184 230 200" stroke="#fff8d0" stroke-width="5" stroke-linecap="round" opacity=".55" filter="url(#${id}b1)"/>
-          <path d="M234 196 C240 206 244 214 242 224 C240 232 232 232 232 224 C232 216 236 208 234 196 Z" fill="#7fd257" ${S(2.4)}/><ellipse cx="236" cy="216" rx="1.6" ry="3" fill="#fff" opacity=".7"/>
+          <g class="m-drip" style="transform-origin:236px 196px"><path d="M234 196 C240 206 244 214 242 224 C240 232 232 232 232 224 C232 216 236 208 234 196 Z" fill="#7fd257" ${S(2.4)}/><ellipse cx="236" cy="216" rx="1.6" ry="3" fill="#fff" opacity=".7"/></g>
           <g class="m-hat" style="transform-origin:150px 100px">
             <path d="M136 64 L164 64 L164 78 C176 82 180 92 178 100 L122 100 C120 92 124 82 136 78 Z" fill="url(#${id}glass)" ${S(3.2)}/>
             <path d="M125 98 C128 90 134 86 140 86 L160 86 C166 86 172 90 175 98 Z" fill="url(#${id}pot)"/><path d="M128 91 L172 91" stroke="#ffd6e8" stroke-width="1.6"/>
@@ -200,6 +236,6 @@
   function unequip(svgRoot, slotName) {
     svgRoot.querySelectorAll(slotName ? `.m-slot[data-slot="${slotName}"]` : '.m-slot').forEach(s => { s.innerHTML = ''; });
   }
-  window.Alquimicos = Object.freeze({ matraz, atomo, slime, equip, unequip, ACCESORIOS, SLOTS: ['cabeza', 'cara', 'cuello', 'mano'],
+  window.Alquimicos = Object.freeze({ matraz, atomo, slime, equip, unequip, ACCESORIOS, setExpression, EXPRESSIONS, SLOTS: ['cabeza', 'cara', 'cuello', 'mano'],
     list: [['matraz', 'Matraz'], ['atomo', 'Átomo'], ['slime', 'Slime']] });
 })();
