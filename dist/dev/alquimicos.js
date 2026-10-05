@@ -21,20 +21,65 @@
 
   // Cara: ojos de varias capas (iris con degradado, reflejo de la ventana, dos brillos, párpado) + mejillas difuminadas + boca.
   function face(id, x, y, gap, r, { mouth = 'smile', blush = '#f48f86', tongue = '#e0675c' } = {}) {
-    const eye = ex => `<g class="m-eye" style="transform-origin:${ex}px ${y}px">` +
+    const eye = ex => `<g class="m-eye" style="transform-origin:${ex}px ${y}px"><g class="m-gaze">` +
       `<ellipse cx="${ex}" cy="${y}" rx="${r * .82}" ry="${r}" fill="url(#${id}iris)" ${S(1.6, '#1a0f08')}/>` +
       `<path d="M${ex - r * .55} ${y + r * .35} C${ex - r * .3} ${y + r * .85} ${ex + r * .35} ${y + r * .85} ${ex + r * .6} ${y + r * .3}" fill="none" stroke="#a07850" stroke-width="${r * .22}" stroke-linecap="round" opacity=".5"/>` +
       `<rect x="${ex + r * .05}" y="${y - r * .72}" width="${r * .5}" height="${r * .55}" rx="${r * .12}" fill="#fff" opacity=".95" transform="rotate(12 ${ex + r * .3} ${y - r * .45})"/>` +
       `<circle cx="${ex - r * .3}" cy="${y + r * .38}" r="${r * .13}" fill="#fff" opacity=".9"/>` +
-      `<path d="M${ex - r * .9} ${y - r * .55} C${ex - r * .45} ${y - r * 1.18} ${ex + r * .45} ${y - r * 1.18} ${ex + r * .9} ${y - r * .55}" fill="none" ${S(2.1)}/></g>`;
-    const m = mouth === 'open'
-      ? `<path d="M${x - r * .62} ${y + r * .95} C${x - r * .48} ${y + r * 1.9} ${x + r * .48} ${y + r * 1.9} ${x + r * .62} ${y + r * .95} C${x + r * .2} ${y + r * 1.1} ${x - r * .2} ${y + r * 1.1} ${x - r * .62} ${y + r * .95} Z" fill="#6e211c" ${S(2.2)}/>` +
-        `<ellipse cx="${x}" cy="${y + r * 1.55}" rx="${r * .34}" ry="${r * .17}" fill="${tongue}"/>`
-      : `<path d="M${x - r * .55} ${y + r * 1.0} C${x - r * .25} ${y + r * 1.5} ${x + r * .25} ${y + r * 1.5} ${x + r * .55} ${y + r * 1.0}" fill="none" ${S(2.6)}/>`;
-    return `<g class="m-face"><g filter="url(#${id}b1)"><ellipse cx="${x - gap - r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/>` +
+      `<path d="M${ex - r * .9} ${y - r * .55} C${ex - r * .45} ${y - r * 1.18} ${ex + r * .45} ${y - r * 1.18} ${ex + r * .9} ${y - r * .55}" fill="none" ${S(2.1)}/></g></g>`;
+    // ——— Variantes de ojos y bocas: todas se dibujan y setExpression() muestra solo las de la expresión activa. ———
+    const both = f => f(x - gap) + f(x + gap);
+    const EYES = {
+      normal: both(eye),
+      feliz: both(ex => `<path d="M${ex - r * .8} ${y + r * .25} Q${ex} ${y - r * 1.05} ${ex + r * .8} ${y + r * .25}" fill="none" ${S(3.2)}/>`),
+      dormido: both(ex => `<path d="M${ex - r * .8} ${y - r * .05} Q${ex} ${y + r * .75} ${ex + r * .8} ${y - r * .05}" fill="none" ${S(3)}/>` +
+        `<path d="M${ex + r * .55} ${y + r * .25} l${r * .25} ${r * .15} M${ex - r * .55} ${y + r * .25} l${-r * .25} ${r * .15}" ${S(1.6)}/>`),
+      sorpresa: both(ex => `<g class="m-gaze"><ellipse cx="${ex}" cy="${y}" rx="${r * .95}" ry="${r * 1.12}" fill="#fffdf6" ${S(2.2)}/>` +
+        `<circle cx="${ex}" cy="${y + r * .1}" r="${r * .42}" fill="url(#${id}iris)"/><circle cx="${ex + r * .14}" cy="${y - r * .08}" r="${r * .14}" fill="#fff"/></g>`),
+      concentrado: both(ex => `<g transform="translate(0 ${y * .28}) scale(1 .72)">${eye(ex)}</g>` +
+        `<path d="M${ex - r * .95} ${y - r * .45} L${ex + r * .95} ${y - r * .6}" ${S(2.4)}/>`),
+      // Cejas sobre los ojos normales: tristes (suben hacia el centro) o enojadas (bajan hacia el centro).
+      triste: both(ex => eye(ex) + `<path d="M${ex - r * .95} ${y - r * 1.35} L${ex + r * .7} ${y - r * 1.75}" ${S(2.6)} transform="${ex < x ? '' : `scale(-1 1) translate(${-2 * ex} 0)`}"/>`),
+      enojado: both(ex => eye(ex) + `<path d="M${ex - r * .9} ${y - r * 1.75} L${ex + r * .75} ${y - r * 1.3}" ${S(2.8)} transform="${ex < x ? '' : `scale(-1 1) translate(${-2 * ex} 0)`}"/>`),
+      estrellas: both(ex => `<g transform="translate(${ex} ${y})"><path d="M0 ${-r * 1.1} L${r * .3} ${-r * .35} L${r * 1.05} ${-r * .3} L${r * .45} ${r * .15} L${r * .65} ${r * .95} L0 ${r * .5} L${-r * .65} ${r * .95} L${-r * .45} ${r * .15} L${-r * 1.05} ${-r * .3} L${-r * .3} ${-r * .35} Z" fill="#ffd34d" ${S(1.8)}/>` +
+        `<circle cx="${-r * .2}" cy="${-r * .35}" r="${r * .18}" fill="#fff"/></g>`),
+      amor: both(ex => `<g transform="translate(${ex} ${y})"><path d="M0 ${r * .9} C${-r * 1.2} 0 ${-r * 1.1} ${-r * 1.05} ${-r * .45} ${-r * .95} C${-r * .15} ${-r * .9} 0 ${-r * .7} 0 ${-r * .5} C0 ${-r * .7} ${r * .15} ${-r * .9} ${r * .45} ${-r * .95} C${r * 1.1} ${-r * 1.05} ${r * 1.2} 0 0 ${r * .9} Z" fill="#ff5d7a" ${S(2)}/>` +
+        `<ellipse cx="${-r * .42}" cy="${-r * .5}" rx="${r * .22}" ry="${r * .14}" fill="#fff" opacity=".85"/></g>`)
+    };
+    const open = (k = 1) => `<path d="M${x - r * .62 * k} ${y + r * .95} C${x - r * .48 * k} ${y + r * (.95 + .95 * k)} ${x + r * .48 * k} ${y + r * (.95 + .95 * k)} ${x + r * .62 * k} ${y + r * .95} C${x + r * .2} ${y + r * 1.1} ${x - r * .2} ${y + r * 1.1} ${x - r * .62 * k} ${y + r * .95} Z" fill="#6e211c" ${S(2.2)}/>` +
+      `<ellipse cx="${x}" cy="${y + r * (.95 + .6 * k)}" rx="${r * .34 * k}" ry="${r * .17 * k}" fill="${tongue}"/>`;
+    const MOUTHS = {
+      sonrisa: `<path d="M${x - r * .55} ${y + r * 1.0} C${x - r * .25} ${y + r * 1.5} ${x + r * .25} ${y + r * 1.5} ${x + r * .55} ${y + r * 1.0}" fill="none" ${S(2.6)}/>`,
+      abierta: open(1),
+      grande: open(1.35),
+      o: `<ellipse cx="${x}" cy="${y + r * 1.35}" rx="${r * .3}" ry="${r * .38}" fill="#6e211c" ${S(2.2)}/>`,
+      bostezo: `<ellipse cx="${x}" cy="${y + r * 1.5}" rx="${r * .5}" ry="${r * .62}" fill="#6e211c" ${S(2.2)}/><ellipse cx="${x}" cy="${y + r * 1.85}" rx="${r * .3}" ry="${r * .16}" fill="${tongue}"/>`,
+      plana: `<path d="M${x - r * .35} ${y + r * 1.2} C${x - r * .1} ${y + r * 1.32} ${x + r * .15} ${y + r * 1.32} ${x + r * .38} ${y + r * 1.18}" fill="none" ${S(2.4)}/>`,
+      dormida: `<ellipse cx="${x + r * .1}" cy="${y + r * 1.25}" rx="${r * .18}" ry="${r * .22}" fill="#6e211c" ${S(1.8)}/>`,
+      triste: `<path d="M${x - r * .5} ${y + r * 1.45} C${x - r * .25} ${y + r * 1.05} ${x + r * .25} ${y + r * 1.05} ${x + r * .5} ${y + r * 1.45}" fill="none" ${S(2.6)}/>`,
+      ondulada: `<path d="M${x - r * .6} ${y + r * 1.3} q${r * .2} ${-r * .3} ${r * .4} 0 q${r * .2} ${r * .3} ${r * .4} 0 q${r * .2} ${-r * .3} ${r * .4} 0" fill="none" ${S(2.4)}/>`
+    };
+    const base = mouth === 'open' ? 'abierta' : 'sonrisa';
+    const variants = (set, kind, on) => Object.entries(set).map(([k, v]) =>
+      `<g class="m-x" data-${kind}="${k}"${k === on ? '' : ' style="display:none"'}>${v}</g>`).join('');
+    return `<g class="m-face" data-base-mouth="${base}"><g class="m-blush" filter="url(#${id}b1)"><ellipse cx="${x - gap - r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/>` +
       `<ellipse cx="${x + gap + r}" cy="${y + r * 1.3}" rx="${r * .78}" ry="${r * .44}" fill="${blush}" opacity=".72"/></g>` +
       `<path d="M${x - gap - r * 1.3} ${y + r * 1.2} l2 -3 M${x - gap - r * .9} ${y + r * 1.25} l2 -3 M${x + gap + r * .7} ${y + r * 1.25} l2 -3 M${x + gap + r * 1.1} ${y + r * 1.2} l2 -3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" opacity=".8"/>` +
-      eye(x - gap) + eye(x + gap) + m + '</g>';
+      variants(EYES, 'eyes', 'normal') + variants(MOUTHS, 'mouth', base) + '</g>';
+  }
+  // Expresiones = ojos + boca. "base" usa la boca propia de cada mascota (el slime sonríe con la boca abierta).
+  const EXPRESSIONS = {
+    neutral: ['normal', 'base'], feliz: ['feliz', 'grande'], sorpresa: ['sorpresa', 'o'], dormida: ['dormido', 'dormida'],
+    concentrada: ['concentrado', 'plana'], amor: ['amor', 'abierta'], bostezo: ['dormido', 'bostezo'], idea: ['sorpresa', 'grande'],
+    triste: ['triste', 'triste'], enojada: ['enojado', 'triste'], deslumbrada: ['estrellas', 'grande'], nerviosa: ['sorpresa', 'ondulada'],
+    confundida: ['normal', 'ondulada'], picara: ['feliz', 'sonrisa']
+  };
+  function setExpression(svgRoot, name) {
+    const face = svgRoot.querySelector('.m-face'), [e, m0] = EXPRESSIONS[name] || EXPRESSIONS.neutral;
+    if (!face) return;
+    const m = m0 === 'base' ? face.dataset.baseMouth : m0;
+    face.querySelectorAll('[data-eyes]').forEach(g => { g.style.display = g.dataset.eyes === e ? '' : 'none'; });
+    face.querySelectorAll('[data-mouth]').forEach(g => { g.style.display = g.dataset.mouth === m ? '' : 'none'; });
   }
 
   // ——— MATRAZ ———
@@ -166,7 +211,7 @@
           </g>
           <ellipse cx="112" cy="136" rx="22" ry="14" fill="#fff" opacity=".6" transform="rotate(-28 112 136)"/><ellipse cx="96" cy="162" rx="5" ry="6.5" fill="#fff" opacity=".55"/>
           <path d="M214 150 C222 166 228 184 230 200" stroke="#fff8d0" stroke-width="5" stroke-linecap="round" opacity=".55" filter="url(#${id}b1)"/>
-          <path d="M234 196 C240 206 244 214 242 224 C240 232 232 232 232 224 C232 216 236 208 234 196 Z" fill="#7fd257" ${S(2.4)}/><ellipse cx="236" cy="216" rx="1.6" ry="3" fill="#fff" opacity=".7"/>
+          <g class="m-drip" style="transform-origin:236px 196px"><path d="M234 196 C240 206 244 214 242 224 C240 232 232 232 232 224 C232 216 236 208 234 196 Z" fill="#7fd257" ${S(2.4)}/><ellipse cx="236" cy="216" rx="1.6" ry="3" fill="#fff" opacity=".7"/></g>
           <g class="m-hat" style="transform-origin:150px 100px">
             <path d="M136 64 L164 64 L164 78 C176 82 180 92 178 100 L122 100 C120 92 124 82 136 78 Z" fill="url(#${id}glass)" ${S(3.2)}/>
             <path d="M125 98 C128 90 134 86 140 86 L160 86 C166 86 172 90 175 98 Z" fill="url(#${id}pot)"/><path d="M128 91 L172 91" stroke="#ffd6e8" stroke-width="1.6"/>
@@ -189,8 +234,47 @@
       '<path d="M-15 -6 C-5 -9 6 -9 15 -6" stroke="#e8b65a" stroke-width="4" fill="none"/><path d="M-2 -28 l2 -5 l2 5 l5 1 l-5 2 l-2 5 l-2 -5 l-5 -2 Z" fill="#ffe08a"/>' },
     lentes: { slot: 'cara', svg: '<circle cx="-20" cy="0" r="12" fill="#cfe9ff" fill-opacity=".25" stroke="#8a5a22" stroke-width="3.2"/><circle cx="20" cy="0" r="12" fill="#cfe9ff" fill-opacity=".25" stroke="#8a5a22" stroke-width="3.2"/>' +
       '<path d="M-8 -1 C-4 -5 4 -5 8 -1" stroke="#8a5a22" stroke-width="3" fill="none"/><path d="M-25 -6 L-21 -9" stroke="#fff" stroke-width="2" stroke-linecap="round"/>' },
-    corbatin: { slot: 'cuello', svg: `<path d="M0 0 L-16 -9 L-16 9 Z M0 0 L16 -9 L16 9 Z" fill="#c2453a" ${S(2.6)}/><circle r="4.5" fill="#e0574a" ${S(2.4)}/>` }
+    corbatin: { slot: 'cuello', svg: `<path d="M0 0 L-16 -9 L-16 9 Z M0 0 L16 -9 L16 9 Z" fill="#c2453a" ${S(2.6)}/><circle r="4.5" fill="#e0574a" ${S(2.4)}/>` },
+    // ——— Cabeza ———
+    birrete: { slot: 'cabeza', svg: `<path d="M-15 -10 L-15 0 C-8 5 8 5 15 0 L15 -10 Z" fill="#2a2a38" ${S(2.6)}/>` +
+      `<path d="M-32 -15 L0 -27 L32 -15 L0 -3 Z" fill="#3a3a4d" ${S(2.8)}/><path d="M-22 -16 L0 -24 L12 -19.5" stroke="#5c5c78" stroke-width="2" fill="none"/>` +
+      `<path d="M0 -15 L24 -12 L25 2" stroke="#e8b65a" stroke-width="2.2" fill="none"/><path d="M22 2 L28 2 L27 10 L23 10 Z" fill="#e8b65a" ${S(1.6)}/><circle cx="0" cy="-15" r="2.6" fill="#e8b65a"/>` },
+    corona: { slot: 'cabeza', svg: `<path d="M-22 0 L-25 -24 L-12 -11 L0 -30 L12 -11 L25 -24 L22 0 Z" fill="#f2c14e" ${S(2.8)}/>` +
+      `<path d="M-22 0 L22 0 L21 -6 L-21 -6 Z" fill="#d99a2b" ${S(2.2)}/><path d="M-17 -12 L-12 -9 M8 -14 L4 -20" stroke="#fff3c4" stroke-width="2.2" stroke-linecap="round"/>` +
+      `<circle cx="0" cy="-3" r="3.4" fill="#e0574a" ${S(1.4)}/><circle cx="-13" cy="-3" r="2.6" fill="#5fb3e6" ${S(1.2)}/><circle cx="13" cy="-3" r="2.6" fill="#5fb3e6" ${S(1.2)}/>` +
+      `<circle cx="0" cy="-30" r="3" fill="#fff6c9" ${S(1.4)}/><circle cx="-25" cy="-24" r="2.6" fill="#fff6c9" ${S(1.2)}/><circle cx="25" cy="-24" r="2.6" fill="#fff6c9" ${S(1.2)}/>` },
+    gorro: { slot: 'cabeza', svg: `<path d="M-23 -2 C-24 -30 24 -30 23 -2 Z" fill="#c2453a" ${S(2.8)}/><path d="M-12 -22 C-10 -12 -9 -6 -9 -3 M0 -26 L0 -3 M12 -22 C10 -12 9 -6 9 -3" stroke="#9a3229" stroke-width="2" fill="none"/>` +
+      `<rect x="-26" y="-7" width="52" height="10" rx="4" fill="#efe1c2" ${S(2.6)}/><path d="M-18 -6 L-18 2 M-10 -6 L-10 2 M-2 -6 L-2 2 M6 -6 L6 2 M14 -6 L14 2" stroke="#cdb88f" stroke-width="1.6"/>` +
+      `<circle cx="0" cy="-30" r="8" fill="#fbf2df" ${S(2.4)}/><circle cx="-2.5" cy="-32.5" r="2.4" fill="#fff"/>` },
+    flor: { slot: 'cabeza', svg: `<g transform="translate(16 -4) rotate(-15)">${[0, 72, 144, 216, 288].map(a => `<ellipse cx="0" cy="-8" rx="5.5" ry="8" fill="#f7a6c4" ${S(1.8)} transform="rotate(${a})"/>`).join('')}` +
+      `<circle r="5" fill="#ffd34d" ${S(1.8)}/><circle cx="-1.5" cy="-1.5" r="1.6" fill="#fff6c9"/></g><path d="M8 0 C2 -2 -4 -2 -8 2" stroke="#5f9f4a" stroke-width="2.6" fill="none" stroke-linecap="round"/>` },
+    // ——— Cara ———
+    lentesSol: { slot: 'cara', svg: `<path d="M-33 -8 L-8 -8 L-9 6 C-10 10 -14 12 -20 12 C-28 12 -32 8 -33 2 Z M33 -8 L8 -8 L9 6 C10 10 14 12 20 12 C28 12 32 8 33 2 Z" fill="#1f1c2b" ${S(2.4)}/>` +
+      `<path d="M-8 -6 C-3 -9 3 -9 8 -6" stroke="${INK}" stroke-width="2.6" fill="none"/><path d="M-29 -5 L-22 -5 M14 -5 L19 -5" stroke="#9fd3f0" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>` +
+      `<path d="M-27 4 L-15 4" stroke="#6a5f9a" stroke-width="2" stroke-linecap="round" opacity=".7"/>` },
+    monoculo: { slot: 'cara', svg: `<circle cx="20" cy="0" r="13" fill="#e6f4ff" fill-opacity=".22" stroke="#d6a44c" stroke-width="3.4"/><circle cx="20" cy="0" r="13" fill="none" stroke="${INK}" stroke-width="1.2"/>` +
+      `<path d="M13 -6 C15 -9 18 -10 21 -10" stroke="#fff" stroke-width="2.2" stroke-linecap="round" fill="none"/><path d="M31 6 C36 18 34 30 26 40" stroke="#d6a44c" stroke-width="1.6" stroke-dasharray="2 2" fill="none"/>` },
+    // ——— Cuello ———
+    bufanda: { slot: 'cuello', svg: `<path d="M-30 -6 C-12 2 12 2 30 -6 L30 6 C12 14 -12 14 -30 6 Z" fill="#3f7fbf" ${S(2.6)}/>` +
+      `<path d="M14 6 L24 34 L12 36 L6 9 Z" fill="#3f7fbf" ${S(2.4)}/><path d="M-22 -2 L-22 9 M-8 1 L-8 12 M8 1 L8 12 M22 -2 L22 9 M16 15 L22 13 M18 23 L23 21" stroke="#f2e2bd" stroke-width="2.6"/>` +
+      `<path d="M12 36 L13 41 M16 35.5 L17 40.5 M20 35 L21 40" stroke="${INK}" stroke-width="1.8" stroke-linecap="round"/>` },
+    collar: { slot: 'cuello', svg: `<path d="M-24 -6 C-12 6 12 6 24 -6" stroke="#d6a44c" stroke-width="2.6" stroke-dasharray="3 2" fill="none"/>` +
+      `<path d="M0 2 C6 8 6 16 0 22 C-6 16 -6 8 0 2 Z" fill="#7a5bd6" ${S(2.2)}/><path d="M-1.5 8 L-3 13" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><circle cx="0" cy="2" r="2.6" fill="#d6a44c" ${S(1.2)}/>` },
+    // ——— Mano / costado ———
+    lupa: { slot: 'mano', svg: `<path d="M-2 4 L-14 22" stroke="#6b4426" stroke-width="7" stroke-linecap="round"/><path d="M-2 4 L-14 22" stroke="#9a6a3e" stroke-width="3" stroke-linecap="round"/>` +
+      `<circle cx="6" cy="-8" r="13" fill="#dff1ff" fill-opacity=".45" stroke="#d6a44c" stroke-width="4"/><circle cx="6" cy="-8" r="13" fill="none" stroke="${INK}" stroke-width="1.4"/>` +
+      `<path d="M-1 -14 C1 -18 5 -19 8 -19" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>` },
+    varita: { slot: 'mano', svg: `<path d="M-14 22 L8 -10" stroke="${INK}" stroke-width="6.5" stroke-linecap="round"/><path d="M-14 22 L8 -10" stroke="#5b3a26" stroke-width="3.2" stroke-linecap="round"/>` +
+      `<path d="M-12 16 L-8 10" stroke="#e8b65a" stroke-width="3.2" stroke-linecap="round"/>` +
+      `<path d="M10 -26 L13 -16 L23 -15 L15 -9 L18 1 L10 -5 L2 1 L5 -9 L-3 -15 L7 -16 Z" fill="#ffe08a" ${S(2)}/><circle cx="8" cy="-14" r="2" fill="#fff"/>` },
+    taza: { slot: 'mano', svg: `<path d="M-12 -8 L12 -8 L10 14 C10 18 -10 18 -10 14 Z" fill="#f2e7d2" ${S(2.6)}/><path d="M12 -3 C22 -3 22 10 11 9" stroke="${INK}" stroke-width="2.6" fill="none"/>` +
+      `<ellipse cx="0" cy="-8" rx="12" ry="3.5" fill="#8a5a36" ${S(2)}/><path d="M-6 2 L6 2" stroke="#c2453a" stroke-width="3"/>` +
+      `<path d="M-4 -14 C-8 -19 0 -22 -4 -28 M4 -14 C0 -19 8 -22 4 -28" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" opacity=".75"/>` }
   };
+  // Para la tienda/vestuario: nombres legibles y ranura de cada accesorio.
+  const NOMBRES = { sombrero: 'Sombrero de mago', birrete: 'Birrete', corona: 'Corona', gorro: 'Gorro de lana', flor: 'Flor',
+    lentes: 'Lentes redondos', lentesSol: 'Lentes de sol', monoculo: 'Monóculo', corbatin: 'Corbatín', bufanda: 'Bufanda', collar: 'Collar de gema',
+    lupa: 'Lupa', varita: 'Varita', taza: 'Taza de té' };
   function equip(svgRoot, id) {
     const a = ACCESORIOS[id], slot = a && svgRoot.querySelector(`.m-slot[data-slot="${a.slot}"]`);
     if (!slot) return false;
@@ -200,6 +284,6 @@
   function unequip(svgRoot, slotName) {
     svgRoot.querySelectorAll(slotName ? `.m-slot[data-slot="${slotName}"]` : '.m-slot').forEach(s => { s.innerHTML = ''; });
   }
-  window.Alquimicos = Object.freeze({ matraz, atomo, slime, equip, unequip, ACCESORIOS, SLOTS: ['cabeza', 'cara', 'cuello', 'mano'],
+  window.Alquimicos = Object.freeze({ matraz, atomo, slime, equip, unequip, ACCESORIOS, NOMBRES, setExpression, EXPRESSIONS, SLOTS: ['cabeza', 'cara', 'cuello', 'mano'],
     list: [['matraz', 'Matraz'], ['atomo', 'Átomo'], ['slime', 'Slime']] });
 })();

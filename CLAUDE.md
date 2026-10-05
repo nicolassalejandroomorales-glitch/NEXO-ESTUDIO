@@ -46,7 +46,9 @@ node smoke-test.cjs; node tools/room-test.cjs; node tools/update01-test.cjs   # 
 
 ## Reglas del Inicio (escena)
 
-- `dist/assets/home-scenes/refugio-012.png` es el arte original aprobado: **nunca se modifica**. Todo se agrega como capas encima.
+- `dist/assets/home-scenes/refugio-012.png` es el arte original: **nunca se modifica ni se borra** (queda de respaldo).
+  Desde el 5 oct 2026 el Inicio se rehace en **pixel art de verdad** (`refugio-pixel.png`, 418×235 ×4, ver `docs/inicio-pixelart/SPEC.md`):
+  dibujado píxel por píxel con rampas de color, nunca un filtro sobre el arte viejo ni sprites "cutres" pegados encima.
 - Cada asset nuevo se genera con un **script reproducible** en `tools/` (no a mano), que lee el original y escribe en `dist/assets/home-scenes/`.
 - Los objetos tocables **usan el mismo router** que los botones normales (`data-route` / `data-route-sub`). Son invisibles: sin etiquetas ni bordes, solo un brillo suave al pasar el mouse.
 - Toda capa de luz usa los pesos `--w-*` o `--sun` / `--lamps` para que el cambio sea gradual. No crear reglas nuevas por estado (`body[data-nexo-time=...]`) en el Inicio.
@@ -130,6 +132,9 @@ para diseñar, encontrar errores y decidir mejoras con orden. Los chats **no se 
   también se probaron y rechazó). Cada SVG tiene partes con clase (`m-root`, `m-body`, `m-eye`…) y **ranuras de accesorios** (`m-slot`: cabeza, cara,
   cuello, mano). Demo en la sala: `/dev/mascota-sala.html`. Regla: nada de diseños "planos"; siempre volumen, material y detalle. Tienda y Mascota
   muestran "Disponible próximamente".
+  **5 oct 2026: versión PIXEL ART** (`dist/dev/pixelmascotas.js`, demo `/dev/mascota-pixel.html`): sprites de 40×44 px de arte con las **mismas
+  rampas y tamaño de píxel (×4) que el refugio pixel**; cada pose se re-rasteriza (nunca se estira la imagen). Mismas conductas, 14 expresiones,
+  emotes (incluido "6 7") y 14 accesorios. La versión SVG queda de respaldo.
 - **Juegos de Nexo** (3 oct 2026): chat nuevo dedicado. SPEC borrador en `docs/juegos/SPEC.md` (esperando decisiones de Niquito). Principio: los juegos deben alimentar
   el motor académico (evidencia, FSRS), no ser entretención suelta. Código nuevo en `dist/games/`.
 - **Campaña "Camino a la PEP 1"** (4 oct 2026): `dist/games/pep1/` (abrir `http://127.0.0.1:8765/games/pep1/index.html`; `?todo=1` abre todos los jefes).
