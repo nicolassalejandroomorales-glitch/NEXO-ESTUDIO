@@ -7,6 +7,8 @@ const catalog = context.window.NexoClassCatalog;
 let items = 0;
 for (const [id, file] of Object.entries(catalog)) {
   vm.runInContext(fs.readFileSync(path.join(dir, file), 'utf8'), context, { filename: file });
+  const genFile = path.join(dir, `${id}-gen.js`); // generadores de la etapa 8 (opcionales)
+  if (fs.existsSync(genFile)) vm.runInContext(fs.readFileSync(genFile, 'utf8'), context, { filename: `${id}-gen.js` });
   const cls = context.window.NexoClasses[id];
   assert.ok(cls && cls.id === id, `${id}: la clase no se registró`);
   const ids = new Set();
@@ -230,6 +232,96 @@ for (const [id, file] of Object.entries(catalog)) {
     // Escrita en papel: cuenta si te autocorriges con la pauta
     const wi = cls.missions.flatMap(m => NX.itemsOf(m)).find(x => x.item.type === 'write').item;
     assert.ok(NX.isCorrect(wi, { paper: true, text: '(Resuelto en papel)', checks: wi.rubric.map(() => true) }), 'Resuelta en papel y autocorregida, cuenta');
+  }
+  // Etapa 8: ejercicios infinitos con 5 niveles, escalera 2 arriba / 1 abajo, y que nunca se agoten.
+  if (context.window.NexoClassGen?.[id]) {
+    const NX = context.window.NexoClassroom, G = context.window.NexoClassGen[id];
+    const cids = new Set(cls.concepts.map(c => c.id));
+    let made = 0;
+    for (const g of G.generators) for (const want of g.concepts) for (let lv = 1; lv <= 5; lv++) for (let k = 0; k < 40; k++) {
+      const gid = `gen:${g.id}:${lv}:t${k}${g.concepts.length > 1 ? `:${want}` : ''}`, it = NX.genItem(cls, gid), tag = `${gid}`;
+      made += 1;
+      assert.ok(it && it.id === gid && it.gen.level === lv, `${tag}: no se generó`);
+      assert.equal(it.concept, want, `${tag}: el ejercicio debe ser del concepto pedido`);
+      assert.ok(cids.has(it.concept) && it.prompt && it.explain && it.hint && cls.sources[it.source], `${tag}: falta concepto, enunciado, explicación, pista o fuente`);
+      assert.ok(!it.slide || cls.slides[it.slide], `${tag}: diapositiva ${it.slide} inexistente`);
+      const type = it.type || 'choice';
+      if (type === 'choice') {
+        assert.equal(it.options.filter(o => o.correct).length, 1, `${tag}: debe tener exactamente una correcta`);
+        assert.equal(new Set(it.options.map(o => o.text)).size, it.options.length, `${tag}: alternativas repetidas`);
+        assert.ok(it.options.length >= 2 && it.options.every(o => o.text && (o.correct || o.note)), `${tag}: cada distractor necesita su porqué`);
+      } else {
+        assert.equal(type, 'order', `${tag}: tipo inesperado`);
+        assert.ok(it.answer.length === it.cards.length && it.answer.every(a => it.cards.some(c => c.id === a)), `${tag}: orden inválido`);
+      }
+      for (const o of [...(it.options || []), it]) if (o.misconception) assert.ok(cls.misconceptions[o.misconception], `${tag}: error típico ${o.misconception} sin explicación`);
+      const sol = type === 'order' ? it.answer : it.options.findIndex(o => o.correct);
+      assert.ok(NX.isCorrect(it, sol), `${tag}: la solución propia no se corrige como correcta`);
+      if (type === 'order') assert.ok(!NX.isCorrect(it, [...it.answer].reverse()), `${tag}: el orden al revés no debe contar`);
+      // Misma semilla, misma pregunta (se vuelve a armar desde el id, sin guardar nada).
+      const again = g.make((() => { let a = [...`t${k}`].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0, 2166136261); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(), lv, g.concepts.length > 1 ? want : undefined);
+      assert.equal(again.prompt, it.prompt, `${tag}: la misma semilla debe dar la misma pregunta`);
+    }
+    // Todo concepto de la clase tiene ejercicios infinitos.
+    for (const c of cls.concepts) assert.ok(G.generators.some(g => g.concepts.includes(c.id)), `${c.id}: sin generador`);
+    // Basicidad: el orden siempre coincide con la tabla de pKa (lo que se muestra entre paréntesis en el nivel 2).
+    for (let k = 0; k < 60; k++) { const it = NX.genItem(cls, `gen:basicidad:2:o${k}:am.orden`); const pk = it.answer.map(a => Number(it.cards.find(c => c.id === a).text.match(/pKaH (−?[\d,]+)/)[1].replace('−', '-').replace(',', '.')));
+      assert.ok(pk.every((x, i) => !i || x > pk[i - 1]), 'Basicidad: el orden debe seguir el pKa'); }
+    // Escalera: parte según lo que demostraste; 2 aciertos seguidos suben, 1 error baja.
+    const st = { answers: {}, hints: {}, retries: {}, revealed: {}, skipExplain: {}, detour: {}, conf: {}, confWhy: {}, rounds: {}, far: {}, tips: {}, work: {} };
+    assert.equal(NX.levelOf(cls, st, 'am.orden'), 1, 'Sin evidencia se parte en Fácil');
+    const ans = (id, correct, t) => { st.answers[id] = { correct, at: `2026-10-05T10:00:${String(t).padStart(2, '0')}Z`, stage: 'train' }; };
+    ans('gen:basicidad:1:a1:am.orden', true, 1); assert.equal(NX.levelOf(cls, st, 'am.orden'), 1, 'Un acierto todavía no sube');
+    ans('gen:basicidad:1:a2:am.orden', true, 2); assert.equal(NX.levelOf(cls, st, 'am.orden'), 2, 'Dos aciertos seguidos suben a Media');
+    ans('gen:basicidad:2:a3:am.orden', false, 3); assert.equal(NX.levelOf(cls, st, 'am.orden'), 1, 'Un error baja un nivel');
+    st.answers['gen:basicidad:1:a4:am.orden'] = { correct: true, hint: true, at: '2026-10-05T10:00:04Z' };
+    st.answers['gen:basicidad:1:a5:am.orden'] = { correct: true, at: '2026-10-05T10:00:05Z' };
+    assert.equal(NX.levelOf(cls, st, 'am.orden'), 1, 'Un acierto con pista no cuenta para subir');
+    const m5t = cls.missions.find(m => m.id === 'm5').stages.transfer.find(x => x.concept === 'am.orden');
+    if (m5t) assert.ok(NX.startLevel(cls, { ...st, answers: { [m5t.id]: { correct: true, stage: 'transfer' } } }, 'am.orden') >= 3, 'Acertar el caso estilo prueba hace partir en Intermedia o más');
+    // Camino Entrenar: 8 preguntas generadas, una tras otra, y el resumen.
+    const tr = { ...st, answers: {}, path: 'entrenar', trainRun: NX.newRun(cls, { ...st, answers: {} }, 'm:m5') };
+    let bs = NX.beats(cls, tr);
+    assert.ok(bs[1].kind === 'trainpick' && bs.filter(b => b.kind === 'question').length === 1, 'Entrenar muestra una pregunta a la vez');
+    for (let i = 0; i < 8; i++) { const q = NX.beats(cls, tr).filter(b => b.kind === 'question').pop(); assert.equal(q.stage, 'train'); assert.ok(q.item.gen && q.m?.id === 'm5', 'Las preguntas son generadas y de la misión elegida');
+      tr.answers[q.item.id] = { correct: true, at: `2026-10-05T11:00:${String(10 + i)}Z`, stage: 'train' }; }
+    bs = NX.beats(cls, tr);
+    assert.ok(bs.filter(b => b.kind === 'question').length === 8 && bs[bs.length - 1].kind === 'trainsum', 'Ronda de 8 y resumen');
+    assert.equal(new Set(tr.trainRun.ids).size, 8, 'No se repiten preguntas en una ronda');
+    assert.ok(Math.max(...tr.trainRun.ids.map(i => NX.findItem(cls, i).gen.level)) >= 2, 'Acertando todo, el nivel sube durante la ronda');
+    // Ronda del alba: si ya acertaste todas las fijas de un concepto, trae una generada (nunca se agota).
+    const all = {}; for (const m of cls.missions) for (const { item } of NX.itemsOf(m)) all[item.id] = { correct: true, at: '2026-10-01T10:00:00Z', stage: 'practice' };
+    const round = NX.roundPick(cls, { ...st, answers: all }, null, 4);
+    assert.ok(round.length === 4 && round.every(i => i.startsWith('gen:')), 'Con todo respondido, la ronda trae ejercicios nuevos');
+    assert.ok(NX.beats(cls, { ...st, answers: all, path: 'alba', albaKey: 'k', rounds: { k: round } }).filter(b => b.kind === 'question').every(b => b.item?.gen && (b.m || !cls.concepts.find(c => c.id === b.item.concept).mission)), 'La ronda muestra los generados con su misión');
+    // Simulacro: desde el 2°, las alternativas y los ordenar son casos nuevos nivel PEP; el puntaje sigue sumando lo mismo.
+    const s2 = NX.simBuild(cls, { ...st, simN: 1 }, 'full'), s1 = NX.simBuild(cls, st, 'full');
+    assert.ok(s1.ids.every(i => !i.startsWith('gen:')), 'El primer simulacro usa los casos de las misiones');
+    const gens = s2.ids.filter(i => i.startsWith('gen:'));
+    assert.ok(gens.length > 0 && gens.every(i => NX.findItem(cls, i).gen.level === 5 && s2.from[i]), 'Desde el 2° simulacro hay casos nuevos nivel PEP');
+    const perfect = {}; for (const i of s2.ids) { const it = NX.findItem(cls, i); perfect[i] = it.type === 'write' ? { correct: true, value: { checks: it.rubric.map(() => true) } } : { correct: true }; }
+    const sc2 = NX.simScore(cls, { ...st, sim: s2, answers: perfect }), sc1 = NX.simScore(cls, { ...st, sim: s1, answers: {} });
+    assert.ok(Math.abs(sc2.max - sc1.max) < 1e-9 && Math.abs(sc2.got - sc2.max) < 1e-9, 'El simulacro con casos nuevos vale lo mismo y se puede sacar el 7');
+    const g0 = NX.goalOf(cls, st).earned, g2 = NX.goalOf(cls, { ...st, genFrom: s2.from, answers: { [gens[0]]: { correct: true } } }).earned;
+    assert.ok(g2 > g0, 'Un caso nuevo nivel PEP acertado cuenta en el Camino al 7');
+    // Bestiario: se captura con aciertos sin ayuda en 3 días distintos después de la última caída.
+    const mk = k => cls.misconceptions[k] && k, mcKey = mk('pka-inverted');
+    const recs = [{ misconception: mcKey, conceptId: 'am.pka', at: '2026-10-01T10:00:00Z', correct: false }];
+    assert.equal(NX.bestiary(cls, recs)[0].state, 'wild', 'Recién caída: suelta');
+    recs.push({ conceptId: 'am.pka', at: '2026-10-02T10:00:00Z', correct: true }, { conceptId: 'am.pka', at: '2026-10-02T18:00:00Z', correct: true });
+    assert.ok(NX.bestiary(cls, recs)[0].state === 'tracking' && NX.bestiary(cls, recs)[0].days === 1, 'Dos aciertos el mismo día cuentan como un día');
+    recs.push({ conceptId: 'am.pka', at: '2026-10-03T10:00:00Z', correct: true, hint: true });
+    assert.equal(NX.bestiary(cls, recs)[0].days, 1, 'Con pista no cuenta');
+    recs.push({ conceptId: 'am.pka', at: '2026-10-04T10:00:00Z', correct: true }, { conceptId: 'am.pka', at: '2026-10-06T10:00:00Z', correct: true });
+    assert.equal(NX.bestiary(cls, recs)[0].state, 'captured', 'Tres días distintos: capturada');
+    recs.push({ misconception: mcKey, conceptId: 'am.pka', at: '2026-10-07T10:00:00Z', correct: false });
+    assert.equal(NX.bestiary(cls, recs)[0].state, 'wild', 'Si vuelves a caer, se escapa');
+    // Laboratorio: cada reacción lleva a una sustancia que existe y explica por qué.
+    const L = G.lab, subIds = new Set(L.substances.map(x => x.id));
+    for (const st0 of L.starts) assert.ok(subIds.has(st0), `lab: inicio ${st0} no existe`);
+    for (const a of L.substances) for (const r of L.reagents) { const out = L.react(a.id, r.id); assert.ok(out.why && (!out.to || subIds.has(out.to)), `lab: ${a.id} + ${r.id} sin explicación o con destino inexistente`); }
+    assert.equal(L.react('benceno', 'hno3').to, 'nitrobenceno'); assert.equal(L.react('diazonio', 'cubr').to, 'bromobenceno'); assert.equal(L.react('trietilamina', 'acCl').to, null);
+    console.log(`Etapa 8: ${G.generators.length} generadores · ${made} ejercicios revisados (5 niveles) · escalera, Entrenar, ronda, simulacro, bestiario y laboratorio OK.`);
   }
   // Meta de la clase: cada pregunta de la prueba apunta a misiones que tienen caso estilo prueba.
   if (cls.goal) {

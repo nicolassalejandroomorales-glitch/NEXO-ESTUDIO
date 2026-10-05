@@ -786,3 +786,60 @@ body[data-nexo-ambient-motion="reduced"] :is(.is-tour-target, .cr-spot, .cr-tour
 @media (max-width: 700px) { .cr-plan-list li { grid-template-columns: auto 1fr; } .cr-plan-list li > :last-child { grid-column: 2; justify-self: start; } .cr-sim-score em { margin-left: 0; } }
 @media (max-width: 700px) { .cr-paths-btn { padding-inline: 8px; } }
 @media (max-width: 700px) { .cr-paths-btn span { display: none; } }
+
+/* ───────── Etapa 8: Entrenar, niveles, laboratorio, bestiario y noche antes (docs/etapa-8-entrenar/SPEC.md) ───────── */
+.cr-level { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: .78em; font-weight: 800; letter-spacing: .02em; vertical-align: 1px;
+  color: #fff; background: var(--lv, #7a6a55); }
+.cr-level.is-l1 { --lv: #4f8a5b; } .cr-level.is-l2 { --lv: #3f7f8f; } .cr-level.is-l3 { --lv: #5d63a8; } .cr-level.is-l4 { --lv: #9a5a9c; } .cr-level.is-l5 { --lv: #b5562e; }
+.cr-train-levels { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.cr-train-row { display: grid; gap: 6px; margin: 10px 0; padding-top: 10px; border-top: 1px dashed var(--parch-edge); }
+.cr-train-row .cr-link { justify-self: start; font-weight: 800; }
+.cr-train-base { font-weight: 800; color: var(--ink-soft); }
+.cr-train-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cr-train-chip { flex-direction: column; align-items: flex-start; gap: 2px; border-left: 5px solid var(--lv); }
+.cr-train-chip span { font-size: .8em; color: var(--ink-soft); }
+.cr-train-chip.is-l1 { --lv: #4f8a5b; } .cr-train-chip.is-l2 { --lv: #3f7f8f; } .cr-train-chip.is-l3 { --lv: #5d63a8; } .cr-train-chip.is-l4 { --lv: #9a5a9c; } .cr-train-chip.is-l5 { --lv: #b5562e; }
+
+.cr-tabs { flex-wrap: wrap; }
+.cr-tab { flex: 1 1 auto; padding-inline: 10px; }
+@media (max-width: 700px) { .cr-tab { flex-basis: 30%; font-size: .9em; } }
+
+.cr-lab-starts, .cr-lab-reagents { display: flex; flex-wrap: wrap; gap: 6px; }
+.cr-lab-starts .cr-chip { flex-direction: column; align-items: flex-start; gap: 2px; }
+.cr-lab-starts small { color: var(--ink-soft); }
+.cr-lab { display: grid; gap: 10px; }
+.cr-lab-flask { padding: 14px 16px; border-radius: 14px; border: 2px solid var(--parch-edge); background: linear-gradient(180deg, #fffaf0, #f1e2c2); }
+.cr-lab-flask b { display: block; font-size: 1.15em; }
+.cr-lab-formula { display: block; margin-top: 4px; font-size: 1.25em; font-family: 'Cambria Math', Georgia, serif; overflow-wrap: anywhere; }
+.cr-lab-flask.is-ok { border-color: #5d9b62; animation: cr-lab-pop .5s ease-out; }
+.cr-lab-flask.is-no { border-color: #c27a4a; }
+@keyframes cr-lab-pop { 0% { transform: scale(.97); box-shadow: 0 0 0 0 rgb(93 155 98 / .6); } 100% { transform: none; box-shadow: 0 0 0 14px rgb(93 155 98 / 0); } }
+.cr-lab-msg { margin: 0; padding: 10px 12px; border-radius: 10px; background: rgb(138 93 23 / .08); }
+.cr-lab-msg.is-ok { background: rgb(93 155 98 / .16); } .cr-lab-msg.is-no { background: rgb(194 122 74 / .16); }
+.cr-lab-trail { margin: 0; font-size: .9em; color: var(--ink-soft); }
+.cr-lab-trail i { font-style: normal; font-weight: 700; }
+
+.cr-beasts { display: grid; gap: 10px; }
+.cr-beast { display: grid; grid-template-columns: 76px 1fr; gap: 12px; align-items: start; padding: 12px; border-radius: 14px; border: 1px solid var(--parch-edge); background: rgb(255 250 240 / .6); }
+.cr-beast h3 { margin: 2px 0 4px; font-size: 1.02em; }
+.cr-beast p { margin: 0 0 4px; }
+.cr-beast-svg { width: 76px; height: 76px; }
+.cr-beast-svg.is-wild { animation: cr-beast-hop 2.4s ease-in-out infinite; }
+.cr-beast.is-captured { border-color: var(--gold-deep, #a87a2a); }
+@keyframes cr-beast-hop { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+.cr-night { margin-top: 12px; padding: 16px 18px; border-radius: 6px; background: #fffdf7; color: #1f1a14; border: 1px solid #d8cdb5; font-size: .92em; line-height: 1.4; }
+.cr-night header { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding-bottom: 6px; margin-bottom: 8px; border-bottom: 2px solid #1f1a14; }
+.cr-night h4 { margin: 10px 0 4px; font-size: 1em; text-transform: uppercase; letter-spacing: .04em; }
+.cr-night ul { margin: 0; padding-left: 18px; }
+.cr-night li { margin: 2px 0; }
+#nexo-print-sheet { display: none; }
+@media print {
+  body.nexo-print-night > :not(#nexo-print-sheet) { display: none !important; }
+  body.nexo-print-night { background: #fff !important; }
+  body.nexo-print-night #nexo-print-sheet { display: block; margin: 0; border: 0; font-size: 10.5pt; }
+}
+@media (prefers-reduced-motion: reduce) { .cr-beast-svg.is-wild, .cr-lab-flask.is-ok { animation: none; } }
+body[data-nexo-ambient-motion="reduced"] .cr-beast-svg.is-wild, body[data-nexo-ambient-motion="reduced"] .cr-lab-flask.is-ok { animation: none; }
+/* 7 caminos: tarjetas un poco más compactas y la última (impar) a lo ancho, para que la meta siga a la vista. */
+@media (min-width: 701px) { .cr-path { padding: 14px 18px; gap: 4px; } .cr-paths > .cr-path:last-child:nth-child(odd) { grid-column: 1 / -1; } }

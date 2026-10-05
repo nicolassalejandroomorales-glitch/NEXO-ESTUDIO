@@ -177,6 +177,10 @@ Eliges tipo (reconocer, entender, producir), tema y dificultad, y haces todas la
 del estante y ves qué sale (o por qué no reacciona); solo combinaciones de la tabla de reacciones, cada una con su fuente.
 Los juegos usan los mismos generadores; las recompensas premian retener, no hacer clic. Racha amable (no castiga).
 
+**Hecho (etapa 8):** 15 generadores cubren los 22 conceptos en 5 niveles (Fácil → Nivel PEP) con escalera 2 arriba / 1 abajo.
+Se usan en Entrenar, en la Ronda del alba (cuando se acaban las fijas), en el Simulacro (desde el 2° intento) y en "Practicar más".
+El grimorio suma Laboratorio, Bestiario y Noche antes. Ver `docs/etapa-8-entrenar/SPEC.md`.
+
 ## 9. Herramientas propias (sin plugins)
 
 | Herramienta | Qué hace | Límite honesto |
@@ -207,8 +211,8 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 5 | Formulario con investigación y recetario de pociones | **Hecha** (esperando tu prueba) | Opus 5.5 |
 | 6 | Las otras misiones de Aminas al modelo nuevo | **Hecha** (esperando tu prueba) | Opus 5.5 |
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | **Hecha** (esperando tu prueba) | Sonnet 5.5 |
-| 8 | Entrenar con generadores, laboratorio libre, bestiario, hoja de la noche anterior, voz | **Siguiente** | Sonnet 5.5 |
-| 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | Pendiente | Sonnet 5.5 |
+| 8 | Entrenar con generadores de 5 niveles (en toda la app), laboratorio libre, bestiario, hoja de la noche anterior. La voz queda para después | **Hecha** (esperando tu prueba) · `docs/etapa-8-entrenar/SPEC.md` | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
+| 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | **Siguiente** (la plantilla ya está al día con la etapa 7) | Sonnet 5.5 |
 | 10 | **Arte al final:** torre por capas, árbol vivo y personajes cartoon, diseñados con calma | En diseño (bocetos) | Opus 5.5 |
 
 Orden cambiado el 4 oct a pedido de Niquito: el arte se diseña al final, cuando todo lo funcional esté listo.

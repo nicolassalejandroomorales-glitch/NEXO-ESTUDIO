@@ -9,11 +9,12 @@
     alba: { name: 'Ronda del alba', tag: 'Repaso · 5 min', text: 'Preguntas mezcladas de lo que ya viste, sin mirar apuntes. Lo que no se repasa, se olvida.' },
     simulacro: { name: 'Simulacro PEP', tag: 'Con tiempo', text: 'Como la prueba: con cronómetro, sin pistas ni formulario. Al final, cómo te corrige el profe.' },
     misiones: { name: 'Misiones', tag: '10–15 min', text: 'Una idea por visita. Se retoma donde la dejaste.' },
+    entrenar: { name: 'Entrenar', tag: 'Infinito · se adapta', text: 'Ejercicios nuevos sin fin, de fácil a nivel PEP. Subo la dificultad cuando aciertas.' },
     expedicion: { name: 'Expedición', tag: 'Clase larga', text: 'Todas las misiones seguidas, con desafíos extra si vas bien.' },
     prueba: { name: 'Prueba encima', tag: 'Evaluación pronto', text: 'Directo a lo que se pregunta. El rescate te lleva a lo que falta.', hidden: true },
     base: { name: 'Repaso desde cero', tag: 'Opcional', text: 'Las bases de Orgánica I que usan las aminas.', hidden: true }
   };
-  const PATH_ORDER = ['diagnostico', 'tiempo', 'misiones', 'alba', 'simulacro', 'expedicion'];
+  const PATH_ORDER = ['diagnostico', 'tiempo', 'misiones', 'entrenar', 'alba', 'simulacro', 'expedicion'];
   let TIMER = null; // cronómetro del simulacro
   const SCENES = ['dawn', 'day', 'dusk', 'night'];
   /* Torre del alquimista por momento del día (assets/classroom/README.md). Pinturas HD de Canva entregadas por Niquito. */
@@ -50,7 +51,8 @@
     ['Los objetos de la torre', 'Sabio: desde cero · Libro: grimorio (glosario, formulario y recetario) · Pizarra: diapositivas · Ventana: hora del día · Frascos: datos curiosos.'],
     ['Camino al 7', 'Los puntos de la PEP que ya demostraste acertando sin ayuda los casos estilo prueba.'],
     ['Las hojas', 'Cada concepto es una hoja: brote (guiado) → verde (lo hiciste solo) → flor (lo recordaste días después).'],
-    ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Tengo X minutos: tu plan del día. Misiones: una idea por visita. Ronda del alba: repaso diario. Simulacro PEP: como la prueba, con reloj. Expedición: todo seguido.']
+    ['Los caminos', '¿Por dónde empiezo?: diagnóstico. Tengo X minutos: tu plan del día. Misiones: una idea por visita. Entrenar: ejercicios infinitos que suben de nivel contigo. Ronda del alba: repaso diario. Simulacro PEP: como la prueba, con reloj. Expedición: todo seguido.'],
+    ['Los niveles', 'Fácil → Media → Intermedia → Avanzada → Nivel PEP. Subes al acertar 2 seguidas sin pista; bajas uno si fallas. Así trabajas cerca del 70 % de aciertos, donde más se aprende.']
   ];
   function dominantScene() {
     const style = getComputedStyle(document.body);
@@ -76,7 +78,7 @@
   /* Meta de la clase (cls.goal): cuántos puntos de la prueba ya demostraste. Un punto cuenta cuando aciertas
      sin ayuda el caso estilo prueba (transferencia) de las misiones que preparan esa pregunta. */
   // Un caso estilo prueba está demostrado si lo acertaste sin ayuda en la misión o en algún simulacro (copias "id@sN").
-  const solvedGoal = (s, id) => Object.entries(s.answers).some(([k, r]) => (k === id || k.startsWith(`${id}@s`)) && r?.correct && !r.hint);
+  const solvedGoal = (s, id) => Object.entries(s.answers).some(([k, r]) => (k === id || k.startsWith(`${id}@s`) || s.genFrom?.[k] === id) && r?.correct && !r.hint);
   function goalOf(cls, s) {
     const g = cls.goal;
     if (!g) return null;
@@ -112,11 +114,93 @@
   // Actividades fuera de las misiones: clase base, diagnóstico y casos cortos de los errores típicos.
   const extraItems = cls => [...(cls.base || []).flatMap(m => itemsOf(m).map(x => x.item)), ...(cls.diagnosis?.items || []).map(x => x.item),
     ...Object.values(cls.misconceptions || {}).map(mc => mc.check).filter(Boolean)];
-  const findBase = (cls, itemId) => allItems(cls).find(x => x.item.id === itemId)?.item || extraItems(cls).find(item => item.id === itemId);
+  const findBase = (cls, itemId) => (String(itemId).startsWith('gen:') ? genItem(cls, itemId)
+    : allItems(cls).find(x => x.item.id === itemId)?.item || extraItems(cls).find(item => item.id === itemId));
   // "id@algo" es una copia de una actividad (ronda del alba o simulacro): misma pregunta, respuesta aparte.
   const findItem = (cls, itemId) => { const base = findBase(cls, String(itemId).split('@')[0]); return base && String(itemId).includes('@') ? { ...base, id: itemId } : base; };
-  const missionOfItem = (cls, itemId) => { const base = String(itemId).split('@')[0]; return cls.missions.find(m => itemsOf(m).some(x => x.item.id === base)); };
+  const missionOfItem = (cls, itemId) => { const base = String(itemId).split('@')[0];
+    if (base.startsWith('gen:')) { const c = (cls.concepts || []).find(k => k.id === genItem(cls, base)?.concept); return cls.missions.find(m => m.id === c?.mission); }
+    return cls.missions.find(m => itemsOf(m).some(x => x.item.id === base)); };
   const today = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  /* ───────── Etapa 8: ejercicios infinitos (docs/etapa-8-entrenar/SPEC.md) ─────────
+     Un generado se guarda solo como texto: "gen:<generador>:<nivel>:<semilla>[:<concepto>]". La misma semilla
+     siempre arma la misma pregunta, así que no hay que guardar la pregunta para corregirla o revisarla después. */
+  const LEVELS = ['Fácil', 'Media', 'Intermedia', 'Avanzada', 'Nivel PEP'];
+  const GEN = cls => window.NexoClassGen?.[cls.id] || null;
+  const hashStr = t => [...String(t)].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0, 2166136261);
+  const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const GEN_CACHE = new Map();
+  function genItem(cls, id) {
+    const key = `${cls.id}|${id}`;
+    if (GEN_CACHE.has(key)) return GEN_CACHE.get(key);
+    const [, gId, lv, seed, want] = String(id).split(':'), G = GEN(cls), g = G?.generators.find(x => x.id === gId);
+    let item = null;
+    if (g) { const level = Math.max(1, Math.min(5, Number(lv) || 1));
+      try { item = { source: G.source, ...g.make(mulberry(hashStr(seed)), level, want || undefined), id, gen: { id: gId, level } }; } catch { item = null; } }
+    if (GEN_CACHE.size > 2000) GEN_CACHE.clear();
+    GEN_CACHE.set(key, item);
+    return item;
+  }
+  const gensFor = (cls, concept) => (GEN(cls)?.generators || []).filter(g => g.concepts.includes(concept));
+  const genConcepts = cls => (cls.concepts || []).filter(c => gensFor(cls, c.id).length).map(c => c.id);
+  // Nivel de partida de un concepto: según lo que ya demostraste sin ayuda en las misiones (o en un caso estilo prueba).
+  function startLevel(cls, s, concept) {
+    let solo = 0, transfer = false;
+    for (const [k, r] of Object.entries(s.answers)) {
+      if (k.startsWith('gen:') || !r?.correct || r.hint || r.stage === 'pretest') continue;
+      if (findBase(cls, k.split('@')[0])?.concept !== concept) continue;
+      solo += 1; if (r.stage === 'transfer' || r.stage === 'simulacro') transfer = true;
+    }
+    return transfer ? (solo >= 4 ? 4 : 3) : solo >= 3 ? 3 : solo >= 1 ? 2 : 1;
+  }
+  /* Escalera "2 arriba, 1 abajo" (Levitt, 1971): 2 aciertos seguidos sin pista suben un nivel; un error baja uno.
+     Converge cerca del 70 % de aciertos: difícil, pero alcanzable. Todo se deduce de tus respuestas a generados. */
+  function trainLevels(cls, s) {
+    const lv = {}, streak = {};
+    const recs = Object.entries(s.answers).filter(([k]) => k.startsWith('gen:')).map(([k, r]) => ({ r, it: findItem(cls, k) })).filter(x => x.it)
+      .sort((a, b) => String(a.r.at).localeCompare(String(b.r.at)));
+    for (const { r, it } of recs) {
+      const c = it.concept, at = it.gen.level;
+      if (r.correct && !r.hint) { streak[c] = (streak[c] || 0) + 1; lv[c] = streak[c] >= 2 ? Math.min(5, at + 1) : at; if (streak[c] >= 2) streak[c] = 0; }
+      else { streak[c] = 0; lv[c] = r.correct ? at : Math.max(1, at - 1); }
+    }
+    return { lv, streak };
+  }
+  const levelOf = (cls, s, concept, T = trainLevels(cls, s)) => T.lv[concept] ?? startLevel(cls, s, concept);
+  function genFor(cls, s, concept, seedKey, level) {
+    const gs = gensFor(cls, concept);
+    if (!gs.length) return null;
+    const g = gs[hashStr(seedKey) % gs.length], lv = level ?? levelOf(cls, s, concept);
+    for (let salt = 0; salt < 20; salt++) {
+      const id = `gen:${g.id}:${lv}:${hashStr(`${seedKey}~${salt}`).toString(36)}${g.concepts.length > 1 ? `:${concept}` : ''}`;
+      if (!Object.keys(s.answers).some(k => k.split('@')[0] === id)) return id;
+    }
+    return null;
+  }
+  // Qué concepto entrenar ahora: el foco elegido, o "lo que más necesito" (el nivel más bajo de lo que ya empezaste), sin repetir el anterior.
+  function trainConcept(cls, s, run, T) {
+    const all = genConcepts(cls), prev = findItem(cls, run.ids[run.ids.length - 1] || '')?.concept;
+    let list = run.focus.startsWith('c:') ? [run.focus.slice(2)] : run.focus.startsWith('m:') ? all.filter(c => (cls.concepts || []).find(k => k.id === c)?.mission === run.focus.slice(2)) : null;
+    if (list?.length) { const opts = list.length > 1 ? list.filter(c => c !== prev) : list; return opts[run.ids.length % opts.length]; }
+    const seen = new Set(Object.keys(s.answers).map(k => findBase(cls, k.split('@')[0])?.concept).filter(Boolean));
+    list = all.filter(c => seen.has(c));
+    for (const m of cls.missions) { if (list.length >= 3) break; all.filter(c => (cls.concepts || []).find(k => k.id === c)?.mission === m.id && !list.includes(c)).forEach(c => list.push(c)); }
+    const inRun = c => run.ids.filter(id => findItem(cls, id)?.concept === c).length;
+    return list.filter(c => c !== prev || list.length === 1).sort((a, b) => levelOf(cls, s, a, T) - levelOf(cls, s, b, T) || inRun(a) - inRun(b) || all.indexOf(a) - all.indexOf(b))[0];
+  }
+  function newRun(cls, s, focus = 'mix') {
+    const T = trainLevels(cls, s);
+    return { key: `${today()}-${Date.now().toString(36)}`, focus, size: 8, ids: [], start: Object.fromEntries(genConcepts(cls).map(c => [c, levelOf(cls, s, c, T)])) };
+  }
+  // Agrega la siguiente pregunta cuando respondiste la anterior (se calcula con tu nivel de ese momento y queda fija).
+  function trainAdvance(cls, s) {
+    const run = s.trainRun;
+    if (!run || run.ids.length >= run.size || (run.ids.length && !s.answers[run.ids[run.ids.length - 1]])) return;
+    const T = trainLevels(cls, s), c = trainConcept(cls, s, run, T);
+    const id = c && genFor(cls, s, c, `${run.key}:${run.ids.length}`, levelOf(cls, s, c, T));
+    if (id) run.ids.push(id); else run.size = run.ids.length;
+  }
 
   /* Ronda del alba (docs/etapa-7-prueba/SPEC.md): preguntas mezcladas de conceptos ya vistos; primero los vencidos (FSRS),
      después los que viste hace más tiempo. Una pregunta por concepto, alternando misiones (práctica intercalada). */
@@ -133,13 +217,17 @@
     const picks = [];
     for (const c of order) {
       if (picks.length >= size) break;
-      const all = pool(c); if (!all.length) continue;
+      const all = pool(c);
       const fresh = all.filter(x => !s.answers[x.item.id]), wrong = all.filter(x => s.answers[x.item.id] && !s.answers[x.item.id].correct);
+      // Si ya acertaste todas las fijas de este concepto, una nueva generada a tu nivel (así la ronda nunca se repite).
+      const gen = !fresh.length && !wrong.length && genFor(cls, s, c, `alba:${today(now)}:${c}`);
+      if (gen) { picks.push({ item: { id: gen }, m: missionOfItem(cls, gen) || {} }); continue; }
+      if (!all.length) continue;
       const list = fresh.length ? fresh : wrong.length ? wrong : all;
       picks.push(list[hash(today(now) + c) % list.length]);
     }
     const out = [], rest = [...picks]; // intercalar: que no queden dos seguidas de la misma misión
-    while (rest.length) { const i = rest.findIndex(x => x.m.id !== out[out.length - 1]?.m.id); out.push(rest.splice(i < 0 ? 0 : i, 1)[0]); }
+    while (rest.length) { const i = rest.findIndex(x => x.m?.id !== out[out.length - 1]?.m?.id); out.push(rest.splice(i < 0 ? 0 : i, 1)[0]); }
     return out.map(x => x.item.id);
   }
 
@@ -147,9 +235,18 @@
   function simBuild(cls, s, size = 'full') {
     const missions = [...new Set((cls.goal?.questions || []).flatMap(q => q.missions))].map(id => missionById(cls, id)).filter(Boolean);
     const n = (s.simN || 0) + 1;
-    const ids = size === 'mini' ? missions.map(m => (m.stages.transfer || [])[(n - 1) % Math.max(1, (m.stages.transfer || []).length)]).filter(Boolean).map(i => i.id)
-      : missions.flatMap(m => (m.stages.transfer || []).map(i => i.id));
-    return { n, size, ids: ids.map(id => `${id}@s${n}`), minutes: size === 'mini' ? 12 : 40, start: Date.now(), ended: false };
+    const items = size === 'mini' ? missions.map(m => (m.stages.transfer || [])[(n - 1) % Math.max(1, (m.stages.transfer || []).length)]).filter(Boolean)
+      : missions.flatMap(m => m.stages.transfer || []);
+    /* Desde el 2° simulacro, las alternativas y los ordenar se cambian por casos nuevos nivel PEP del mismo concepto
+       (las ya vistas se recuerdan de memoria). Las escritas, flechas y dibujos se quedan: ahí se practica producir. */
+    const from = {};
+    const ids = items.map((item, i) => {
+      const gen = n >= 2 && ['choice', 'order', undefined].includes(item.type) && genFor(cls, s, item.concept, `sim:${n}:${i}:${item.id}`, 5);
+      const id = `${gen || item.id}@s${n}`;
+      if (gen) from[id] = item.id;
+      return id;
+    });
+    return { n, size, ids, from, minutes: size === 'mini' ? 12 : 40, start: Date.now(), ended: false };
   }
   // Puntaje como en la pauta: cada pregunta de la prueba reparte sus puntos entre sus casos; las escritas dan puntaje parcial por idea.
   function itemScore(item, rec) {
@@ -160,7 +257,7 @@
   function simScore(cls, s, sim = s.sim) {
     if (!sim) return null;
     const rows = (cls.goal?.questions || []).map(q => {
-      const mine = sim.ids.filter(id => q.missions.includes(missionOfItem(cls, id)?.id));
+      const mine = sim.ids.filter(id => q.missions.includes(missionOfItem(cls, sim.from?.[id] || id)?.id));
       const scores = mine.map(id => itemScore(findItem(cls, id), s.answers[id]));
       return { ...q, ids: mine, got: mine.length ? q.points * scores.reduce((a, b) => a + b, 0) / mine.length : 0, max: mine.length ? q.points : 0 };
     });
@@ -263,6 +360,15 @@
       return out;
     }
     if (s.path === 'tiempo') { out.push({ kind: 'plan' }); return out; }
+    if (s.path === 'entrenar') {
+      out.push({ kind: 'trainpick' });
+      const run = s.trainRun;
+      if (!run) return out;
+      trainAdvance(cls, s);
+      run.ids.forEach((id, i) => out.push({ kind: 'question', item: findItem(cls, id), m: missionOfItem(cls, id), stage: 'train', n: i + 1, of: run.size }));
+      if (run.ids.length >= run.size && run.ids.every(id => s.answers[id])) out.push({ kind: 'trainsum' });
+      return out;
+    }
     if (s.path === 'alba') {
       const ids = s.rounds[s.albaKey] || [];
       if (!ids.length) { out.push({ kind: 'albaclose', empty: true }); return out; }
@@ -346,6 +452,7 @@
     if (b.kind === 'detour') return s.detour[`${b.m.id}:${b.root}`] !== undefined;
     if (b.kind === 'basepick') return Boolean(s.mission);
     if (b.kind === 'simstart') return Boolean(s.sim);
+    if (b.kind === 'trainpick') return Boolean(s.trainRun);
     return true;
   }
 
@@ -646,6 +753,15 @@
   }
   const showWhy = rec => rec && (rec.correct || rec.kind === 'alerta' || rec.why === 'dos');
 
+  // Qué le pasó a tu nivel con esta respuesta de Entrenar.
+  function trainNote(cls, s, item) {
+    if (!item.gen) return '';
+    const T = trainLevels(cls, s), now = levelOf(cls, s, item.concept, T), was = item.gen.level, rec = s.answers[item.id];
+    if (now > was) return ` **¡Subes a ${LEVELS[now - 1]}!**`;
+    if (now < was) return ` Bajamos a **${LEVELS[now - 1]}** para afirmar la base; con 2 seguidas vuelves a subir.`;
+    if (rec?.correct && !rec.hint && T.streak[item.concept]) return ' Una más sin pista y subes de nivel.';
+    return '';
+  }
   /* Qué dice el sabio y qué aparece al centro en cada momento. */
   function moment(cls, api, s, b) {
     const sage = { text: '', actions: '', mood: 'calm' };
@@ -656,8 +772,8 @@
       sage.text = `Bienvenido a la torre, aprendiz. Hoy abriremos el capítulo de **${cls.title}** (${cls.evaluation}). ¿Cómo quieres aprender?`;
       center = `<div class="cr-paths" role="group" aria-label="Camino de estudio">${PATH_ORDER.filter(id => PATHS[id] && !PATHS[id].hidden).map(id => [id, PATHS[id]]).map(([id, p]) =>
         `<button class="cr-path ${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? 'is-recommended' : ''}" data-cr="path" data-path="${id}"><span class="cr-path-tag">${esc(p.tag)}</span>${id === 'diagnostico' && !diagnosisPlan(cls, s).done ? '<span class="cr-path-rec">Recomendado para empezar</span>' : ''}<b>${esc(p.name)}</b><span>${esc(p.text)}</span></button>`).join('')}</div>
-        <p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>
-        ${cls.goal ? `<p class="cr-soon cr-goal-line">Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>` : ''}`;
+        ${cls.goal ? `<p class="cr-soon cr-goal-line">${cls.missions.length} misiones · Meta: ${esc(cls.goal.text)} (de ${cls.goal.total} para el 7) · <button class="cr-link" data-cr="goal">ver mi camino al 7</button></p>`
+          : `<p class="cr-soon">${cls.missions.length} misiones · todo lo de ${esc(cls.title)} para la ${esc(cls.evaluation)}</p>`}`;
       return { sage, center };
     }
     if (b.kind === 'pick') {
@@ -772,6 +888,43 @@
           return `<li class="${s.answers[i]?.correct ? 'is-right' : 'is-wrong'}">${s.answers[i]?.correct ? '✓' : '✗'} <b>${esc(c?.title || '')}</b> <small>${esc(missionOfItem(cls, i)?.title || '')}</small></li>`; }).join('')}</ul>
         <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas</p>${leafChips(cls, api, cls.id, c => ids.some(i => findItem(cls, i).concept === c.id))}</div>
         <p class="cr-note">Una hoja <b>florece</b> cuando aciertas sin ayuda, 24 horas o más después de haberla puesto verde. Por eso esta ronda es diaria.</p></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'trainpick') {
+      const G = GEN(cls);
+      if (!G) {
+        sage.text = 'Esta clase todavía no tiene ejercicios infinitos. Mientras, usa la Ronda del alba.';
+        sage.actions = '<button class="cr-btn cr-primary" data-cr="path" data-path="alba">Ronda del alba</button>';
+        return { sage, center };
+      }
+      const T = trainLevels(cls, s), cs = genConcepts(cls), title = c => (cls.concepts || []).find(k => k.id === c)?.title || c;
+      const chip = c => { const l = levelOf(cls, s, c, T); return `<button class="cr-chip cr-train-chip is-l${l}" data-cr="train" data-focus="c:${esc(c)}"><b>${esc(title(c))}</b><span>${esc(LEVELS[l - 1])}${T.streak[c] ? ' · 1 de 2 para subir' : ''}</span></button>`; };
+      sage.text = 'Entrena con ejercicios **nuevos cada vez**, de 8 en 8. Parto en tu nivel de cada tema y lo ajusto: **2 aciertos seguidos sin pista suben un nivel; un error baja uno.** Así trabajas donde más se aprende: difícil, pero alcanzable.';
+      sage.actions = `<button class="cr-btn cr-primary" data-cr="train" data-focus="mix">Lo que más necesito ▸</button>`;
+      center = `<div class="cr-parchment cr-train-pick"><p class="cr-eyebrow">Entrenar · ejercicios infinitos</p>
+        <button class="cr-tip-card is-done" data-cr="train" data-focus="mix"><b>Lo que más necesito (recomendado)</b><span>Mezcla de los temas que ya empezaste, primero los de nivel más bajo. Mezclar temas cuesta más, pero se recuerda mejor.</span></button>
+        <p class="cr-train-levels" aria-label="Niveles">${LEVELS.map((l, i) => `<span class="cr-level is-l${i + 1}">${i + 1} · ${esc(l)}</span>`).join('')}</p>
+        ${cls.missions.map((m, i) => { const mine = cs.filter(c => (cls.concepts || []).find(k => k.id === c)?.mission === m.id); return mine.length ? `<div class="cr-train-row">
+          <button class="cr-link" data-cr="train" data-focus="m:${m.id}">Misión ${i + 1} · ${esc(m.title)} ▸</button><div class="cr-train-chips">${mine.map(chip).join('')}</div></div>` : ''; }).join('')}
+        <div class="cr-train-row"><span class="cr-train-base">Bases</span><div class="cr-train-chips">${cs.filter(c => (cls.concepts || []).find(k => k.id === c)?.root).map(chip).join('')}</div></div>
+        <button class="cr-tip-card is-base" data-cr="grimoire" data-tab="lab"><b>Laboratorio libre</b><span>Mezcla reactivos y mira qué pasa, sin nota. Ideal para armar rutas de síntesis.</span></button></div>`;
+      return { sage, center };
+    }
+    if (b.kind === 'trainsum') {
+      const run = s.trainRun, T = trainLevels(cls, s), title = c => (cls.concepts || []).find(k => k.id === c)?.title || c;
+      const ok = run.ids.filter(i => s.answers[i]?.correct && !s.answers[i].hint).length;
+      const touched = [...new Set(run.ids.map(i => findItem(cls, i)?.concept).filter(Boolean))];
+      const moves = touched.map(c => { const a = run.start[c] ?? 1, z = levelOf(cls, s, c, T); return { c, a, z }; });
+      const up = moves.filter(x => x.z > x.a).length;
+      sage.text = `${ok} de ${run.ids.length} sin ayuda.${up ? ` Subiste de nivel en ${up} tema${up > 1 ? 's' : ''}.` : ' Ningún nivel subió esta vez: es normal, el nivel busca justo el punto donde cuesta.'} ¿Otra ronda?`;
+      sage.mood = ok >= run.ids.length * 0.7 ? 'proud' : 'calm';
+      sage.actions = `<button class="cr-btn cr-primary" data-cr="train" data-focus="${esc(run.focus)}">Otra ronda ▸</button><button class="cr-btn" data-cr="train-pick">Elegir otro tema</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+      center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Entrenar · resultado</p>
+        <ul class="cr-round">${run.ids.map(i => { const it = findItem(cls, i), r = s.answers[i];
+          return `<li class="${r?.correct ? 'is-right' : 'is-wrong'}">${r?.correct ? '✓' : '✗'} <b>${esc(title(it?.concept))}</b> <span class="cr-level is-l${it?.gen?.level}">${esc(LEVELS[(it?.gen?.level || 1) - 1])}</span>${r?.hint ? ' <small>con pista</small>' : ''}</li>`; }).join('')}</ul>
+        <p class="cr-eyebrow">Tu nivel</p><ul class="cr-round">${moves.map(x => `<li class="${x.z > x.a ? 'is-right' : x.z < x.a ? 'is-wrong' : ''}"><b>${esc(title(x.c))}</b> ${esc(LEVELS[x.a - 1])} → <b>${esc(LEVELS[x.z - 1])}</b> ${x.z > x.a ? '▲' : x.z < x.a ? '▼' : '='}</li>`).join('')}</ul>
+        <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas</p>${leafChips(cls, api, cls.id, c => touched.includes(c.id))}</div>
+        <p class="cr-note">Estos ejercicios se arman con los datos de la cátedra (tablas de pKa, reactivos y reglas). El <b>nivel PEP</b> imita las preguntas 3, 4 y 6.</p></div>`;
       return { sage, center };
     }
     if (b.kind === 'simstart') {
@@ -902,26 +1055,29 @@
     if (b.kind === 'question') {
       const item = b.item, record = s.answers[item.id], hint = s.hints[item.id];
       const pre = b.stage === 'pretest', blind = b.stage === 'simulacro', noConf = pre || blind;
-      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final', review: 'Ronda del alba', simulacro: 'Simulacro PEP', placement: 'Diagnóstico', fix: 'Caso corto para corregir', detour: 'Repaso de la base' }[b.stage];
+      const label = item.teach ? 'Enséñale a tu compañero' : { diagnostic: 'Reto del sabio', pretest: 'Antes de enseñarte · adivina', practice: 'Prueba del aprendiz', challenge: 'Desafío', transfer: 'Encargo final', review: 'Ronda del alba', simulacro: 'Simulacro PEP', placement: 'Diagnóstico', fix: 'Caso corto para corregir', detour: 'Repaso de la base', train: 'Entrenar' }[b.stage];
+      const lvTag = item.gen ? ` · <span class="cr-level is-l${item.gen.level}">${esc(LEVELS[item.gen.level - 1])}</span>` : '';
       if (!record) {
         sage.text = item.teach ? 'Tu compañero se enredó con algo. ¿Se lo explicas tú? Explicar es la mejor forma de aprender.'
           : { diagnostic: 'Responde con lo que sabes.', pretest: 'Adivina sin miedo: esto no cuenta. Solo despierta la curiosidad.', practice: 'Tu turno.', challenge: 'Este es más difícil. Confío en ti.', transfer: 'Un caso nuevo. Piensa como en la prueba.',
             review: 'Sin mirar apuntes: ¿lo recuerdas?', simulacro: 'Como en la PEP: sin pistas ni formulario.',
-            placement: 'Responde con lo que sabes. Si no sabes, marca poca confianza y elige la que te parezca.', fix: 'Un caso corto para corregir esa idea ahora mismo.', detour: 'Un ejercicio fácil de la base. Sin apuro.' }[b.stage];
+            placement: 'Responde con lo que sabes. Si no sabes, marca poca confianza y elige la que te parezca.', fix: 'Un caso corto para corregir esa idea ahora mismo.', detour: 'Un ejercicio fácil de la base. Sin apuro.',
+            train: `Nivel **${LEVELS[(item.gen?.level || 1) - 1]}**. Si te trabas, tu compañero tiene una pista (pero no cuenta para subir de nivel).` }[b.stage];
       } else if (blind) {
         sage.text = 'Respuesta guardada. Las correcciones las verás al final, como en una prueba.'; sage.mood = 'calm'; sage.actions = cont('Siguiente ▸');
       } else if (pre) {
         sage.text = record.correct ? `¡Buena intuición! ${item.explain} Ahora verás por qué.` : 'No era esa, y está perfecto: ahora lo vas a descubrir. Fíjate bien en la explicación.';
         sage.mood = record.correct ? 'proud' : 'calm'; sage.actions = cont('A la lección ▸');
       } else if (record.correct) {
-        sage.text = `${hint ? 'Bien, con una pista.' : record.kind === 'fragil' ? 'Bien, aunque dudabas.' : '¡Exacto, sin ayuda!'} ${item.explain}`; sage.mood = 'proud'; sage.actions = cont();
+        sage.text = `${hint ? 'Bien, con una pista.' : record.kind === 'fragil' ? 'Bien, aunque dudabas.' : '¡Exacto, sin ayuda!'} ${item.explain}${b.stage === 'train' ? trainNote(cls, s, item) : ''}`; sage.mood = 'proud'; sage.actions = cont();
       } else {
         const mc = mcOf(cls, item, record);
-        sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${window.NexoMolEditor?.feedback(item, record) || item.wrong || 'Lo revisaremos juntos en el rescate.'}`;
+        sage.text = mc ? `**${mc.label}.** ${mc.why}` : `No del todo. ${window.NexoMolEditor?.feedback(item, record) || item.wrong || (b.stage === 'train' ? '' : 'Lo revisaremos juntos en el rescate.')}`;
+        if (b.stage === 'train') sage.text += ` ${item.explain}${trainNote(cls, s, item)}`;
         sage.mood = 'concerned'; sage.actions = cont();
       }
       center = `<article class="cr-card ${blind ? 'is-blind' : record ? (record.correct ? 'is-right' : 'is-wrong') : ''}">
-        <p class="cr-eyebrow">${esc(label)} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
+        <p class="cr-eyebrow">${esc(label)}${lvTag} · ${b.n} de ${b.of}</p><p class="cr-q">${md(item.prompt)}</p>
         ${hint && !record ? `<p class="cr-hinttext"><b>Pista de tu compañero:</b> ${md(item.hint)}</p>` : ''}
         ${b.stage === 'practice' && !record && !hint && s.tips.conf && !s.tips.hint ? tipMarkup('hint', '¿Te trabaste? <b>Toca a tu compañero</b> (abajo, a la derecha) y te dará una pista.') : ''}
         ${item.paper && !record ? '<p class="cr-paper">✎ Si prefieres, resuélvelo en papel como en la prueba y después escribe aquí lo esencial para autocorregirte con la pauta.</p>' : ''}
@@ -961,7 +1117,9 @@
     const nextBase = s.path === 'base' ? cls.base[cls.base.findIndex(m => m.id === s.mission) + 1] : null;
     sage.text = 'Buen trabajo, aprendiz. Lo que acertaste hoy muestra que lo entendiste. Para que sea tuyo de verdad, vuelve en uno o dos días y demuéstralo de nuevo sin ayuda.';
     sage.mood = 'proud';
-    sage.actions = `${s.planDay === today() ? '<button class="cr-btn cr-primary" data-cr="path" data-path="tiempo">Volver a mi plan</button>' : ''}${next ? `<button class="cr-btn ${s.planDay === today() ? '' : 'cr-primary'}" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}${s.path === 'base' ? `${nextBase ? `<button class="cr-btn cr-primary" data-cr="base" data-mission="${nextBase.id}">Siguiente repaso ▸</button>` : ''}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
+    const more = s.path === 'misiones' && GEN(cls) && genConcepts(cls).some(c => (cls.concepts || []).find(k => k.id === c)?.mission === s.mission)
+      ? `<button class="cr-btn" data-cr="train" data-focus="m:${esc(s.mission)}">Practicar más (infinito) ▸</button>` : '';
+    sage.actions = `${s.planDay === today() ? '<button class="cr-btn cr-primary" data-cr="path" data-path="tiempo">Volver a mi plan</button>' : ''}${more}${next ? `<button class="cr-btn ${s.planDay === today() ? '' : 'cr-primary'}" data-cr="mission" data-mission="${next.id}">Siguiente misión ▸</button>` : ''}${s.path === 'base' ? `${nextBase ? `<button class="cr-btn cr-primary" data-cr="base" data-mission="${nextBase.id}">Siguiente repaso ▸</button>` : ''}<button class="cr-btn" data-cr="path" data-path="misiones">Ir a las misiones</button>` : ''}<button class="cr-btn" data-cr="restart">Volver a empezar</button><button class="cr-btn" data-cr="exit">Salir de la torre</button>`;
     center = `<div class="cr-parchment cr-summary-card"><p class="cr-eyebrow">Lo que demostraste</p>
       <dl class="cr-summary"><div><dt>Sin ayuda</dt><dd>${solo}</dd></div><div><dt>Con pista</dt><dd>${withHint}</dd></div><div><dt>Errores corregidos</dt><dd>${fixed}/${wrong.length}</dd></div></dl>
       ${(() => { const goal = goalOf(cls, s); if (!goal) return '';
@@ -1011,7 +1169,7 @@
   }
 
   /* ───────── El grimorio: glosario, formulario y recetario (docs/etapa-5-grimorio/SPEC.md) ───────── */
-  const grimoireTabs = s => `<div class="cr-tabs" role="tablist" aria-label="Secciones del grimorio">${[['glossary', 'Glosario'], ['formulas', 'Formulario'], ['recipes', 'Recetario']]
+  const grimoireTabs = s => `<div class="cr-tabs" role="tablist" aria-label="Secciones del grimorio">${[['glossary', 'Glosario'], ['formulas', 'Formulario'], ['recipes', 'Recetario'], ['lab', 'Laboratorio'], ['beasts', 'Bestiario'], ['night', 'Noche antes']]
     .map(([id, name]) => `<button class="cr-tab ${(s.gtab || 'glossary') === id ? 'is-on' : ''}" role="tab" aria-selected="${(s.gtab || 'glossary') === id}" data-cr="grimoire" data-tab="${id}">${name}</button>`).join('')}</div>`;
   const sup = html => html.replace(/\^\(([^)]*)\)/g, '<sup>$1</sup>').replace(/\^([^\s,()<]+)/g, '<sup>$1</sup>');
   function formulasMarkup(cls, s) {
@@ -1035,6 +1193,87 @@
       }).join('')}</div>`;
   }
   // Estado de una receta según tu evidencia: sin ver → vista → aprendida → dominada.
+
+  /* ───────── Laboratorio libre, bestiario y hoja de la noche anterior (etapa 8) ───────── */
+  function labMarkup(cls, s) {
+    const L = GEN(cls)?.lab;
+    if (!L) return '<p class="cr-note">Esta clase todavía no tiene laboratorio.</p>';
+    if (s.path === 'prueba' || s.path === 'simulacro') return '<p class="cr-note">El laboratorio está <b>cerrado</b> durante la prueba. Ábrelo cuando estudies.</p>';
+    const sub = id => L.substances.find(x => x.id === id), found = Object.keys(s.labFound || {}).length;
+    const head = `<p class="cr-act-help">Mezcla sin miedo: aquí no hay nota. Elige una sustancia, agrega reactivos y el sabio te dice qué pasa y por qué.
+      <b>Descubriste ${found} de ${L.total} reacciones.</b></p>`;
+    if (!s.lab?.at) return `${head}<p class="cr-eyebrow">¿Con qué empiezas?</p><div class="cr-lab-starts">${L.starts.map(id => `<button class="cr-chip" data-cr="lab-start" data-sub="${esc(id)}"><b>${esc(sub(id).name)}</b><small>${esc(sub(id).formula)}</small></button>`).join('')}</div>`;
+    const cur = sub(s.lab.at), last = s.lab.trail[s.lab.trail.length - 1], rg = id => L.reagents.find(x => x.id === id)?.label || id;
+    return `${head}
+      <div class="cr-lab">
+        <div class="cr-lab-flask ${last ? (last.to ? 'is-ok' : 'is-no') : ''}"><p class="cr-eyebrow">En tu matraz</p><b>${esc(cur.name)}</b><span class="cr-lab-formula">${esc(cur.formula)}</span></div>
+        ${last ? `<p class="cr-lab-msg ${last.to ? 'is-ok' : last.ok ? 'is-mid' : 'is-no'}">${last.to ? '✓' : last.ok ? '·' : '✗'} <b>${esc(rg(last.reagent))}:</b> ${md(last.why)}</p>` : '<p class="cr-lab-msg">Agrega un reactivo.</p>'}
+        ${s.lab.trail.some(t => t.to) ? `<p class="cr-lab-trail">${[s.lab.trail.find(t => t.to)?.from, ...s.lab.trail.filter(t => t.to).map(t => `<i>${esc(rg(t.reagent))}</i> → ${esc(sub(t.to).name)}`)].map((x, i) => i ? x : esc(sub(x).name)).join(' → ')}</p>` : ''}
+        <p class="cr-eyebrow">Reactivos</p>
+        <div class="cr-lab-reagents">${L.reagents.map(r => `<button class="cr-chip" data-cr="lab-add" data-reagent="${esc(r.id)}">${esc(r.label)}</button>`).join('')}</div>
+        <div class="cr-row">${s.lab.trail.length ? '<button class="cr-btn cr-small" data-cr="lab-undo">↶ Deshacer</button>' : ''}<button class="cr-btn cr-small" data-cr="lab-reset">Otra sustancia</button></div>
+      </div>`;
+  }
+  /* Bestiario de errores: cada error típico en que caíste es una criatura. Se doma acertando su concepto sin ayuda
+     en 3 días distintos después de la última vez que caíste (repaso espaciado: Cepeda y cols., 2006). */
+  function bestiary(cls, records) {
+    const map = {};
+    for (const r of records || []) {
+      if (!r.misconception || !cls.misconceptions?.[r.misconception] || r.retry) continue;
+      const b = (map[r.misconception] ||= { key: r.misconception, mc: cls.misconceptions[r.misconception], concept: r.conceptId, falls: 0, last: r.at });
+      b.falls += 1; if (String(r.at) > String(b.last)) b.last = r.at;
+    }
+    return Object.values(map).map(b => {
+      const days = new Set((records || []).filter(r => r.conceptId === b.concept && r.correct && !r.hint && !r.retry && String(r.at) > String(b.last)).map(r => today(new Date(r.at)))).size;
+      return { ...b, days: Math.min(3, days), state: days >= 3 ? 'captured' : days ? 'tracking' : 'wild' };
+    }).sort((a, b) => ({ wild: 0, tracking: 1, captured: 2 })[a.state] - ({ wild: 0, tracking: 1, captured: 2 })[b.state] || b.falls - a.falls);
+  }
+  // Criatura propia (sin personajes de otros): un bicho redondo con orejas puntudas; enojado si anda suelto, en un frasco si está capturado.
+  function creatureSvg(color, state) {
+    const brow = state === 'wild' ? '<path d="M26 39l9 3M54 39l-9 3" stroke="#2a1b0e" stroke-width="2.6" stroke-linecap="round"/>' : '';
+    const jar = state === 'captured' ? '<rect x="7" y="12" width="66" height="64" rx="16" fill="rgb(200 230 255 / .22)" stroke="#8fb3c9" stroke-width="2.5"/><rect x="22" y="5" width="36" height="9" rx="3" fill="#a87a45"/>' : '';
+    const line = state === 'tracking' ? 'stroke="#2a1b0e" stroke-dasharray="4 3" stroke-width="2"' : 'stroke="rgb(0 0 0 / .25)" stroke-width="1.5"';
+    return `<svg viewBox="0 0 80 80" class="cr-beast-svg is-${state}" aria-hidden="true">${jar}
+      <path d="M20 34l-6-16 15 9zM60 34l6-16-15 9z" fill="${color}" ${line}/>
+      <ellipse cx="40" cy="48" rx="23" ry="21" fill="${color}" ${line}/>
+      <ellipse cx="40" cy="56" rx="12" ry="9" fill="rgb(255 255 255 / .28)"/>
+      <ellipse cx="31" cy="46" rx="5.5" ry="6.5" fill="#fff"/><ellipse cx="49" cy="46" rx="5.5" ry="6.5" fill="#fff"/>
+      <circle cx="32" cy="47" r="2.8" fill="#2a1b0e"/><circle cx="48" cy="47" r="2.8" fill="#2a1b0e"/>${brow}
+      <path d="${state === 'wild' ? 'M34 60q6-4 12 0' : 'M34 58q6 5 12 0'}" stroke="#2a1b0e" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+      ${state === 'wild' ? '<path d="M36 60l2 3 2-3M42 60l2 3 2-3" fill="#fff"/>' : ''}</svg>`;
+  }
+  function beastsMarkup(cls, s, api) {
+    const E = EV(), recs = E ? E.storeFor(api.getState(), cls.id).records : [];
+    const list = bestiary(cls, recs), C = GEN(cls)?.creatures || {}, title = c => (cls.concepts || []).find(k => k.id === c)?.title || c;
+    const caught = list.filter(b => b.state === 'captured').length;
+    if (!list.length) return '<p class="cr-act-help">Aquí aparecerán como criaturas los <b>errores típicos</b> en que caigas. No es malo: cada error que conoces se puede domar.</p>';
+    return `<p class="cr-act-help">Cada error típico en que caíste es una criatura. <b>Se captura</b> cuando aciertas su tema sin ayuda en <b>3 días distintos</b> después de la última vez que caíste. Capturadas: <b>${caught} de ${list.length}</b>.</p>
+      <div class="cr-beasts">${list.map(b => { const [name, color] = C[b.concept] || ['Criatura', '#8a7a6a'];
+        return `<article class="cr-beast is-${b.state}">${creatureSvg(color, b.state)}<div>
+          <p class="cr-eyebrow">${esc(name)} · ${{ wild: 'Suelta', tracking: `Rastreando · ${b.days} de 3 días`, captured: 'Capturada ✦' }[b.state]}</p>
+          <h3>${esc(b.mc.label)}</h3><p>${md(b.mc.why)}</p>
+          <p class="cr-note">Caíste ${b.falls} ${b.falls === 1 ? 'vez' : 'veces'} · tema: ${esc(title(b.concept))}</p>
+          ${b.state !== 'captured' && gensFor(cls, b.concept).length ? `<button class="cr-btn cr-small" data-cr="train" data-focus="c:${esc(b.concept)}">Ir a domarla ▸</button>` : ''}</div></article>`; }).join('')}</div>`;
+  }
+  // Hoja de la noche anterior: una página para imprimir con lo esencial y TUS puntos débiles.
+  function nightMarkup(cls, s, api) {
+    const E = EV(), store = E?.storeFor(api.getState(), cls.id), recs = store?.records || [];
+    const beasts = bestiary(cls, recs).filter(b => b.state !== 'captured').slice(0, 3);
+    const lv = E && cls.concepts ? E.leaves(cls, store) : {}, rank = c => E?.LEAVES?.[lv[c.id]?.shown]?.rank || 0;
+    const weak = (cls.concepts || []).filter(c => !c.root && lv[c.id]).sort((a, b) => (lv[b.id].count ? 1 : 0) - (lv[a.id].count ? 1 : 0) || rank(a) - rank(b)).slice(0, 4); // primero lo que ya viste y está flojo
+    const rules = cls.missions.flatMap(m => (m.parts || []).filter(p => p.rule).map(p => p.rule));
+    return `<p class="cr-act-help">Una página con lo esencial para la noche antes de la ${esc(cls.evaluation)}. Léela, cierra los ojos y <b>recuérdala</b>: recordar fija más que releer.</p>
+      <div class="cr-row"><button class="cr-btn cr-primary cr-small" data-cr="print">🖨 Imprimir o guardar en PDF</button></div>
+      <article class="cr-night"><header><b>${esc(cls.title)} · noche antes de la ${esc(cls.evaluation)}</b><span>${esc(today())}</span></header>
+        <section><h4>Fórmulas</h4><ul>${(cls.formulas || []).map(f => `<li><b>${esc(f.title)}:</b> ${sup(esc(f.formula))}</li>`).join('')}</ul></section>
+        <section><h4>Recetas</h4><ul>${(cls.recipes || []).map(r => `<li><b>${esc(r.title)}:</b> ${md(r.base)} + ${md(r.reagents)}${r.condition ? ` (${md(r.condition)})` : ''} → ${md(r.result)}</li>`).join('')}</ul></section>
+        ${rules.length ? `<section><h4>Reglas</h4><ul>${rules.map(r => `<li><b>${esc(r.title)}:</b> ${r.steps.map(md).join(' · ')}</li>`).join('')}</ul></section>` : ''}
+        <section><h4>Tus trampas</h4>${beasts.length ? `<ul>${beasts.map(b => `<li><b>${esc(b.mc.label)}.</b> ${md(b.mc.why)}</li>`).join('')}</ul>` : '<p>Todavía no registras errores típicos. ¡Bien!</p>'}</section>
+        <section><h4>Lo que más te conviene repasar</h4>${weak.length ? `<ul>${weak.map(c => `<li>${esc(c.title)} <small>(${esc(lv[c.id].label)})</small></li>`).join('')}</ul>` : '<p>—</p>'}</section>
+        <section><h4>Antes de dormir</h4><ul><li>Una Ronda del alba de 5 minutos: practicar recordando fija más que releer (Roediger y Karpicke, 2006).</li>
+          <li>Nada de materia nueva a última hora: repasa lo que ya sabes.</li><li>Duerme 7 a 9 horas: el sueño consolida lo estudiado (Diekelmann y Born, 2010).</li></ul></section>
+      </article>`;
+  }
   function recipeState(cls, api, r) {
     const E = EV(); if (!E) return 'seen';
     const store = E.storeFor(api.getState(), cls.id), recs = store.records.filter(x => x.conceptId === r.concept);
@@ -1100,6 +1339,9 @@
     } else if (s.panel === 'glossary' && s.gtab === 'recipes') {
       title = 'Tu grimorio';
       body = grimoireTabs(s) + recipesMarkup(cls, s, api);
+    } else if (s.panel === 'glossary' && ['lab', 'beasts', 'night'].includes(s.gtab)) {
+      title = 'Tu grimorio';
+      body = grimoireTabs(s) + { lab: labMarkup, beasts: beastsMarkup, night: nightMarkup }[s.gtab](cls, s, api);
     } else if (s.panel === 'glossary') {
       title = 'Tu grimorio';
       const entries = (cls.glossary || []).map((g, i) => Array.isArray(g) ? { term: g[0], def: g[1], i } : { ...g, i });
@@ -1160,13 +1402,15 @@
     if (b.kind === 'simresult' && s.sim && !s.sim.logged) { const sc = simScore(cls, s); s.sim.ended = true; s.sim.logged = true; (s.simHistory ||= []).push({ n: s.sim.n, at: new Date().toISOString(), got: sc.got, max: sc.max, nota: sc.nota }); }
     if (s.path === 'misiones' && s.mission) s.far[s.mission] = Math.max(s.far[s.mission] || 0, s.beat);
     const { sage, center } = moment(cls, api, s, b);
-    const hintable = b.kind === 'question' && (b.stage === 'practice' || b.stage === 'challenge') && !s.answers[b.item.id] && !s.hints[b.item.id];
+    const hintable = b.kind === 'question' && ['practice', 'challenge', 'train'].includes(b.stage) && !s.answers[b.item.id] && !s.hints[b.item.id];
     let progress = Math.round((s.beat / Math.max(1, list.length - 1)) * 100);
     const goal = goalOf(cls, s);
     if (s.path === 'diagnostico') { const plan = diagnosisPlan(cls, s); progress = plan.done ? 100 : Math.round((plan.asked.length - 1) / (cls.diagnosis?.max || 7) * 100); }
     // En el mapa y la bienvenida, el % es de toda la clase (actividades respondidas); dentro de una misión, de esa misión.
     if (b.kind === 'pick' || b.kind === 'path') { const all = allItems(cls); progress = Math.round(all.filter(({ item }) => s.answers[item.id]).length / Math.max(1, all.length) * 100); }
-    const where = s.path === 'tiempo' ? 'Tu plan de hoy' : s.path === 'alba' ? 'Ronda del alba' : s.path === 'simulacro' ? 'Simulacro PEP' : !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
+    if (b.kind === 'trainpick') progress = 0;
+    if (s.path === 'entrenar' && s.trainRun) progress = Math.round(s.trainRun.ids.filter(i => s.answers[i]).length / s.trainRun.size * 100);
+    const where = s.path === 'tiempo' ? 'Tu plan de hoy' : s.path === 'entrenar' ? 'Entrenar' : s.path === 'alba' ? 'Ronda del alba' : s.path === 'simulacro' ? 'Simulacro PEP' : !s.path || b.kind === 'pick' ? 'la clase' : s.path === 'base' ? (baseById(cls, s.mission) ? `Repaso: ${baseById(cls, s.mission).title}` : 'Repaso desde cero') : s.path === 'misiones' && missionById(cls, s.mission)
       ? `Misión ${cls.missions.findIndex(m => m.id === s.mission) + 1}` : s.path === 'misiones' ? 'la clase' : PATHS[s.path].name;
     const mascotMood = s.mascotMood || 'idle';
     const entering = !api.app.querySelector('.classroom');
@@ -1308,7 +1552,27 @@
     if (action === 'exit') { clearInterval(TIMER); }
     if (action === 'paths') { s.path = null; s.mission = null; s.beat = 0; s.panel = null; clearInterval(TIMER); return rerender(id, api); }
     if (action === 'plan-min') { s.planMin = Number(button.dataset.min) || null; s.planDay = today(); return rerender(id, api); }
-    if (action === 'sim-start') { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; s.beat += 1; return rerender(id, api); }
+    if (action === 'sim-start') { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; Object.assign((s.genFrom ||= {}), s.sim.from); s.beat += 1; return rerender(id, api); }
+    if (action === 'train') { s.panel = null; s.path = 'entrenar'; s.trainRun = newRun(cls, s, button.dataset.focus || 'mix'); s.beat = 2; s.mascotMood = 'happy'; return rerender(id, api); }
+    if (action === 'train-pick') { s.trainRun = null; s.beat = 1; return rerender(id, api); }
+    if (action === 'lab-start') { s.lab = { at: button.dataset.sub, trail: [] }; return rerender(id, api); }
+    if (action === 'lab-add') {
+      const L = GEN(cls)?.lab, from = s.lab?.at, reagent = button.dataset.reagent;
+      if (!L || !from) return;
+      const r = L.react(from, reagent);
+      s.lab.trail.push({ from, reagent, ...r });
+      if (r.to) { s.lab.at = r.to; (s.labFound ||= {})[`${from}>${reagent}`] = true; }
+      s.mascotMood = r.to ? 'happy' : 'think'; return rerender(id, api);
+    }
+    if (action === 'lab-reset') { s.lab = null; return rerender(id, api); }
+    if (action === 'lab-undo') { const last = s.lab?.trail.pop(); if (last) s.lab.at = last.from; return rerender(id, api); }
+    if (action === 'print') { // se imprime una copia suelta de la hoja (así no la recorta el panel)
+      const sheet = document.querySelector('.cr-night'); if (!sheet) return;
+      document.getElementById('nexo-print-sheet')?.remove();
+      const copy = sheet.cloneNode(true); copy.id = 'nexo-print-sheet'; document.body.append(copy); document.body.classList.add('nexo-print-night');
+      window.addEventListener('afterprint', () => { document.body.classList.remove('nexo-print-night'); copy.remove(); }, { once: true });
+      window.print(); return;
+    }
     if (action === 'sim-new') { s.sim = null; s.beat = 1; return rerender(id, api); }
     if (action === 'exit') { document.body.classList.remove('in-classroom'); window.NexoAmbientTime?.stopPreview?.(); s.slideOpen = null; s.panel = null; return api.exit(); }
     if (action === 'panel-close') { s.slideOpen = null; s.panel = null; return rerender(id, api); }
@@ -1338,7 +1602,7 @@
         s.albaKey = key;
         if (!s.rounds[key]) s.rounds[key] = roundPick(cls, s, EV()?.storeFor(api.getState(), id), size);
       }
-      if (s.path === 'simulacro' && button.dataset.size && !(s.sim && !s.sim.ended)) { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; s.beat = 2; }
+      if (s.path === 'simulacro' && button.dataset.size && !(s.sim && !s.sim.ended)) { s.sim = simBuild(cls, s, button.dataset.size); s.simN = s.sim.n; Object.assign((s.genFrom ||= {}), s.sim.from); s.beat = 2; }
       api.track?.('class_started', { class_id: id, path: s.path });
       return rerender(id, api);
     }
@@ -1385,7 +1649,7 @@
     if (action === 'offer') { s.skipExplain[b.m.id] = button.dataset.skip === '1'; s.beat += 1; s.mascotMood = 'happy'; return rerender(id, api); }
     if (action === 'reveal') { s.revealed[button.dataset.key] = true; return rerender(id, api); }
     if (action === 'mascot') {
-      const canHint = b.kind === 'question' && (b.stage === 'practice' || b.stage === 'challenge') && !s.answers[b.item.id];
+      const canHint = b.kind === 'question' && ['practice', 'challenge', 'train'].includes(b.stage) && !s.answers[b.item.id];
       if (canHint && b.item.hint && !s.hints[b.item.id]) {
         s.hints[b.item.id] = true; s.mascotMood = 'think';
         s.mascotSay = 'Te dejé una pista en el pergamino. Esta respuesta contará como "con pista".';
@@ -1467,5 +1731,6 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS };
+  window.NexoClassroom = { render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
+    genItem, genFor, trainLevels, levelOf, startLevel, newRun, bestiary, LEVELS };
 })();

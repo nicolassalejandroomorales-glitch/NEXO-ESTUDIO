@@ -136,10 +136,16 @@ Se ve en el encabezado (★ Camino al 7), en el mapa de misiones (puntos por mis
 
 **Se hereda solo (no hay que programar nada):** el aula y la torre, el sabio y el compañero, la barra de confianza, el motor de evidencia
 (hojas, calibración, repaso FSRS), el diagnóstico adaptativo, los errores que guían y el desvío a la base, la mini clase y "Ver a profundidad",
-el grimorio (glosario, formulario con calculadoras, recetario y reglas), el Camino al 7, el recorrido de bienvenida y todos los tipos de actividad.
+el grimorio (glosario, formulario con calculadoras, recetario, reglas, laboratorio, bestiario y hoja de la noche anterior), el Camino al 7,
+la ronda del alba, el simulacro, Entrenar con su escalera de 5 niveles, el recorrido de bienvenida y todos los tipos de actividad.
 
 **Se escribe por ramo (contenido):** misiones con sus partes, conceptos, errores típicos, fórmulas, recetas o reglas, mini clases, diagnóstico y
 la meta de la prueba. Las diapositivas se cargan con `tools/classroom-art/slides.py`.
+
+**Ejercicios infinitos (opcional, `dist/classes/<id>-gen.js`):** un archivo con `window.NexoClassGen['<id>'] = { LEVELS, source, generators, lab, creatures }`.
+Cada generador es `{ id, title, mission, concepts, make(rng, nivel, concepto) }` y devuelve una pregunta `choice` u `order` del concepto pedido,
+con pista, explicación y diapositiva. El aula hace todo lo demás (niveles, Entrenar, ronda, simulacro). Sin este archivo la clase funciona igual,
+pero sin ejercicios infinitos. Ejemplo completo: `org-01-gen.js`. `tools/classroom-test.cjs` lo revisa solo si existe.
 
 **Ojo con ramos que no son de química:** el editor de moléculas y las flechas (`build`, `arrows`) son para química. Para Física o Cálculo
 faltaría un tipo de actividad "respuesta numérica con unidades" (pendiente). Todo lo demás sirve igual.
