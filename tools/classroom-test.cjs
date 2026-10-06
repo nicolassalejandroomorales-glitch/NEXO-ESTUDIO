@@ -212,7 +212,7 @@ for (const [id, file] of Object.entries(catalog)) {
     const want = Math.min(4, new Set(Object.keys(seenSt.answers).map(i => NX.findItem(cls, i).concept)).size);
     const ids = NX.roundPick(cls, seenSt, null, 4);
     assert.ok(ids.length === want && new Set(ids.map(i => NX.findItem(cls, i).concept)).size === want, 'La ronda trae una pregunta por concepto ya visto');
-    const mis = ids.map(i => cls.missions.find(m => NX.itemsOf(m).some(x => x.item.id === i)).id);
+    const mis = ids.map(i => cls.missions.find(m => NX.itemsOf(m).some(x => x.item.id === i))?.id || cls.concepts.find(c => c.id === NX.findItem(cls, i).concept)?.mission); // un generado cuenta en la misión de su concepto
     assert.ok(mis.every((m, i) => i === 0 || m !== mis[i - 1] || new Set(mis).size === 1), 'La ronda intercala misiones');
     const key = '2026-10-06:4', st = { ...seenSt, path: 'alba', albaKey: key, rounds: { [key]: ids } };
     const qs = NX.beats(cls, st).filter(b => b.kind === 'question');
