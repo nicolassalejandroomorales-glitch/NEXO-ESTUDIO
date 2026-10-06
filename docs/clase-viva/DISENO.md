@@ -213,7 +213,7 @@ Cada etapa: SPEC corto si hace falta, implementar, probar en 1440 y 390, pruebas
 | 7 | Ronda del alba, "tengo X minutos", simulacro PEP y práctica en papel | **Hecha** (esperando tu prueba) | Sonnet 5.5 |
 | 8 | Entrenar con generadores de 5 niveles (en toda la app), laboratorio libre, bestiario, hoja de la noche anterior. La voz queda para después | **Hecha** (esperando tu prueba) · `docs/etapa-8-entrenar/SPEC.md` | Opus 5.5 (química) + Sonnet 5.5 (pantalla) |
 | 9 | Replicar: actualizar `tools/new-class.cjs` y la guía para la próxima clase | **Hecha** · `docs/etapa-9-replicar/SPEC.md` | Sonnet 5.5 |
-| 10 | **Arte al final:** torre por capas, árbol vivo y personajes cartoon, diseñados con calma | En diseño (bocetos) | Opus 5.5 |
+| 10 | **Arte al final:** la Torre del Sauce (pixel art, un sauce que crece dentro de la torre de cada ramo) | **Diseño aprobado** · `docs/etapa-10-arte/SPEC.md`; falta conectarlo a la app | Opus 5.5 |
 
 Orden cambiado el 4 oct a pedido de Niquito: el arte se diseña al final, cuando todo lo funcional esté listo.
 Mientras tanto, las etapas 2 a 9 usan el aula actual.
