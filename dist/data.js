@@ -639,7 +639,7 @@ const NEXO_DATA = {
     },
     "ana-01": {
       "subject": "analitica",
-      "title": "El proceso analítico completo",
+      "title": "El análisis químico y sus errores",
       "duration": 40,
       "reward": 45,
       "central": "¿Qué se mide realmente?",
@@ -693,7 +693,7 @@ const NEXO_DATA = {
     },
     "ana-02": {
       "subject": "analitica",
-      "title": "Mapa de recipientes y alícuotas",
+      "title": "Volumetría: de la bureta a la muestra",
       "duration": 50,
       "reward": 55,
       "central": "¿Cómo vuelvo desde la bureta a la muestra original?",
@@ -747,7 +747,7 @@ const NEXO_DATA = {
     },
     "ana-03": {
       "subject": "analitica",
-      "title": "Ácido–base y curvas",
+      "title": "Curvas de titulación ácido-base",
       "duration": 50,
       "reward": 55,
       "central": "¿Qué especie domina en cada zona?",

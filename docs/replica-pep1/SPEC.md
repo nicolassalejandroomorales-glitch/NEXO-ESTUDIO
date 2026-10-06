@@ -35,4 +35,9 @@ pero solo para la PEP 1. Primero se mide si Nexo sirve (experimento, `docs/repli
 3. **Fisiopatología — Nervioso, respiratorio y digestivo** (después de rehacer su catálogo).
 4. **Química Analítica — Etapas, errores y volumetría ácido-base**.
 
+## Avance (6 oct 2026)
+
+- [x] Fisicoquímica `fq-01` · [x] Orgánica `org-04`, `org-05` · [x] Analítica `ana-01`, `ana-02`, `ana-03` (ver `docs/clase-ana-pep1/SPEC.md`)
+- [ ] Fisiopatología (catálogo y clases)
+
 Cada clase: SPEC corto, contenido con fuente por diapositiva, generadores, pruebas, ANTES/AHORA y revisión humana de la química.

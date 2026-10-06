@@ -9,7 +9,8 @@ body.in-willow .companion-presence { display: none !important; }
 .wv-top { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: 10px; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 22px;
   background: linear-gradient(#0b0a18e6, #0b0a1800); }
 .wv-title { display: grid; min-width: 0; flex: 1; text-shadow: 0 1px 3px #000; }
-.wv-title b { font-size: 1.15rem; letter-spacing: .3px; }
+.wv-title b { font-size: 1.15rem; letter-spacing: .3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wv.is-tall .wv-title b { font-size: 1rem; }
 .wv-title span { font-size: .85rem; opacity: .85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wv-switch { display: flex; gap: 6px; }
 .wv-btn { font: 600 .9rem var(--font-ui, system-ui, sans-serif); color: #f4efff; background: #1b1834d9; border: 2px solid #ffffff2e; border-radius: 6px; padding: 7px 11px; cursor: pointer; }
