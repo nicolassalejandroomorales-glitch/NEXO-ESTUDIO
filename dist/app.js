@@ -929,7 +929,7 @@
         // Motor de evidencia y repaso espaciado (FSRS); si no cargan, la clase funciona igual sin agendar repasos.
         window.NexoLoader.script('./classes/evidence.js?v=5'), window.NexoLoader.script('./classes/molecule.js?v=2'), window.NexoLoader.script('./classes/editor.js?v=5'), window.NexoLoader.script('./academic/reviews.js?v=14').catch(() => null)])
         .then(() => Promise.all([window.NexoLoader.script(`./classes/slides/${id}.js?v=1`).catch(() => null), // diapositivas reales, si ya se convirtieron
-          window.NexoLoader.script(`./classes/${id}-gen.js?v=4`).catch(() => null)])) // generadores de ejercicios (etapa 8), si la clase los tiene
+          window.NexoLoader.script(`./classes/${id}-gen.js?v=5`).catch(() => null)])) // generadores de ejercicios (etapa 8), si la clase los tiene
         .then(() => true);
     });
     promise.catch(() => classroomLoads.delete(id));

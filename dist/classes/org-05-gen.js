@@ -119,7 +119,8 @@
           { concept: c, slide: c === 'sea.halogenacion' ? 6 : 11, hint: 'El catalizador o el ácido fuerte genera un electrófilo más potente.', explain: `${rg} → ${el}.` }); }
       const pool = TARGET.filter(x => x.c === c), x = pick(rng, pool), others = TARGET.filter(y => y.r !== x.r);
       return choice(rng, `${level === 5 ? 'Estilo PEP (P5): ' : ''}¿Qué reactivo convierte benceno en ${x.t}?`.replace('benceno en anilina (desde nitrobenceno)', 'nitrobenceno en anilina'), x.r,
-        [...sample(rng, others, 2).map(y => ({ text: y.r, note: `${y.r} da ${y.t}.` })), { text: x.r.split(' / ')[0] + ' solo', note: 'Falta el catalizador (ácido de Lewis o H₂SO₄) o el oxidante.', misconception: x.mc }],
+        // "X solo" es un distractor válido solo cuando de verdad falta un catalizador (Br₂, Cl₂, I₂, HNO₃); el SO₃ ya es el electrófilo y Fe solo no reduce sin ácido.
+        [...sample(rng, others, x.mc ? 2 : 3).map(y => ({ text: y.r, note: `${y.r} da ${y.t}.` })), ...(x.mc ? [{ text: x.r.split(' / ')[0] + ' solo', note: 'Falta el catalizador (ácido de Lewis o H₂SO₄) o el oxidante.', misconception: x.mc }] : [])],
         { concept: c, slide: c === 'sea.halogenacion' ? 6 : 11, hint: '¿Cuál es el electrófilo que hace falta?', explain: `${x.t}: ${x.r}.` });
     }
   };
