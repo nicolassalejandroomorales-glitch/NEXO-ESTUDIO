@@ -16,7 +16,7 @@ for (const k of ['hook', 'q:diagnostic', 'q:pretest', 'lesson:bloque', 'q:practi
 for (const { item } of NX.itemsOf(cls.missions[0])) {
   const type = item.type || 'choice';
   const sol = type === 'order' ? item.answer : type === 'spot' ? { step: item.wrong, fix: item.fix.options.findIndex(o => o.correct) }
-    : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : item.options.findIndex(o => o.correct);
+    : type === 'write' ? { text: item.model, checks: item.rubric.map(() => true) } : type === 'number' ? { num: item.answer, unit: item.unit } : item.options.findIndex(o => o.correct);
   assert.ok(NX.isCorrect(item, sol), `${item.id}: la solución de la plantilla no se corrige como correcta`);
 }
 assert.ok(cls.concepts.every(c => cls.mini[c.id]), 'Cada concepto de la plantilla trae su mini clase');

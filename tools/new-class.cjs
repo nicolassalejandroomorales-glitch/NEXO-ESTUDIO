@@ -117,9 +117,13 @@ const template = `/* ${title} · ${evaluation}. Creada con tools/new-class.cjs: 
               { id: 'b1', concept: 'c1', title: 'REEMPLAZAR', slide: 1, body: 'REEMPLAZAR: la idea, con el dato de la diapositiva.', deeper: 'REEMPLAZAR: más simple, paso a paso.' }
               // Mecanismo con controles (solo química): { id: 'b1m', concept, title, slide, body, deeper, frames: [{ scene, lonePairs, arrows: [['lp:n', 'a:c']], caption }] }
             ],
-            practice: [   // todas con pista (hint). Tipos: choice, order, classify, match, pick, write, poe, recipe, spot, build, arrows
+            practice: [   // todas con pista (hint). Tipos: choice, order, classify, match, pick, write, number, poe, recipe, spot, build, arrows
               q('m1-p1', 'REEMPLAZAR', [{ text: 'Correcta', correct: true }, { text: 'Otra', note: 'REEMPLAZAR' }], { concept: 'c1', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
               order('m1-p2', 'REEMPLAZAR: ordena…', [['a', 'Primero'], ['b', 'Segundo'], ['c', 'Tercero']], ['a', 'b', 'c'], { concept: 'c1', direction: 'De menor a mayor.', explain: 'REEMPLAZAR', slide: 1, hint: 'REEMPLAZAR' }),
+              // Respuesta numérica (escalón 5): para ramos de cálculo. tol = tolerancia relativa; units = unidades para elegir (opcional);
+              // traps = resultados de errores típicos, con su porqué; solution = pasos que se muestran al corregir.
+              { id: 'm1-n1', type: 'number', source: SRC, concept: 'c1', slide: 1, prompt: 'REEMPLAZAR: calcula…', label: 'REEMPLAZAR: K', answer: 6, unit: 'REEMPLAZAR: unidad', tol: 0.02,
+                traps: [{ value: 3, note: 'REEMPLAZAR: por qué sale 3 si te equivocas en…' }], solution: ['REEMPLAZAR: paso 1', 'REEMPLAZAR: paso 2'], explain: 'REEMPLAZAR', hint: 'REEMPLAZAR' },
               { id: 'm1-fx1', type: 'spot', source: SRC, concept: 'c1', slide: 1, prompt: 'Un aprendiz se equivocó. ¿En qué paso?',
                 steps: ['REEMPLAZAR: paso bien', 'REEMPLAZAR: paso con el error', 'REEMPLAZAR: conclusión'], wrong: 1,
                 stepNotes: { 0: 'REEMPLAZAR: por qué este paso está bien', 2: 'REEMPLAZAR: viene del error anterior' },

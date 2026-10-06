@@ -510,6 +510,18 @@
      choice (alternativas) · order (ordenar tarjetas) · classify (clasificar en calderos)
      match (unir pares) · pick (tocar la parte correcta de una molécula). */
   const MIN_WRITE = 25;
+  /* Respuesta numérica (Fisicoquímica, Analítica): acepta coma o punto, "1,2e-3", "1,2x10^-3" y "1,2·10⁻³".
+     Se corrige con tolerancia relativa (item.tol, por defecto 2 %) y, si hay varias unidades para elegir, la unidad debe ser la pedida. */
+  function parseNum(raw) {
+    let t = String(raw ?? '').trim().replace(/\s+/g, '').replace(/−/g, '-').replace(/[⁰¹²³⁴⁵⁶⁷⁸⁹⁻]/g, ch => '0123456789-'['⁰¹²³⁴⁵⁶⁷⁸⁹⁻'.indexOf(ch)]);
+    t = t.replace(/(?:x|×|\*|·)10\^?(-?\d+)$/i, 'e$1');
+    if (/^-?\d{1,3}(\.\d{3})+,\d+$/.test(t)) t = t.replace(/\./g, ''); // 1.234,5
+    t = t.replace(',', '.');
+    return /^-?(\d+\.?\d*|\.\d+)(e-?\d+)?$/i.test(t) ? Number(t) : NaN;
+  }
+  const numOk = (item, num) => Number.isFinite(num) && Math.abs(num - item.answer) <= Math.max(Math.abs(item.answer) * (item.tol ?? 0.02), 1e-12);
+  const fmtNum = x => (Math.abs(x) >= 1e5 || (Math.abs(x) < 1e-3 && x !== 0) ? x.toExponential(2).replace('e', ' × 10^').replace('.', ',') : Number(x.toPrecision(4)).toLocaleString('es-CL'));
+  const trapOf = (item, num) => (item.traps || []).find(t => Number.isFinite(num) && Math.abs(num - t.value) <= Math.abs(t.value) * (item.tol ?? 0.02) + 1e-12) || null;
   const PHOTOS = new Map(); // fotos de la hoja en papel: solo en memoria, nunca se guardan
   const norm = t => String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   // Ideas clave de una respuesta escrita (solo busca palabras: orienta, no reemplaza la autocorrección).
@@ -536,12 +548,14 @@
     if (item.type === 'recipe') return JSON.stringify(value) === JSON.stringify(item.answer);
     if (item.type === 'spot') return value?.step === item.wrong && Boolean(item.fix.options[value?.fix]?.correct);
     if (item.type === 'write') return (value?.paper || String(value?.text || '').trim().length >= MIN_WRITE) && item.rubric.every((_, i) => value?.checks?.[i] === true);
+    if (item.type === 'number') return numOk(item, Number(value?.num)) && (!item.units || value?.unit === item.unit);
     return Boolean(item.options[value]?.correct);
   }
   function mcKeyOf(item, rec) {
     if (!rec || rec.correct) return null;
     if (!item.type || item.type === 'choice') return item.options[rec.choice]?.misconception || null;
     if (item.type === 'pick') return item.targets[rec.value]?.misconception || item.misconception || null;
+    if (item.type === 'number') return trapOf(item, Number(rec.value?.num))?.misconception || item.misconception || null;
     return item.misconception || null;
   }
   function mcOf(cls, item, rec) { const key = mcKeyOf(item, rec); return key ? cls.misconceptions[key] || null : null; }
@@ -550,6 +564,7 @@
     if (item.type === 'pick') return item.targets[rec.value]?.label;
     if (item.type === 'order') return rec.value.map(id => item.cards.find(c => c.id === id)?.text).join(' < ');
     if (item.type === 'write') return 'tu respuesta escrita';
+    if (item.type === 'number') return `${rec.value?.raw ?? ''} ${rec.value?.unit || item.unit || ''}`.trim();
     if (item.type === 'build') return 'tu dibujo';
     if (item.type === 'arrows') return 'tus flechas';
     if (item.type === 'poe') return item.options[rec.value.pred]?.text;
@@ -637,6 +652,18 @@
           <div class="cr-check">${actBtn(item, retry, 'act-check', '', 'Preparar la poción ▸', 'cr-btn cr-primary', seq.length !== item.answer.length)}</div>`}
         ${done ? `<p class="mol-status ${rec.correct ? 'is-ok' : 'is-bad'}">${rec.correct ? `¡La poción brilla! Obtuviste ${md(item.target)}.` : `La poción salió mal. ${md(recipeWhy(item, seq))}`}</p>` : ''}</div>`;
     }
+    if (item.type === 'number') {
+      // Calcula y escribe el valor (con su unidad si hay que elegirla).
+      const raw = done ? rec.value.raw : (w.text || ''), unit = done ? rec.value.unit : (w.unit || ''), num = done ? Number(rec.value.num) : parseNum(raw), trap = done && !rec.correct ? trapOf(item, num) : null;
+      const unitSel = item.units ? `<select class="cr-num-unit" data-cr-unit="${esc(item.id)}" data-retry="${retry ? 1 : 0}" aria-label="Unidad" ${done ? 'disabled' : ''}><option value="">unidad…</option>${item.units.map(u => `<option ${u === unit ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select>`
+        : item.unit ? `<span class="cr-num-fixed">${esc(item.unit)}</span>` : '';
+      return `<div class="cr-num"><p class="cr-act-help">${done ? '' : 'Resuélvelo (en papel si quieres) y escribe el resultado. Puedes usar coma decimal o notación 1,2e-3.'}</p>
+        <div class="cr-num-row"><span class="cr-num-label">${md(item.label || 'Resultado')} =</span><input class="cr-num-input ${done ? (rec.correct ? 'is-right' : 'is-wrong') : ''}" inputmode="decimal" autocomplete="off" data-cr-text="${esc(item.id)}" data-retry="${retry ? 1 : 0}" value="${esc(raw)}" aria-label="Tu resultado" ${done ? 'disabled' : ''}>${unitSel}</div>
+        ${!done && w.warn ? '<p class="cr-warn">Escribe un número (por ejemplo 0,0123 o 1,23e-2)' + (item.units ? ' y elige la unidad' : '') + '.</p>' : ''}
+        ${done ? `<p class="mol-status ${rec.correct ? 'is-good' : 'is-bad'}">${rec.correct ? '¡Correcto!' : `Era <b>${esc(fmtNum(item.answer))} ${esc(item.unit || '')}</b>.`} ${trap ? md(trap.note) : !rec.correct && item.units && rec.value.unit !== item.unit && numOk(item, num) ? 'El número estaba bien, pero la unidad no.' : ''}</p>
+          ${item.solution ? `<ol class="cr-num-steps">${item.solution.map(t => `<li>${md(t)}</li>`).join('')}</ol>` : ''}`
+        : `<div class="cr-check">${actBtn(item, retry, 'act-check', '', 'Comprobar ▸', 'cr-btn cr-primary')}</div>`}</div>`;
+    }
     if (item.type === 'spot') {
       // El aprendiz se equivocó: encuentra el paso malo y corrígelo.
       const step = done ? rec.value.step : w.step, fixing = step === item.wrong;
@@ -693,6 +720,7 @@
         const mc = cls.misconceptions[t.misconception]; const reason = id === item.answer ? item.explain : (mc ? mc.why : t.note);
         return reason ? `<li class="${id === item.answer ? 'is-ok' : ''}"><b>${esc(t.label)}</b>${id === item.answer ? ' (correcta)' : ''}: ${md(reason)}</li>` : ''; }).join('')}</ul>`;
       else if (item.type === 'write') extra = '';
+      else if (item.type === 'number') extra = `<p>Resultado: <b>${esc(fmtNum(item.answer))} ${esc(item.unit || '')}</b>.</p>${(item.traps || []).length ? `<ul>${item.traps.map(t => `<li>${esc(fmtNum(t.value))}: ${md(t.note)}</li>`).join('')}</ul>` : ''}`;
       else if (item.type === 'build') extra = window.NexoMolEditor?.solution(item) || '';
       else if (item.type === 'arrows') extra = '';
       else if (item.type === 'recipe') extra = `<p>Receta correcta: ${item.answer.map(id => md(item.ingredients.find(x => x.id === id).label)).join(' → ')}.</p>`;
@@ -1559,6 +1587,8 @@
       }
       const box = event.target.closest('[data-cr-text]');
       if (box) { const it = findItem(cls, box.dataset.crText); if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
+      const unitBox = event.target.closest('[data-cr-unit]');
+      if (unitBox) { const it = findItem(cls, unitBox.dataset.crUnit); if (it) workOf(s, it, unitBox.dataset.retry === '1').unit = unitBox.value; }
     });
     root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
     (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
@@ -1752,6 +1782,7 @@
       pairs[w.left] = r; w.left = undefined;
     }
     else if (action === 'act-spot' && Number(button.dataset.i) === item.wrong) { w.step = item.wrong; }
+    else if (action === 'act-check' && item.type === 'number' && (!Number.isFinite(parseNum(w.text)) || (item.units && !w.unit))) { w.warn = true; }
     else if (['act-target', 'act-check', 'act-poe-done', 'act-spot', 'act-spot-fix'].includes(action)) {
       const value = action === 'act-target' ? button.dataset.target
         : action === 'act-poe-done' ? { pred: w.pred }
@@ -1760,6 +1791,7 @@
         : item.type === 'recipe' ? [...(w.seq || [])]
         : item.type === 'order' ? [...w.seq] : item.type === 'classify' ? { ...w.assign }
         : item.type === 'write' ? { text: String(w.text || '').slice(0, 2000), checks: [...(w.checks || [])], paper: Boolean(w.paper) }
+        : item.type === 'number' ? { raw: String(w.text || '').slice(0, 40), num: parseNum(w.text), unit: w.unit || (item.units ? '' : item.unit || '') }
         : item.type === 'build' ? { graph: JSON.parse(JSON.stringify(w.graph || item.start || { atoms: [], bonds: [] })) }
         : item.type === 'arrows' ? [...(w.arrows || [])] : { ...w.pairs };
       const correct = isCorrect(item, value);
@@ -1776,6 +1808,6 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { nextExam, willowOf, render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
+  window.NexoClassroom = { nextExam, willowOf, parseNum, render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
     genItem, genFor, trainLevels, levelOf, startLevel, newRun, bestiary, LEVELS };
 })();
