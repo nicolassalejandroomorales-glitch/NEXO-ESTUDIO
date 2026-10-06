@@ -247,11 +247,11 @@
     const n = (s.simN || 0) + 1;
     const items = size === 'mini' ? missions.map(m => (m.stages.transfer || [])[(n - 1) % Math.max(1, (m.stages.transfer || []).length)]).filter(Boolean)
       : missions.flatMap(m => m.stages.transfer || []);
-    /* Desde el 2° simulacro, las alternativas y los ordenar se cambian por casos nuevos nivel PEP del mismo concepto
-       (las ya vistas se recuerdan de memoria). Las escritas, flechas y dibujos se quedan: ahí se practica producir. */
+    /* Desde el 2° simulacro, las alternativas, los ordenar y los cálculos se cambian por casos nuevos nivel PEP del mismo concepto
+       (las ya vistas se recuerdan de memoria; un cálculo nuevo trae otros números). Las escritas, flechas y dibujos se quedan. */
     const from = {};
     const ids = items.map((item, i) => {
-      const gen = n >= 2 && ['choice', 'order', undefined].includes(item.type) && genFor(cls, s, item.concept, `sim:${n}:${i}:${item.id}`, 5);
+      const gen = n >= 2 && ['choice', 'order', 'number', undefined].includes(item.type) && genFor(cls, s, item.concept, `sim:${n}:${i}:${item.id}`, 5);
       const id = `${gen || item.id}@s${n}`;
       if (gen) from[id] = item.id;
       return id;

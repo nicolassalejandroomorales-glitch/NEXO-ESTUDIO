@@ -969,7 +969,7 @@ const NEXO_DATA = {
     },
     "fq-01": {
       "subject": "fisico",
-      "title": "K, Q y ΔG",
+      "title": "Equilibrio químico: ξ, Q, K y ΔG",
       "duration": 45,
       "reward": 50,
       "central": "¿Hacia dónde avanza el sistema?",

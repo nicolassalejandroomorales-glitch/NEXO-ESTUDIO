@@ -262,12 +262,15 @@ for (const [id, file] of Object.entries(catalog)) {
         assert.equal(it.options.filter(o => o.correct).length, 1, `${tag}: debe tener exactamente una correcta`);
         assert.equal(new Set(it.options.map(o => o.text)).size, it.options.length, `${tag}: alternativas repetidas`);
         assert.ok(it.options.length >= 2 && it.options.every(o => o.text && (o.correct || o.note)), `${tag}: cada distractor necesita su porqué`);
+      } else if (type === 'number') {
+        assert.ok(Number.isFinite(it.answer) && it.answer !== 0 && it.unit !== undefined, `${tag}: respuesta numérica sin valor`);
+        for (const t of it.traps || []) assert.ok(t.note && !NX.isCorrect(it, { num: t.value, unit: it.unit }), `${tag}: trampa igual a la respuesta o sin porqué`);
       } else {
         assert.equal(type, 'order', `${tag}: tipo inesperado`);
         assert.ok(it.answer.length === it.cards.length && it.answer.every(a => it.cards.some(c => c.id === a)), `${tag}: orden inválido`);
       }
       for (const o of [...(it.options || []), it]) if (o.misconception) assert.ok(cls.misconceptions[o.misconception], `${tag}: error típico ${o.misconception} sin explicación`);
-      const sol = type === 'order' ? it.answer : it.options.findIndex(o => o.correct);
+      const sol = type === 'order' ? it.answer : type === 'number' ? { num: it.answer, unit: it.unit } : it.options.findIndex(o => o.correct);
       assert.ok(NX.isCorrect(it, sol), `${tag}: la solución propia no se corrige como correcta`);
       if (type === 'order') assert.ok(!NX.isCorrect(it, [...it.answer].reverse()), `${tag}: el orden al revés no debe contar`);
       // Misma semilla, misma pregunta (se vuelve a armar desde el id, sin guardar nada).
