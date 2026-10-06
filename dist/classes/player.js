@@ -754,6 +754,36 @@
     return `<ul class="cr-leaves">${cls.concepts.filter(filter).map(c => { const l = all[c.id];
       return `<li class="cr-leaf is-${l.shown}"><span class="cr-leaf-dot" aria-hidden="true"></span><b>${esc(c.title)}</b><small>${esc(l.label)}</small></li>`; }).join('')}</ul>`;
   }
+  /* Torre del Sauce (etapa 10): la etapa sale de tu avance y cada hilo del sauce es un concepto con su hoja real. */
+  const LEAF_TO_STRAND = { semilla: 'none', brote: 'bud', clara: 'bud', verde: 'green', intensa: 'green', flor: 'flower', amarilla: 'yellow', seca: 'dry' };
+  function willowOf(cls, api, s) {
+    const E = EV(), store = E ? E.storeFor(api.getState(), cls.id) : { records: [] }, all = E ? E.leaves(cls, store) : {};
+    const concepts = (cls.concepts || []).filter(c => !c.root), roots = (cls.concepts || []).filter(c => c.root);
+    const states = concepts.map(c => LEAF_TO_STRAND[all[c.id]?.shown] || 'none');
+    const items = allItems(cls), done = items.filter(({ item }) => s.answers[item.id]).length, p = items.length ? done / items.length : 0;
+    const started = (store.records || []).length > 0 || Object.keys(s.answers || {}).length > 0;
+    const goal = goalOf(cls, s), mastered = goal && goal.max > 0 && goal.earned >= goal.max - 1e-9;
+    const stage = !started ? 0 : mastered ? 6 : Math.min(5, 1 + 4 * p);
+    const rootsShown = roots.length ? roots.filter(c => all[c.id] && all[c.id].shown !== 'semilla').length / roots.length : 1;
+    const green = states.filter(x => x === 'green' || x === 'flower').length, lit = states.filter(x => x === 'flower').length;
+    return { stage, states, roots: started ? Math.max(0.3, rootsShown) : 0, green, lit, total: states.length,
+      floor: stage >= 6 ? 'el sauce rompió el techo' : stage >= 2 ? `piso ${Math.min(4, Math.floor(stage - 1))} de 4` : stage >= 1 ? 'semilla y raíces' : 'torre dormida' };
+  }
+  function willowMarkup(cls, api, s) {
+    if (!window.NexoWillowTower) return '';
+    const w = willowOf(cls, api, s);
+    return `<figure class="cr-willow"><canvas data-willow width="256" height="192" role="img" aria-label="Tu sauce en la torre de ${esc(cls.title)}: ${esc(w.floor)}, ${w.green} de ${w.total} conceptos verdes o con farolito"></canvas>
+      <figcaption><b>Tu sauce · ${esc(w.floor)}</b> ${w.green} de ${w.total} hilos verdes${w.lit ? `, ${w.lit} con farolito` : ''}. Cada hilo es un concepto: amarillo o seco si toca repasar.</figcaption></figure>`;
+  }
+  // Se monta después de dibujar la pantalla; el sauce viejo se apaga solo al salir de la página.
+  function mountWillow(cls, api, s) {
+    const canvas = api.app.querySelector('canvas[data-willow]');
+    if (!canvas || !window.NexoWillowTower) return;
+    const w = willowOf(cls, api, s), look = window.NexoWillowTower.forSubject(cls.subject);
+    const t = window.NexoWillowTower.mount(canvas, { ...look, stage: s.willowSeen ?? w.stage, states: w.states, roots: w.roots });
+    t.update({ stage: w.stage }); // si creció desde la última vez, se ve crecer
+    s.willowSeen = w.stage;
+  }
   function calibrationLine(cls, api, id) {
     const E = EV();
     if (!E) return '';
@@ -1139,6 +1169,7 @@
         return `<div class="cr-goal-close"><p class="cr-eyebrow">Camino al 7</p>${goalMeter(goal)}
           <p>${here ? `${s.path === 'misiones' ? 'Esta misión' : 'Esta clase'} vale <b>${pts(here)} pts</b> de la PEP y demostraste <b>${pts(got)}</b>.` : 'Esta misión es <b>base</b>: no da puntos directos, pero sin ella no se puede responder lo que sí los da.'}
           En total llevas <b>${pts(goal.earned)} de ${goal.total}</b>.</p><button class="cr-link" data-cr="goal">Ver qué me falta para el 7</button></div>`; })()}
+      ${willowMarkup(cls, api, s)}
       <div class="cr-goal-close"><p class="cr-eyebrow">Tus hojas${s.path === 'misiones' || s.path === 'base' ? ' en esta misión' : ''}</p>
         ${leafChips(cls, api, cls.id, c => s.path === 'base' ? c.id === missionById(cls, s.mission)?.concept : s.path !== 'misiones' ? !c.root : c.mission === s.mission)}${calibrationLine(cls, api, cls.id)}
         <p class="cr-note">Las hojas se ponen <b>verdes</b> solo cuando produces la respuesta tú solo (escalón 5), por ejemplo al escribirla. Elegir entre alternativas deja un <b>brote</b>.</p></div>
@@ -1378,6 +1409,7 @@
           <div class="cr-goal-bar"><span style="width:${q.points ? Math.round(q.earned / q.points * 100) : 0}%"></span></div>
           <div class="cr-row">${q.missions.map(mId => { const m = missionById(cls, mId); return m ? `<button class="cr-btn cr-small" data-cr="mission" data-mission="${m.id}">${esc(m.title)} ▸</button>` : ''; }).join('')}</div></li>`).join('')}
           ${(goal.rest || []).map(r => `<li class="is-later"><div><b>${esc(r.label)}</b><span>${pts(r.points)} pts · ${esc(r.note || '')}</span></div></li>`).join('')}</ul>
+        ${willowMarkup(cls, api, s)}
         <p class="cr-eyebrow">Lo que sabes, concepto por concepto</p>
         ${cls.missions.map(m => `<div class="cr-leaf-group"><b>${esc(m.title)}</b>${leafChips(cls, api, cls.id, c => c.mission === m.id)}</div>`).join('')}
         <div class="cr-leaf-group"><b>Raíces (clase base)</b>${leafChips(cls, api, cls.id, c => c.root)}</div>
@@ -1529,6 +1561,7 @@
       if (box) { const it = findItem(cls, box.dataset.crText); if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
     });
     root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
+    mountWillow(cls, api, s);
     (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
   }
 
@@ -1743,6 +1776,6 @@
     return rerender(id, api);
   }
 
-  window.NexoClassroom = { nextExam, render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
+  window.NexoClassroom = { nextExam, willowOf, render, beats, isCorrect, itemsOf, blocksOf, diagnosisPlan, findItem, roundPick, simBuild, simScore, goalOf, PATHS,
     genItem, genFor, trainLevels, levelOf, startLevel, newRun, bestiary, LEVELS };
 })();

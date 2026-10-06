@@ -847,3 +847,8 @@ body[data-nexo-ambient-motion="reduced"] .cr-beast-svg.is-wild, body[data-nexo-a
 .cr-exam-line { margin-top: 10px; background: rgb(122 70 20 / .85); color: #ffe9bf; }
 .cr-exam-line .cr-link { color: #ffe1a6; }
 .cr-exam-line + .cr-goal-line { margin-top: 6px; }
+
+/* Torre del Sauce (etapa 10): el sauce que crece con tu evidencia, en pixel art. */
+.cr-willow { margin: 10px 0 4px; display: grid; gap: 6px; }
+.cr-willow canvas { display: block; width: 100%; max-width: 560px; height: auto; aspect-ratio: 4 / 3; image-rendering: pixelated; image-rendering: crisp-edges; border-radius: 6px; border: 2px solid rgba(255, 255, 255, .14); background: #0b0a18; }
+.cr-willow figcaption { font-size: .9em; opacity: .9; max-width: 560px; }

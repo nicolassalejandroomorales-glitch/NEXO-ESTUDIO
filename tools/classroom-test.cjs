@@ -348,6 +348,17 @@ for (const [id, file] of Object.entries(catalog)) {
     assert.equal(NX.nextExam(cls, api, new Date(2026, 9, 14, 8)).label, 'es hoy', 'El mismo día dice "es hoy"');
     assert.equal(NX.nextExam(cls, { getState: () => ({}) }), null, 'Sin calendario no muestra nada');
   }
+  // Etapa 10: la Torre del Sauce crece con tu avance y cada hilo es un concepto.
+  {
+    const NX = context.window.NexoClassroom, api = { getState: () => ({}) };
+    const w0 = NX.willowOf(cls, api, { answers: {} });
+    assert.ok(w0.stage === 0 && w0.states.length === cls.concepts.filter(c => !c.root).length && w0.states.every(x => x === 'none'), 'Sin empezar: torre dormida y un hilo por concepto');
+    const some = {}; for (const m of cls.missions) for (const { item } of NX.itemsOf(m).slice(0, 3)) some[item.id] = { correct: true };
+    const w1 = NX.willowOf(cls, api, { answers: some }), allIn = {}; for (const { item } of cls.missions.flatMap(m => NX.itemsOf(m))) allIn[item.id] = { correct: true };
+    const w2 = NX.willowOf(cls, api, { answers: allIn });
+    assert.ok(w1.stage > 1 && w1.stage < 5, 'Con avance, el sauce sube de piso');
+    assert.equal(w2.stage, 6, 'Con todos los puntos demostrados, el sauce rompe el techo');
+  }
   // Meta de la clase: cada pregunta de la prueba apunta a misiones que tienen caso estilo prueba.
   if (cls.goal) {
     const sum = cls.goal.questions.reduce((a, q) => a + q.points, 0) + (cls.goal.rest || []).reduce((a, r) => a + r.points, 0);

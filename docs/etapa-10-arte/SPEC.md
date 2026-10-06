@@ -45,6 +45,15 @@ Parte del plan de `docs/clase-viva/DISENO.md` (§11, etapa 10). Diseño aprobado
    y `body.ambient-paused`.
 4. Pruebas: que la etapa y los hilos salgan de los datos (sin navegador) y capturas en 1440 y 390.
 
+## Avance
+
+- **Pasos 1 y 2 hechos (6 oct):** `dist/classes/willow-tower.js` (el boceto como módulo: `NexoWillowTower.mount`, `forSubject`) y `willowOf` en
+  `player.js`: etapa = 0 sin empezar, 1 + 4 × (actividades respondidas / total) mientras avanzas, 6 con todos los puntos de la meta; cada concepto
+  es un hilo según su hoja (semilla → hilo corto, brote/clara → brote, verde/intensa → verde, flor → farolito, amarilla, seca); raíces según
+  las bases con evidencia. Se ve en el cierre de cada misión y en "Camino al 7" (`app-camino-al-7.png`). Si creció desde la última vez, se ve
+  crecer. Lee la hora de `body[data-nexo-hour]` (lo escribe `ambient/time.js`), así `NexoAmbientTime.preview(21)` también la mueve.
+  Se pausa fuera de pantalla, a 20 cuadros/s (10 en calidad baja y sin resplandor; 2 con menos movimiento). Prueba en `classroom-test.cjs`.
+
 ## Criterios de aceptación
 
 - Con los datos reales de Aminas, el sauce muestra un hilo por concepto con su estado y crece al completar misiones.
