@@ -29,6 +29,35 @@
     return { type: 'choice', prompt, options, ...rest };
   }
   const order = (prompt, cards, answer, extra) => ({ type: 'order', prompt, cards, answer, ...extra });
+  // Afirmaciones (formato PEP): "¿cuál es correcta?", "¿cuál es INCORRECTA?" o "¿cuántas son verdaderas?". T = hechos; F = [texto, por qué es falso, error típico].
+  function statements(rng, level, bank, extra) {
+    if (level >= 4 && rng() < 0.4) {
+      const nT = 1 + Math.floor(rng() * 3), list = shuffle(rng, [...sample(rng, bank.T, nT).map(t => [t, true]), ...sample(rng, bank.F, 4 - nT).map(f => [f[0], false, f[1]])]);
+      return { type: 'number', prompt: `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}. ¿Cuántas de estas afirmaciones son verdaderas? ${list.map((x, i) => `(${i + 1}) ${x[0]}`).join(' ')}`, answer: nT, unit: '', tol: 0, label: 'verdaderas',
+        traps: [{ value: 4, note: 'No todas son verdaderas: revisa cada una.' }].filter(t => t.value !== nT), solution: list.map((x, i) => `(${i + 1}) ${x[1] ? 'V' : `F: ${x[2]}`}`), ...extra, explain: `${nT} verdadera(s).` }; }
+    if (level >= 3 && rng() < 0.5) { const [f, why, mis] = pick(rng, bank.F);
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es INCORRECTA?`, f, sample(rng, bank.T, 3).map(t => ({ text: t, note: 'Esta es verdadera.' })), { ...extra, misconception: mis, explain: `Es falsa: ${why}` }); }
+    const t = pick(rng, bank.T);
+    return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es correcta?`, t, sample(rng, bank.F, 3).map(([text, why, mis]) => ({ text, note: why, misconception: mis })), { ...extra, explain: t });
+  }
+  const BANKS = {
+    lewis: { topic: 'Estructuras de Lewis y cargas', T: ['Un N neutro con 3 enlaces tiene un par libre.', 'Un N con 4 enlaces y sin pares tiene carga +1.', 'Un O con 1 enlace y 3 pares tiene carga −1.', 'Un C con 3 enlaces y sin pares (carbocatión) tiene carga +1.', 'La carga formal es valencia − (electrones en pares + enlaces).', 'En el ion amonio el N no tiene pares libres.'],
+      F: [['Un N con 4 enlaces tiene un par libre.', 'ya usó sus 5 electrones: no le queda par y lleva carga +.'], ['El O del agua no tiene pares libres.', 'tiene dos pares libres.'], ['Un C con 3 enlaces y un par libre es un carbocatión.', 'eso es un carbanión (carga −).'], ['La carga formal siempre es la del ion completo en cada átomo.', 'la carga del ion se concentra en el átomo con CF distinta de 0.']] },
+    parlibre: { topic: 'El par libre del nitrógeno', T: ['El par libre del N hace que las aminas sean bases.', 'El par libre del N le permite atacar carbonos con δ+ (nucleófilo).', 'Una sal de amonio cuaternario no es básica: su N no tiene par libre.', 'El N es menos electronegativo que el O: ofrece su par con más facilidad.', 'En la anilina el par del N se deslocaliza parcialmente hacia el anillo.', 'Al protonarse, la amina queda como ion amonio R–NH₃⁺.'],
+      F: [['Las aminas son ácidas porque ceden el H del N.', 'en agua actúan como bases: aceptan H⁺.', 'nh-acid'], ['Un R₄N⁺ es una base fuerte.', 'no tiene par libre: no acepta H⁺.', 'lone-pair-not-group'], ['El par libre de la anilina está totalmente localizado en el N.', 'se deslocaliza en parte hacia el anillo.', 'aromatic-more'], ['Al reaccionar con HCl, el Cl se une al N.', 'el par del N toma el H⁺; el Cl⁻ queda como contraión.', 'n-binds-cl']] },
+    geometria: { topic: 'Geometría de las aminas', T: ['El N de una alquilamina es sp³.', 'Una amina tiene forma de pirámide trigonal.', 'El ángulo C–N–C en la trimetilamina es ≈ 108°.', 'Las aminas con tres grupos distintos se invierten rápido: no se separan sus enantiómeros.', 'Una sal cuaternaria con 4 grupos distintos sí puede separarse en enantiómeros.', 'El N de una amida es casi plano por resonancia con el C=O.'],
+      F: [['La trimetilamina es plana con ángulos de 120°.', 'el par libre la deja piramidal (≈ 108°).', 'flat-n'], ['El N de una alquilamina es sp².', 'con 3 enlaces y un par libre es sp³.', 'lone-pair-not-group'], ['Una amina con tres grupos distintos se separa fácil en enantiómeros.', 'se invierte miles de millones de veces por segundo.', 'flat-n'], ['La forma de la molécula de NH₃ es tetraédrica.', 'los electrones están en tetraedro, pero la molécula es una pirámide.', 'tetra-shape']] },
+    fisicas: { topic: 'Propiedades físicas de las aminas', T: ['Las aminas 1° y 2° forman puentes de H entre sí; las 3° no.', 'Una amina hierve más alto que un alcano de masa parecida.', 'Un alcohol hierve más alto que una amina de masa parecida.', 'Las aminas pequeñas son solubles en agua.', 'Las aminas 3° aceptan puentes de H del agua con su par libre.', 'Con más de ≈ 5 C, la solubilidad en agua baja mucho.'],
+      F: [['Las aminas 3° hierven más alto que las 1° de igual masa.', 'sin N–H no hay puentes de H entre sus moléculas.', 'tertiary-donor'], ['Una amina hierve más alto que un alcohol de masa parecida.', 'el O–H forma puentes más fuertes.', 'tertiary-donor'], ['La dodecilamina es muy soluble en agua.', 'su cadena de 12 C es demasiado apolar.', 'size-solubility'], ['Las aminas 3° no pueden formar puentes de H con el agua.', 'su par libre acepta el H del agua.', 'tertiary-donor']] },
+    sne: { topic: 'SN2 y E2', T: ['La SN2 ocurre en un solo paso, con ataque por detrás.', 'En la SN2 la configuración del carbono se invierte.', 'Los haluros metílicos y primarios son los mejores para la SN2.', 'Un haluro terciario con base fuerte da sobre todo E2.', 'Una base voluminosa como el tBuOK favorece la E2.', 'Los solventes polares apróticos (DMSO, DMF) aceleran la SN2 con aniones.', 'La E2 necesita el H y el grupo saliente antiperiplanares.'],
+      F: [['La SN2 es más rápida con haluros terciarios.', 'el carbono terciario está demasiado impedido para el ataque por detrás.', 'overalkylation'], ['En la SN2 la configuración se conserva.', 'se invierte: el nucleófilo entra por el lado opuesto.', 'e1-not-e2'], ['El agua es el mejor solvente para una SN2 con N₃⁻.', 'los próticos solvatan al anión y lo frenan.', 'e1-not-e2'], ['La E2 ocurre en dos pasos con un carbocatión.', 'la E2 es concertada; la de dos pasos es la E1.', 'e1-not-e2'], ['El tBuOK favorece la SN2 por ser una base fuerte.', 'por ser voluminoso favorece la E2.', 'e1-not-e2']] },
+    alquilacion: { topic: 'Síntesis de aminas por alquilación', T: ['El NH₃ con un haluro de alquilo da una mezcla de aminas (sobrealquilación).', 'La síntesis de Gabriel da aminas primarias limpias.', 'La vía azida (NaN₃ y luego LiAlH₄) da aminas primarias sin sobrealquilar.', 'La ftalimida se desprotona con KOH para formar el nucleófilo N⁻.', 'Gabriel necesita un haluro que haga SN2 (metílico o primario).', 'La hidrazina libera la amina al final de la síntesis de Gabriel.'],
+      F: [['El NH₃ con un haluro da solo la amina primaria.', 'la amina formada también ataca: mezcla de aminas.', 'overalkylation'], ['La síntesis de Gabriel sirve con haluros terciarios.', 'necesita SN2: con terciarios hay eliminación.', 'gabriel-poly'], ['En Gabriel la amina sale sola después del SN2.', 'hay que liberarla con hidrazina.', 'gabriel-stop'], ['La azida R–N₃ vuelve a atacar al haluro y sobrealquila.', 'R–N₃ no es nucleófila: no sobrealquila.', 'overalkylation'], ['Gabriel sirve para hacer aminas secundarias.', 'da aminas primarias.', 'gabriel-poly']] },
+    acilacion: { topic: 'Acilación de aminas', T: ['Las aminas 1° y 2° forman amidas con cloruros de ácido.', 'Una amina 3° no forma amida neutra: no tiene H en el N.', 'La acilación libera HCl, que hay que atrapar con más amina o piridina.', 'La amida formada ya no se acila otra vez: su par está deslocalizado.', 'La acilación de la anilina baja su reactividad frente a la SEA.'],
+      F: [['Una amina 3° forma amidas igual que una 1°.', 'no tiene H en el N para quedar neutra.', 'tertiary-acylation'], ['La amida se sigue acilando hasta formar una imida.', 'su par está deslocalizado hacia el C=O.', 'tertiary-acyl'], ['La acilación de una amina da un éster.', 'da una amida; el éster sale con alcoholes.', 'tertiary-acyl'], ['La acilación no libera ningún subproducto.', 'libera HCl.', 'tertiary-acyl']] },
+    hofmann: { topic: 'Eliminación de Hofmann', T: ['La eliminación de Hofmann da el alqueno menos sustituido.', 'Primero se metila el N con CH₃I en exceso.', 'El Ag₂O con agua cambia el I⁻ por OH⁻.', 'El grupo saliente es la trimetilamina.', 'La eliminación de Hofmann es una E2.', 'El grupo –N(CH₃)₃⁺ es muy voluminoso: la base toma el H más accesible.'],
+      F: [['La eliminación de Hofmann da el alqueno más sustituido (Zaitsev).', 'da el menos sustituido por el grupo saliente voluminoso.', 'zaitsev-hofmann'], ['La eliminación de Hofmann es una E1.', 'es una E2.', 'e1-not-e2'], ['El grupo saliente es el NH₂⁻.', 'sale la trimetilamina después de metilar.', 'zaitsev-hofmann'], ['El Ag₂O oxida la amina.', 'solo cambia el contraión (precipita AgI).', 'zaitsev-hofmann']] }
+  };
 
   /* ════════ 1. Clasificar aminas (Misión 1) ════════ */
   const R = [
@@ -96,7 +125,13 @@
       const base = { concept: 'base.carga', slide: 5, hint: 'Carga formal = electrones de valencia − (electrones de pares libres + enlaces).' };
       const ds = [-1, 0, 1, 2].filter(x => x !== s.q).map(x => ({ text: qText(x), note: `Cuenta: ${s.V} − (${s.lp * 2} + ${s.b}) = ${qText(s.q)}.` }));
       const how = `${s.V} − (${s.lp * 2} + ${s.b}) = ${qText(s.q)}`;
-      if (level === 1) return choice(rng, `Un átomo de ${s.at} (trae ${s.V} electrones de valencia) tiene ${s.b} enlaces y ${s.lp} par${s.lp === 1 ? '' : 'es'} libre${s.lp === 1 ? '' : 's'}. ¿Su carga formal?`, qText(s.q), ds, { ...base, explain: `CF = ${how}.` });
+      if (level === 1) { const CFG = [['N', 5, [[4, 0], [3, 1], [2, 2]]], ['O', 6, [[3, 1], [2, 2], [1, 3]]], ['C', 4, [[4, 0], [3, 0], [3, 1]]], ['S', 6, [[2, 2], [3, 1], [1, 3]]], ['B', 3, [[3, 0], [4, 0]]], ['Cl', 7, [[1, 3], [0, 4]]]];
+        const [at, V, opts] = pick(rng, CFG), [b, lp] = pick(rng, opts), q = V - (2 * lp + b);
+        return choice(rng, `Un átomo de ${at} (trae ${V} electrones de valencia) tiene ${b} enlace${b === 1 ? '' : 's'} y ${lp} par${lp === 1 ? '' : 'es'} libre${lp === 1 ? '' : 's'}. ¿Su carga formal?`, qText(q), [-1, 0, 1, 2].filter(x => x !== q).map(x => ({ text: qText(x), note: `Cuenta: ${V} − (${lp * 2} + ${b}) = ${qText(q)}.` })), { ...base, explain: `CF = ${V} − (${lp * 2} + ${b}) = ${qText(q)}.` }); }
+      if (level === 4 && rng() < 0.4) return statements(rng, 4, BANKS.lewis, base);
+      if ((level === 3 || level === 2) && rng() < 0.5) { const four = sample(rng, SPECIES.filter(x => !x.hard), 4), tq = pick(rng, [1, 0, -1].filter(q => four.filter(x => x.q === q).length === 1));
+        if (tq !== undefined) { const right = four.find(x => x.q === tq);
+          return choice(rng, `¿En cuál de estas especies el átomo indicado tiene carga formal ${qText(tq)}?`, `${right.sp} (el ${right.at})`, four.filter(x => x !== right).map(x => ({ text: `${x.sp} (el ${x.at})`, note: `CF = ${x.V} − (${x.lp * 2} + ${x.b}) = ${qText(x.q)}.` })), { ...base, explain: `${right.sp}: CF del ${right.at} = ${qText(tq)}.` }); } }
       if (level === 2) return choice(rng, `En ${s.sp}, el ${s.at} tiene ${s.b} enlaces y ${s.lp} par${s.lp === 1 ? '' : 'es'} libre${s.lp === 1 ? '' : 's'}. ¿Qué carga formal tiene?`, qText(s.q), ds, { ...base, explain: `CF = ${how}.` });
       if (level <= 4) return choice(rng, `¿Qué carga formal tiene el ${s.at} en ${s.sp}?`, qText(s.q), ds, { ...base, explain: `El ${s.at} tiene ${s.b} enlaces y ${s.lp} par${s.lp === 1 ? '' : 'es'} libre${s.lp === 1 ? '' : 's'}: CF = ${how}.` });
       const ion = pick(rng, [{ t: 'CH₃–NH₃⁺', a: 'el N', why: 'El N tiene 4 enlaces y ningún par libre: 5 − 4 = +1.', d: ['un H', 'el C'] },
@@ -237,9 +272,9 @@
       const base = { concept: want, slide, hint: 'Mayor pKa del ion amonio = más básica. Sin números: resonancia, hibridación y grupos que donan o atraen.' };
       const list = s => s.map(x => `${x.n} (${pkTxt(x)})`).join(' < ');
       if (level === 1) {
-        const [a, b] = spaced(rng, 2, 1.0, false, pool); const [x, y] = shuffle(rng, [a, b]);
-        return choice(rng, `¿Cuál es más básica? ${x.n} (pKaH ${pkTxt(x)}) o ${y.n} (pKaH ${pkTxt(y)})`, b.n, [{ text: a.n, note: 'Mayor pKa del ion amonio = base más fuerte.', misconception: 'pka-inverted' }],
-          { ...base, explain: `${b.n} tiene el pKaH mayor (${pkTxt(b)}): es más básica.` });
+        const three = spaced(rng, 3, 1.0, false, pool), most = rng() < 0.6, tgt = most ? three[2] : three[0];
+        return choice(rng, `¿Cuál es la ${most ? 'MÁS' : 'MENOS'} básica? ${shuffle(rng, three).map(x => `${x.n} (pKaH ${pkTxt(x)})`).join(', ')}`, tgt.n, three.filter(x => x !== tgt).map(x => ({ text: x.n, note: `pKaH ${pkTxt(x)}: mayor pKa del ion amonio = base más fuerte.`, misconception: 'pka-inverted' })),
+          { ...base, explain: `${tgt.n} tiene el pKaH ${most ? 'mayor' : 'menor'} (${pkTxt(tgt)}): es la ${most ? 'más' : 'menos'} básica.` });
       }
       const n = level <= 3 ? 3 : 4, gap = [0, 0, 0.3, 2.0, 1.0, 0.6][level], show = level === 2, s = spaced(rng, n, POOL && level >= 4 ? 0.6 : gap, !show, pool);
       const cards = shuffle(rng, s).map((x, i) => [`c${i}`, show ? `${x.n} (pKaH ${pkTxt(x)})` : x.n, x]);
@@ -393,14 +428,16 @@
       const ord = (set, prompt, extra = {}) => { const s = [...set].sort((x, y) => x.t - y.t), cards = shuffle(rng, s).map((x, i) => ({ id: `c${i}`, text: x.n, x }));
         return order(prompt, cards.map(({ id, text }) => ({ id, text })), s.map(x => cards.find(c => c.x === x).id), { ...base, direction: 'De menor a mayor.', explain: `${s.map(x => `${x.n} ≈ ${x.t} °C`).join(' < ')}. Más puentes de H (y más fuertes), más alto hierve.`, ...extra }); };
       if (level === 1) {
-        const set = pick(rng, ISO), [a, b] = sample(rng, set, 2).sort((x, y) => y.t - x.t);
-        return choice(rng, `Mismo número de carbonos: ¿cuál hierve más alto, ${shuffle(rng, [a.n, b.n]).join(' o ')}?`, a.n, [{ text: b.n, note: 'Tiene menos N–H: forma menos puentes de H.', misconception: 'tertiary-donor' }], { ...base, explain: `${a.n} ≈ ${a.t} °C; ${b.n} ≈ ${b.t} °C.` });
+        const set = pick(rng, ISO.filter(x => x.length === 3)), hi = rng() < 0.6, tgt = [...set].sort((x, y) => (hi ? y.t - x.t : x.t - y.t))[0];
+        return choice(rng, `Mismo número de carbonos: ¿cuál hierve ${hi ? 'MÁS ALTO' : 'MÁS BAJO'}?`, tgt.n, set.filter(x => x !== tgt).map(x => ({ text: x.n, note: `≈ ${x.t} °C: ${hi ? 'tiene menos N–H, forma menos puentes de H' : 'tiene más N–H, forma más puentes de H'}.`, misconception: 'tertiary-donor' })), { ...base, explain: set.map(x => `${x.n} ≈ ${x.t} °C`).join('; ') + '.' });
       }
       if (level === 2) {
-        const x = pick(rng, SOL), sol = x.c <= 5;
-        return choice(rng, `¿La ${x.n.toLowerCase()} (${x.c} carbono${x.c > 1 ? 's' : ''}) es soluble en agua?`, sol ? 'Sí, bastante soluble' : 'Poco soluble', [{ text: sol ? 'Poco soluble' : 'Sí, bastante soluble', note: 'Hasta unos 5 carbonos, solubles; con más, la cadena gana.', misconception: 'size-solubility' }], { ...base, explain: `Con ${x.c} carbono${x.c > 1 ? 's' : ''}, ${sol ? 'el grupo NH₂ manda' : 'la cadena de carbonos manda'}: ${sol ? 'soluble' : 'poco soluble'}.` });
+        const three = sample(rng, SOL, 3), most = rng() < 0.5, tgt = [...three].sort((a, b) => (most ? a.c - b.c : b.c - a.c))[0];
+        return choice(rng, `¿Cuál es la ${most ? 'MÁS' : 'MENOS'} soluble en agua?`, `${tgt.n} (${tgt.c} C)`, three.filter(x => x !== tgt).map(x => ({ text: `${x.n} (${x.c} C)`, note: 'Más carbonos = la cadena apolar gana y baja la solubilidad (hasta ≈ 5 C son solubles).', misconception: 'size-solubility' })), { ...base, explain: `${tgt.n}: ${most ? 'la cadena más corta' : 'la cadena más larga'}.` });
       }
+      if (level === 3 && rng() < 0.5) return statements(rng, 3, BANKS.fisicas, base);
       if (level === 3) return ord(pick(rng, ISO.filter(s => s.length === 3)), 'Ordena de menor a mayor punto de ebullición.');
+      if (level === 4 && rng() < 0.4) return statements(rng, 4, BANKS.fisicas, base);
       if (level === 4) { const g = pick(rng, SAME_MASS); return ord(g.set, `Masas parecidas (${g.m}): ordena de menor a mayor punto de ebullición.`, { hint: 'El O–H forma puentes de H más fuertes que el N–H; sin H en el N (o sin N ni O) no hay puentes entre moléculas.' }); }
       if (rng() < 0.5) return ord(pick(rng, BP4), 'Estilo PEP: masas parecidas. Ordena de menor a mayor punto de ebullición.', { hint: 'Alcano o éter < amina 3° < 2° < 1° < alcohol.' });
       const q = pick(rng, PHYS_PEP.filter(x => x.c === 'am.fisicas'));
@@ -466,6 +503,7 @@
         const t = pick(rng, TO_AMINE);
         return choice(rng, `¿Qué reactivo convierte ${t.s} en ${t.p}?`, t.a, sample(rng, Object.keys(REAGENT_NOTE).filter(r => r !== t.a), 3).map(r => ({ text: r, note: REAGENT_NOTE[r] })), { ...base, slide: 33, explain: `${t.a}: ${REAGENT_NOTE[t.a]}` });
       }
+      if (alq && level >= 4 && rng() < 0.5) return statements(rng, level, BANKS.alquilacion, base);
       if (alq && level === 4) {
         const h = pick(rng, HAL);
         return choice(rng, `¿Sirve la síntesis de Gabriel con ${h.n} para obtener ${h.r}–NH₂?`, h.ok ? 'Sí: es un haluro que hace SN2' : `No: ${h.why}`, [{ text: h.ok ? `No: ${pick(rng, HAL.filter(x => !x.ok)).why}` : 'Sí: Gabriel sirve con cualquier haluro', note: 'Gabriel necesita SN2: haluros metílicos y primarios (secundarios con dificultad).' }, { text: 'Solo si se agrega LiAlH₄ al final', note: 'Gabriel termina con hidrazina; el problema (si lo hay) es la SN2.' }],
@@ -487,7 +525,7 @@
   const SAND = [{ r: 'CuCl', x: 'Cl', p: 'clorobenceno' }, { r: 'CuBr', x: 'Br', p: 'bromobenceno' }, { r: 'CuCN', x: 'CN', p: 'benzonitrilo' }, { r: 'KI', x: 'I', p: 'yodobenceno' }, { r: 'HBF₄ y calor', x: 'F', p: 'fluorobenceno' }, { r: 'H₂O y calor', x: 'OH', p: 'fenol' }];
   const AMINES = [{ n: 'metilamina', f: 'CH₃NH₂', N: 'CH₃–NH', t: 1 }, { n: 'etilamina', f: 'CH₃CH₂NH₂', N: 'CH₃CH₂–NH', t: 1 }, { n: 'dimetilamina', f: '(CH₃)₂NH', N: '(CH₃)₂N', t: 2 }, { n: 'dietilamina', f: '(CH₃CH₂)₂NH', N: '(CH₃CH₂)₂N', t: 2 }, { n: 'anilina', f: 'C₆H₅NH₂', N: 'C₆H₅–NH', t: 1 }, { n: 'trietilamina', f: '(CH₃CH₂)₃N', N: null, t: 3, lose: '(CH₃CH₂)₂N' }, { n: 'trimetilamina', f: '(CH₃)₃N', N: null, t: 3, lose: '(CH₃)₂N' }];
   const ACYL = [{ n: 'cloruro de acetilo', g: 'CO–CH₃' }, { n: 'cloruro de benzoílo', g: 'CO–C₆H₅' }];
-  const HOF = [{ a: '2-butanamina, CH₃CH₂CH(NH₂)CH₃', h: '1-buteno', z: '2-buteno' }, { a: '2-pentanamina', h: '1-penteno', z: '2-penteno' }, { a: '2-hexanamina', h: '1-hexeno', z: '2-hexeno' },
+  const HOF = [{ a: '2-heptanamina', h: '1-hepteno', z: '2-hepteno' }, { a: '2-metilpentan-2-amina', h: '2-metil-1-penteno', z: '2-metil-2-penteno' }, { a: '1-ciclohexiletanamina', h: 'vinilciclohexano', z: 'etilidenciclohexano' }, { a: '2-metilbutan-2-amina, (CH₃)₂C(NH₂)CH₂CH₃', h: '2-metil-1-buteno', z: '2-metil-2-buteno' }, { a: '1-fenilpropan-2-amina (anfetamina)', h: '3-fenil-1-propeno', z: '1-fenil-1-propeno' }, { a: '2-butanamina, CH₃CH₂CH(NH₂)CH₃', h: '1-buteno', z: '2-buteno' }, { a: '2-pentanamina', h: '1-penteno', z: '2-penteno' }, { a: '2-hexanamina', h: '1-hexeno', z: '2-hexeno' },
     { a: '3-metil-2-butanamina, (CH₃)₂CH–CH(NH₂)–CH₃', h: '3-metil-1-buteno', z: '2-metil-2-buteno' }, { a: '4-metil-2-pentanamina', h: '4-metil-1-penteno', z: '4-metil-2-penteno' }];
   const reacciones = {
     id: 'reacciones', title: 'Reacciones de aminas', mission: 'm7', concepts: ['am.acilacion', 'am.diazonio', 'am.hofmann'],
@@ -513,6 +551,7 @@
       }
       if (kind === 'acil') {
         const am = pick(rng, AMINES.filter(x => (level === 1 ? x.t === 1 : level === 2 ? x.t < 3 : true))), ac = pick(rng, ACYL), b = { ...base, concept: 'am.acilacion' };
+        if (level === 3 && rng() < 0.4) return statements(rng, 3, BANKS.acilacion, b);
         if (level === 1) return choice(rng, `${am.n[0].toUpperCase()}${am.n.slice(1)} + ${ac.n}. ¿Qué grupo funcional se forma?`, 'Una amida', [{ text: 'Un éster', note: 'Un éster se forma con un alcohol, no con una amina.' }, { text: 'Una imina', note: 'Una imina se forma con un aldehído o una cetona.' }, { text: 'Una amina más sustituida', note: 'El C=O se conserva: es una amida.' }], { ...b, explain: `El N de la ${am.n} reemplaza al Cl del cloruro de ácido: se forma una amida (R–CO–NH–).` });
         if (level === 5 && rng() < 0.6) {
           const q = pick(rng, [{ p: `¿Por qué la acilación de la ${am.n} se hace con 2 equivalentes de amina (o con piridina)?`, a: 'Para atrapar el HCl que se libera', d: [['Para que se forme una amida doble', 'La amida ya no se acila otra vez.'], ['Porque la mitad de la amina se oxida', 'No hay oxidante.'], ['Para acelerar la eliminación', 'No hay eliminación aquí.']], e: 'Cada acilación libera HCl; si nada lo atrapa, protona a la amina y la "apaga".' },
@@ -525,7 +564,8 @@
         if (level >= 4) return choice(rng, `Estilo PEP: ¿cuál de estas aminas NO forma amida con ${ac.n}?`, pick(rng, AMINES.filter(x => x.t === 3)).n, sample(rng, AMINES.filter(x => x.t < 3), 3).map(x => ({ text: x.n, note: `Es ${x.t}°: tiene H en el N y se acila.`, misconception: 'tertiary-acylation' })), { ...b, explain: 'La acilación cambia un H del N por el acilo: una amina 3° no tiene H en el N.' });
         return choice(rng, `${am.n[0].toUpperCase()}${am.n.slice(1)} + ${ac.n}. ¿Producto?`, right, ds, { ...b, explain: am.N ? `El N cambia un H por el acilo: ${right}.` : `La ${am.n} es 3°: no tiene H en el N, no forma amida.` });
       }
-      const h = pick(rng, level === 2 ? HOF.slice(0, 3) : level <= 4 ? HOF.slice(3) : HOF), b = { ...base, concept: 'am.hofmann', slide: 36 };
+      const h = pick(rng, HOF), b = { ...base, concept: 'am.hofmann', slide: 36 };
+      if ((level === 2 && rng() < 0.4) || (level >= 4 && rng() < 0.35)) return statements(rng, level, BANKS.hofmann, b);
       if (level === 1) {
         const q = pick(rng, [
           { p: 'En la eliminación de Hofmann, ¿qué alqueno predomina?', a: 'El menos sustituido', d: [['El más sustituido', 'Eso es Zaitsev; el grupo saliente –N(CH₃)₃⁺ es muy voluminoso.', 'zaitsev-hofmann'], ['No se forma alqueno', 'Sí: es una E2.']], e: 'Hofmann: el alqueno menos sustituido.' },
@@ -559,8 +599,10 @@
       if (level === 1) { const t = 1 + Math.floor(rng() * 3);
         if (rng() < 0.5) return choice(rng, `Una amina ${TYPE[t].toLowerCase().replace(/ \(.*\)/, '')}, ¿cuántos picos N–H muestra entre 3350 y 3500 cm⁻¹?`, PEAKS[t - 1], PEAKS.filter((_, i) => i !== t - 1).map(x => ({ text: x, note: '1° → dos (estiramiento simétrico y asimétrico), 2° → uno, 3° → ninguno.', misconception: 'ir-peaks' })), { ...base, explain: `${TYPE[t]}: ${PEAKS[t - 1]}.` });
         return choice(rng, `Una amina muestra ${PEAKS[t - 1]} entre 3350 y 3500 cm⁻¹. ¿Qué tipo es?`, TYPE[t], [1, 2, 3].filter(x => x !== t).map(x => ({ text: TYPE[x], note: '2 picos → 1°, 1 pico → 2°, ninguno → 3°.', misconception: 'ir-peaks' })), { ...base, explain: `${PEAKS[t - 1][0].toUpperCase()}${PEAKS[t - 1].slice(1)} → ${TYPE[t].toLowerCase()}.` }); }
-      if (level === 2) { const o = pick(rng, OTHERS), odd = o.m % 2 === 1;
-        return choice(rng, `Un compuesto tiene ion molecular M⁺ = ${o.m}. ¿Qué dice la regla del nitrógeno?`, odd ? 'Tiene un número impar de N' : 'Tiene 0 o un número par de N', [{ text: odd ? 'Tiene 0 o un número par de N' : 'Tiene un número impar de N', note: 'Masa impar ⇔ número impar de N.', misconception: 'n-rule' }], { ...base, slide: 47, explain: `${o.m} es ${odd ? 'impar' : 'par'}: ${odd ? 'número impar de N' : '0 o un número par de N'} (por ejemplo, ${o.n.toLowerCase()}).` }); }
+      if (level === 2) { const MS = [...OTHERS, ...SPEC.map(x => ({ n: x.n, m: x.m, N: 1 }))], one = pick(rng, MS.filter(x => x.N === 1)), rest = sample(rng, MS.filter(x => x.m % 2 === 0), 3);
+        if (rest.length === 3 && rng() < 0.6) return choice(rng, 'Por la regla del nitrógeno, ¿cuál de estas masas (M⁺) puede ser de un compuesto con UN nitrógeno?', `M⁺ = ${one.m}`, rest.map(x => ({ text: `M⁺ = ${x.m}`, note: `Masa par: 0 o un número par de N (como ${x.n.toLowerCase()}).`, misconception: 'n-rule' })), { ...base, slide: 47, explain: `${one.m} es impar: número impar de N (como ${one.n.toLowerCase()}).` });
+        const o = pick(rng, OTHERS), odd = o.m % 2 === 1;
+        return choice(rng, `Un compuesto tiene ion molecular M⁺ = ${o.m}. ¿Qué dice la regla del nitrógeno?`, odd ? 'Tiene un número impar de N' : 'Tiene 0 o un número par de N', [{ text: odd ? 'Tiene 0 o un número par de N' : 'Tiene un número impar de N', note: 'Masa impar ⇔ número impar de N.', misconception: 'n-rule' }, { text: 'Tiene exactamente un O', note: 'La regla del nitrógeno solo habla de N.', misconception: 'n-rule' }, { text: odd ? 'Tiene exactamente 2 N' : 'Tiene exactamente 1 N', note: 'Masa impar ⇔ número impar de N.', misconception: 'n-rule' }], { ...base, slide: 47, explain: `${o.m} es ${odd ? 'impar' : 'par'}: ${odd ? 'número impar de N' : '0 o un número par de N'} (por ejemplo, ${o.n.toLowerCase()}).` }); }
       if (level === 3) { const fm = pick(rng, ['C₃H₉N', 'C₄H₁₁N']), grp = SPEC.filter(x => x.f === fm), x = pick(rng, grp);
         return choice(rng, `Un compuesto ${x.f} muestra ${PEAKS[x.t - 1]} N–H en el IR. ¿Cuál es?`, x.n, grp.filter(y => y !== x).map(y => ({ text: y.n, note: `Es ${TYPE[y.t].toLowerCase()}: mostraría ${PEAKS[y.t - 1]}.`, misconception: 'ir-peaks' })), { ...base, explain: `${PEAKS[x.t - 1]} → ${TYPE[x.t].toLowerCase()}: ${x.n}.` }); }
       const x = pick(rng, SPEC.filter(y => level === 5 ? y.t === 3 : true));
@@ -573,7 +615,7 @@
 
   /* ════════ 12. Estructura: Lewis, par libre y geometría (bases y Misión 1) ════════ */
   const VAL = [{ a: 'H', v: 1 }, { a: 'C', v: 4 }, { a: 'N', v: 5 }, { a: 'O', v: 6 }, { a: 'Cl', v: 7 }, { a: 'Br', v: 7 }, { a: 'S', v: 6 }];
-  const HYB = [{ sp: 'el N de la metilamina (CH₃–NH₂)', h: 'sp³' }, { sp: 'el N del ion amonio (NH₄⁺)', h: 'sp³' }, { sp: 'el N de la trimetilamina', h: 'sp³' }, { sp: 'el N de la piridina', h: 'sp²' },
+  const HYB = [{ sp: 'el N de la anilina (aprox., par algo deslocalizado)', h: 'sp³', note: 'Se suele tratar como sp³ algo aplanado; su par se deslocaliza parcialmente al anillo.' }, { sp: 'el N de la piperidina', h: 'sp³' }, { sp: 'el N del ion anilinio (C₆H₅NH₃⁺)', h: 'sp³' }, { sp: 'el N de un ion iminio (R₂C=NH₂⁺)', h: 'sp²' }, { sp: 'el N de la acetonitrilo (CH₃–C≡N)', h: 'sp' }, { sp: 'el N de la metilamina (CH₃–NH₂)', h: 'sp³' }, { sp: 'el N del ion amonio (NH₄⁺)', h: 'sp³' }, { sp: 'el N de la trimetilamina', h: 'sp³' }, { sp: 'el N de la piridina', h: 'sp²' },
     { sp: 'el N del pirrol', h: 'sp²' }, { sp: 'el N de una amida (R–CO–NH₂)', h: 'sp²', note: 'Por resonancia con el C=O, el N queda plano.' }, { sp: 'el N de una imina (R₂C=NH)', h: 'sp²' }, { sp: 'el N de un nitrilo (R–C≡N)', h: 'sp' }];
   const N3 = [['etil', 'metil', 'propil'], ['bencil', 'etil', 'metil'], ['etil', 'isopropil', 'metil'], ['butil', 'etil', 'metil']];
   const estructura = {
@@ -582,6 +624,7 @@
       want = want || pick(rng, this.concepts);
       if (want === 'base.lewis') {
         const base = { concept: 'base.lewis', slide: 5, hint: 'Cada átomo trae sus electrones de valencia. Los que no están en enlaces van como pares libres.' };
+        if ((level === 3 || level === 5) && rng() < 0.5) return statements(rng, level, BANKS.lewis, base);
         if (level === 1) { const x = pick(rng, VAL);
           return choice(rng, `¿Cuántos electrones de valencia trae el ${x.a}?`, String(x.v), [1, 4, 5, 6, 7].filter(n => n !== x.v).map(n => ({ text: String(n), note: `Mira el grupo de la tabla: el ${x.a} trae ${x.v}.` })), { ...base, explain: `El ${x.a} trae ${x.v} electrones de valencia.` }); }
         if (level <= 4) { const sp = pick(rng, SPECIES.filter(x => (level === 4 ? x.hard : !x.hard)));
@@ -594,6 +637,7 @@
       }
       if (want === 'am.par-libre') {
         const base = { concept: 'am.par-libre', slide: 5, hint: 'El par libre del N ataca: a un H⁺ (base) o a un carbono con carga parcial + (nucleófilo).' };
+        if (level >= 2 && rng() < 0.45) return statements(rng, level, BANKS.parlibre, base);
         const RX5 = [{ r: 'CH₃NH₂ + HCl', a: 'Base: toma el H⁺' }, { r: '(CH₃CH₂)₃N + HBr', a: 'Base: toma el H⁺' }, { r: 'CH₃NH₂ + CH₃I', a: 'Nucleófilo: ataca al carbono' },
           { r: 'CH₃CH₂NH₂ + CH₃COCl', a: 'Nucleófilo: ataca al carbono' }, { r: 'C₆H₅NH₂ + H₂SO₄', a: 'Base: toma el H⁺' }, { r: '(CH₃)₂NH + bromoetano', a: 'Nucleófilo: ataca al carbono' }];
         if (level === 1 && rng() < 0.5) { const am = pick(rng, ['la metilamina', 'la trietilamina', 'la anilina', 'el amoníaco', 'la piridina']);
@@ -607,8 +651,13 @@
           { p: 'La trimetilamina es buena base pero no forma amida con un cloruro de ácido. ¿Por qué?', a: 'Puede atacar con su par, pero no tiene H en el N para quedar neutra', d: [['No tiene par libre', 'Sí lo tiene: por eso es base.', 'lone-pair-not-group'], ['Es demasiado ácida', 'Es una base.', 'nh-acid'], ['El cloruro de ácido no es electrófilo', 'Sí lo es: las aminas 1° y 2° lo atacan.']], mc: 'tertiary-acyl' }]);
         return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${q.p}`, q.a, q.d.map(([text, note, misconception]) => ({ text, note, misconception })), { ...base, explain: q.a + '.' });
       }
+      if (level >= 3 && rng() < 0.4) return statements(rng, level, BANKS.geometria, { concept: 'am.geometria', slide: 11, hint: '4 grupos (con el par libre) → sp³ y pirámide; el N se invierte rápido.' });
       const base = { concept: 'am.geometria', slide: 11, hint: 'Cuenta los "grupos" alrededor del N, incluido el par libre: 4 → sp³ (tetraédrico); 3 → sp²; 2 → sp.' };
-      if (level === 1) return choice(rng, `En la ${pick(rng, ['etilamina', 'trimetilamina', 'dietilamina', 'ciclohexilamina', 'propilamina'])}, ¿qué hibridación tiene el N?`, 'sp³', [{ text: 'sp²', note: 'El par libre cuenta como cuarto grupo: 4 grupos → sp³.', misconception: 'lone-pair-not-group' }, { text: 'sp', note: 'sp tiene solo 2 grupos (como en un nitrilo).' }], { ...base, explain: '3 enlaces + 1 par libre = 4 grupos: sp³.' });
+      if (level === 1) { const x = pick(rng, HYB);
+        return choice(rng, `¿Cuántos "grupos" (enlaces σ + pares libres) rodean a ${x.sp}?`, { 'sp³': '4 (sp³)', 'sp²': '3 (sp²)', 'sp': '2 (sp)' }[x.h], ['4 (sp³)', '3 (sp²)', '2 (sp)'].filter(t => t !== { 'sp³': '4 (sp³)', 'sp²': '3 (sp²)', 'sp': '2 (sp)' }[x.h]).map(text => ({ text, note: x.note || 'Cuenta enlaces σ y pares libres que no están en un sistema π.', misconception: 'lone-pair-not-group' })), { ...base, explain: `${x.sp}: ${x.h}.${x.note ? ` ${x.note}` : ''}` }); }
+      if (level === 4 && rng() < 0.5) { const four = sample(rng, HYB, 4), tgtH = pick(rng, ['sp³', 'sp²', 'sp'].filter(h => four.filter(a => a.h === h).length === 1));
+        if (tgtH) { const right = four.find(a => a.h === tgtH);
+          return choice(rng, `¿En cuál de estas especies el N es ${tgtH}?`, right.sp, four.filter(a => a !== right).map(a => ({ text: a.sp, note: `Es ${a.h}.${a.note ? ` ${a.note}` : ''}`, misconception: 'lone-pair-not-group' })), { ...base, explain: `${right.sp}: ${tgtH}.` }); } }
       if (level === 2) { const sp = pick(rng, ['trimetilamina', 'metilamina', 'dimetilamina', 'amoníaco']);
         return choice(rng, `¿Qué forma tiene la molécula de ${sp} alrededor del N?`, 'Pirámide trigonal (≈ 107–108°)', [{ text: 'Plana trigonal (120°)', note: 'El par libre empuja los enlaces hacia abajo: no es plana.', misconception: 'flat-n' }, { text: 'Tetraédrica (109,5°)', note: 'Los electrones están en tetraedro, pero la molécula (solo átomos) es una pirámide.', misconception: 'tetra-shape' }, { text: 'Lineal (180°)', note: 'Eso sería con 2 grupos.' }], { ...base, explain: '4 grupos (3 enlaces + par libre) en tetraedro; contando solo átomos, pirámide trigonal.' }); }
       if (level === 3) { const x = pick(rng, HYB);
@@ -631,13 +680,14 @@
     make(rng, level) {
       const base = { concept: 'base.acido-base', slide: 17, hint: 'Menor pKa = ácido más fuerte = base conjugada más débil.' };
       const [a, b] = sample(rng, ACIDS, 2).sort((x, y) => x.k - y.k);
-      if (level === 1) return choice(rng, `¿Cuál es el ácido más fuerte: ${shuffle(rng, [a, b]).map(x => `${x.n} (pKa ${num(x.k)})`).join(' o ')}?`, a.n, [{ text: b.n, note: 'Menor pKa = ácido más fuerte.', misconception: 'pka-inverted' }], { ...base, explain: `${a.n} tiene el pKa menor (${num(a.k)}).` });
+      if (level === 1) { const three = sample(rng, ACIDS, 3).sort((x, y) => x.k - y.k), strong = rng() < 0.6, tgt = strong ? three[0] : three[2];
+        return choice(rng, `¿Cuál es el ácido ${strong ? 'MÁS' : 'MENOS'} fuerte: ${shuffle(rng, three).map(x => `${x.n} (pKa ${num(x.k)})`).join(', ')}?`, tgt.n, three.filter(x => x !== tgt).map(x => ({ text: x.n, note: `pKa ${num(x.k)}: menor pKa = ácido más fuerte.`, misconception: 'pka-inverted' })), { ...base, explain: `${tgt.n} tiene el pKa ${strong ? 'menor' : 'mayor'} (${num(tgt.k)}).` }); }
       if (level === 2) { const x = pick(rng, ACIDS);
         return choice(rng, `¿Cuál es la base conjugada de ${x.n}?`, CONJ[x.n], sample(rng, ACIDS.filter(y => y !== x), 3).map(y => ({ text: CONJ[y.n], note: `Esa es la base conjugada de ${y.n}.` })), { ...base, explain: `${x.n} pierde un H⁺: queda ${CONJ[x.n]}.` }); }
       if (level === 3) { const set = sample(rng, ACIDS, 3).sort((x, y) => y.k - x.k);
         return choice(rng, `¿Cuál es la base más fuerte: ${shuffle(rng, set).map(x => CONJ[x.n]).join(', ')}?`, CONJ[set[0].n], set.slice(1).map(x => ({ text: CONJ[x.n], note: `Su ácido (${x.n}, pKa ${num(x.k)}) es más fuerte: su base es más débil.`, misconception: 'pka-inverted' })), { ...base, explain: `La base más fuerte es la del ácido más débil: ${set[0].n} (pKa ${num(set[0].k)}).` }); }
       const d = Math.round((b.k - a.k) * 10) / 10;
-      if (level === 4) return choice(rng, `${a.n} (pKa ${num(a.k)}) + ${CONJ[b.n]}. ¿Hacia dónde va el equilibrio?`, 'Hacia la derecha: se forma el ácido más débil', [{ text: 'Hacia la izquierda', note: `Gana el lado del ácido más débil: ${b.n} (pKa ${num(b.k)}).`, misconception: 'strong-side' }, { text: 'Mitad y mitad', note: `Los pKa difieren en ${num(d)} unidades.` }], { ...base, explain: `Productos: ${CONJ[a.n]} + ${b.n} (pKa ${num(b.k)}, más débil): gana la derecha.` });
+      if (level === 4) return choice(rng, `${a.n} (pKa ${num(a.k)}) + ${CONJ[b.n]}. ¿Hacia dónde va el equilibrio?`, 'Hacia la derecha: se forma el ácido más débil', [{ text: 'Hacia la izquierda', note: `Gana el lado del ácido más débil: ${b.n} (pKa ${num(b.k)}).`, misconception: 'strong-side' }, { text: 'Mitad y mitad', note: `Los pKa difieren en ${num(d)} unidades.` }, { text: 'Hacia la derecha: se forma el ácido más fuerte', note: 'La dirección es correcta, pero la razón no: se forma el ácido MÁS DÉBIL.', misconception: 'strong-side' }], { ...base, explain: `Productos: ${CONJ[a.n]} + ${b.n} (pKa ${num(b.k)}, más débil): gana la derecha.` });
       return choice(rng, `Estilo PEP: ${a.n} (pKa ${num(a.k)}) + ${CONJ[b.n]} ⇌ ${CONJ[a.n]} + ${b.n} (pKa ${num(b.k)}). ¿Keq?`, pow10(d), [{ text: pow10(-d), note: 'Keq = 10^(pKa del ácido producto − pKa del ácido reactivo).', misconception: 'strong-side' }, { text: num(d), note: 'Ese es el exponente: Keq = 10 elevado a esa diferencia.' }, { text: pow10(Math.round((a.k + b.k) * 10) / 10), note: 'Se restan los pKa.' }], { ...base, explain: `Keq = 10^(${num(b.k)} − ${par(a.k)}) = ${pow10(d)}.` });
     }
   };
@@ -656,6 +706,7 @@
         const nu = pick(rng, level === 1 ? NUCS.filter(x => (sb.c === 3 ? x.k !== 'nuc' : x.k === 'nuc')) : level === 2 ? NUCS.filter(x => x.k !== 'bulky') : NUCS), out = sneOut(sb.c, nu.k);
         return choice(rng, `${sb.n[0].toUpperCase()}${sb.n.slice(1)} + ${nu.n}. ¿Qué reacción predomina?`, out, OUTS.filter(o => o !== out).map(o => ({ text: o, note: `Carbono ${['metílico', 'primario', 'secundario', 'terciario'][sb.c]} con ${nu.k === 'nuc' ? 'un nucleófilo poco básico' : 'una base fuerte'}${nu.k === 'bulky' ? ' y voluminosa' : ''}.` })), { ...base, explain: `${['Metílico', 'Primario', 'Secundario', 'Terciario'][sb.c]} + ${nu.k === 'nuc' ? 'nucleófilo' : 'base fuerte'}: ${out}.` });
       }
+      if (level >= 4 && rng() < 0.6) return statements(rng, level, BANKS.sne, base);
       if (level === 4) return choice(rng, '¿Qué solvente favorece una SN2 con un nucleófilo aniónico (como N₃⁻)?', pick(rng, ['DMSO (polar aprótico)', 'DMF (polar aprótico)', 'Acetona (polar aprótica)']), [{ text: 'Agua (polar prótico)', note: 'Los solventes próticos rodean al anión con puentes de H y lo frenan.' }, { text: 'Metanol (polar prótico)', note: 'Prótico: solvata y frena al nucleófilo.' }, { text: 'Hexano (apolar)', note: 'No disuelve la sal del nucleófilo.' }], { ...base, explain: 'Polar aprótico: disuelve la sal pero deja al anión "desnudo" y reactivo.' });
       const q = pick(rng, [
         { p: '¿Por qué la síntesis de Gabriel no sirve con un haluro terciario?', a: 'El carbono está muy impedido para la SN2 y el N⁻ actúa como base (E2)', d: [['Porque la ftalimida no es nucleófila', 'Sí lo es con haluros primarios.'], ['Porque los terciarios no tienen H', 'Sí tienen H en los carbonos vecinos: por eso eliminan.'], ['Sí sirve, solo es más lenta', 'Con terciarios predomina la eliminación.']] },

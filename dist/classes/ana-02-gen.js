@@ -37,22 +37,55 @@
     ['La solución de concentración conocida en la bureta', 'Titulante'], ['La diferencia entre el punto final y la equivalencia', 'Error de titulación'],
     ['Agregar un exceso conocido de reactivo y titular lo que sobra', 'Titulación por retroceso'], ['Determinar la concentración exacta del titulante con un patrón', 'Estandarización']
   ];
+  const take = (rng, list, n) => shuffle(rng, list).slice(0, n);
+  const KINDS_T = [
+    ['Se titula HCl con NaOH estandarizado usando fenolftaleína', 'Directa: el titulante reacciona con el analito'],
+    ['Se titula vinagre con NaOH hasta rosado pálido', 'Directa: el titulante reacciona con el analito'],
+    ['El CaCO₃ de una tableta no se disuelve en agua: se agrega HCl en exceso conocido y se titula el HCl que sobra con NaOH', 'Por retroceso: exceso conocido de reactivo y se titula lo que sobra'],
+    ['La aspirina se hidroliza lento: se calienta con NaOH en exceso y se titula el NaOH que sobra con HCl', 'Por retroceso: exceso conocido de reactivo y se titula lo que sobra'],
+    ['El Cu²⁺ oxida I⁻ a I₂ y luego se titula el I₂ liberado con tiosulfato', 'Indirecta (por desplazamiento): se titula un producto liberado por el analito'],
+    ['El NH₃ de un fertilizante se destila sobre HCl en exceso y se titula el HCl que sobra', 'Por retroceso: exceso conocido de reactivo y se titula lo que sobra']
+  ];
   const piezas = {
-    id: 'piezas', title: 'Piezas de una titulación', mission: 'm1', concepts: ['ana.volumetria'],
+    id: 'piezas', title: 'Piezas y tipos de titulación', mission: 'm1', concepts: ['ana.volumetria'],
     make(rng, level) {
-      const [text, term] = pick(rng, level <= 2 ? TERMS.slice(0, 3) : TERMS);
-      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}¿Cómo se llama esto? "${text}"`, term, TERMS.map(t => t[1]).filter(t => t !== term).map(t => ({ text: t, note: 'Repasa las piezas de la titulación.', misconception: (term + t).includes('Punto') ? 'eq-vs-end' : undefined })),
-        { concept: 'ana.volumetria', slide: 2, hint: 'Teórico frente a observado; bureta frente a matraz.', explain: `${term}.` });
+      if (level === 1) { const [text, term] = pick(rng, TERMS);
+        return choice(rng, `¿Cómo se llama esto? "${text}"`, term, take(rng, TERMS.map(t => t[1]).filter(t => t !== term), 3).map(t => ({ text: t, note: 'Repasa las piezas de la titulación.', misconception: (term + t).includes('Punto') ? 'eq-vs-end' : undefined })),
+          { concept: 'ana.volumetria', slide: 2, hint: 'Teórico frente a observado; bureta frente a matraz.', explain: `${term}.` }); }
+      if (level <= 3) { const veq = between(rng, 15, 40, 0.01), d = pick(rng, [-1, 1]) * between(rng, 0.05, 0.6, 0.01), vf = Number((veq + d).toFixed(2));
+        return number(`Según la estequiometría, la equivalencia está en ${fix(veq, 2)} mL, pero el indicador vira a los ${fix(vf, 2)} mL. ¿Cuál es el error de titulación (mL, con signo)?`, vf - veq, 'mL', { concept: 'ana.volumetria', slide: 2, label: 'error', tol: 0.02, hint: 'Error = V(punto final) − V(equivalencia).',
+          traps: [{ value: veq - vf, note: 'Es punto final menos equivalencia.', misconception: 'eq-vs-end' }, { value: (vf - veq) / veq * 100, note: 'Eso es el error relativo en %; se pide en mL.' }],
+          solution: [`Error = ${fix(vf, 2)} − ${fix(veq, 2)} = ${dec(vf - veq, 2)} mL`, vf > veq ? 'Positivo: el indicador viró tarde (se pasó de la equivalencia).' : 'Negativo: el indicador viró antes de la equivalencia.'], explain: `${dec(vf - veq, 2)} mL.` }); }
+      if (level === 4) { const [text, kind] = pick(rng, KINDS_T);
+        return choice(rng, `${text}. ¿Qué tipo de titulación es?`, kind, [...new Set(KINDS_T.map(k => k[1]))].filter(k => k !== kind).concat(['Gravimetría: se pesa el producto']).map(t => ({ text: t, note: '¿Se titula el analito, un exceso que sobra o un producto liberado?' })),
+          { concept: 'ana.volumetria', slide: 3, hint: '¿Qué está en el matraz cuando se titula?', explain: `${kind}.` }); }
+      // Retroceso con números: CaCO₃ + 2 HCl
+      const mTab = between(rng, 0.3, 0.9, 0.0001), pct = between(rng, 0.7, 0.98, 0.001), nCa = mTab * 1000 * pct / 100.09, Vh = pick(rng, [50, 50, 40]), Ch = pick(rng, [0.5, 0.4]), nH = Vh * Ch;
+      const nBack = nH - 2 * nCa; if (nBack <= 0.5) return this.make(() => 0.3, level);
+      const Vn = between(rng, 12, 40, 0.01), Cn = Number((nBack / Vn).toFixed(4)), nCaC = (nH - Vn * Cn) / 2, mgCa = nCaC * 100.09, pctC = mgCa / (mTab * 1000) * 100;
+      return number(`Estilo PEP: una tableta antiácido de ${fix(mTab, 4)} g se disuelve en ${Vh},00 mL de HCl ${fix(Ch, 3)} M (exceso). El HCl que sobra gasta ${fix(Vn, 2)} mL de NaOH ${fix(Cn, 4)} M. ¿Qué % de CaCO₃ (100,09 g/mol) tiene la tableta?`, pctC, '%',
+        { concept: 'ana.volumetria', slide: 3, label: '%', tol: 0.01, hint: 'HCl total − HCl que sobra = HCl que reaccionó; CaCO₃ + 2 HCl.',
+          traps: [{ value: pctC * 2, note: 'Cada CaCO₃ gasta 2 HCl: divide por 2.', misconception: 'stoich-ratio' }, { value: Vn * Cn / 2 * 100.09 / (mTab * 1000) * 100, note: 'Usaste el HCl que sobró, no el que reaccionó.' }],
+          solution: [`HCl total = ${Vh},00 × ${fix(Ch, 3)} = ${dec(nH, 3)} mmol`, `HCl que sobra = ${fix(Vn, 2)} × ${fix(Cn, 4)} = ${dec(Vn * Cn, 3)} mmol`, `HCl que reaccionó = ${dec(nH - Vn * Cn, 3)} mmol → CaCO₃ = ${dec(nCaC, 3)} mmol`, `m = ${dec(nCaC, 3)} × 100,09 = ${dec(mgCa, 1)} mg → ${dec(pctC, 1)} %`], explain: `${dec(pctC, 1)} %.` });
     }
   };
 
   /* ════════ Patrón primario y estandarización ════════ */
-  const STD = [['KHP (ftalato ácido de potasio)', true], ['Na₂CO₃ anhidro', true], ['Bórax (Na₂B₄O₇·10H₂O)', true], ['NaOH en lentejas', false], ['HCl concentrado', false], ['KMnO₄ comercial', false]];
+  const STD = [['KHP (ftalato ácido de potasio)', true, ''], ['Na₂CO₃ anhidro', true, ''], ['Bórax (Na₂B₄O₇·10H₂O)', true, ''], ['Ácido oxálico dihidratado', true, ''],
+    ['NaOH en lentejas', false, 'absorbe agua y CO₂ del aire'], ['HCl concentrado', false, 'es volátil: su concentración cambia'], ['KMnO₄ comercial', false, 'trae MnO₂ y se descompone con la luz'], ['Na₂S₂O₃ (tiosulfato)', false, 'se descompone en solución con el tiempo']];
   const patron = {
-    id: 'patron', title: 'Estandarizar con KHP', mission: 'm1', concepts: ['ana.patron'],
+    id: 'patron', title: 'Patrones y estandarización', mission: 'm1', concepts: ['ana.patron'],
     make(rng, level) {
       if (level === 1) { const good = pick(rng, STD.filter(s => s[1]))[0];
-        return choice(rng, '¿Cuál de estos sirve como patrón primario?', good, STD.filter(s => !s[1]).map(s => ({ text: s[0], note: 'No es puro o estable al pesarlo.', misconception: 'primary-std' })), { concept: 'ana.patron', slide: 4, hint: 'Puro, estable y no higroscópico.', explain: `${good}.` }); }
+        return choice(rng, '¿Cuál de estos sirve como patrón primario?', good, take(rng, STD.filter(s => !s[1]), 3).map(s => ({ text: s[0], note: `No: ${s[2]}.`, misconception: 'primary-std' })), { concept: 'ana.patron', slide: 4, hint: 'Puro, estable y no higroscópico.', explain: `${good}.` }); }
+      if (level === 2) { const [bad, , why] = pick(rng, STD.filter(s => !s[1])), reasons = STD.filter(s => !s[1] && s[0] !== bad).map(s => s[2]);
+        return choice(rng, `¿Por qué ${bad} NO sirve como patrón primario?`, `Porque ${why}`, [...take(rng, reasons, 2).map(r => ({ text: `Porque ${r}`, note: 'Esa razón es de otro reactivo.' })), { text: 'Porque su masa molar es demasiado alta', note: 'Una masa molar alta es una ventaja.', misconception: 'primary-std' }],
+          { concept: 'ana.patron', slide: 4, hint: 'Piensa qué le pasa al pesarlo o guardarlo.', explain: `${bad}: ${why}.` }); }
+      if (level === 4 || (level === 5 && rng() < 0.5)) { // HCl con Na₂CO₃ (1:2)
+        const m = between(rng, 0.1, 0.3, 0.0001), V = between(rng, 18, 45, 0.01), n = m * 1000 / 105.99, C = 2 * n / V;
+        return number(`${level === 5 ? 'Estilo PEP: ' : ''}Se pesan ${fix(m, 4)} g de Na₂CO₃ (105,99 g/mol) y se titulan con ${fix(V, 2)} mL de HCl hasta el segundo punto (Na₂CO₃ + 2 HCl). ¿Concentración del HCl?`, C, 'M',
+          { concept: 'ana.patron', slide: 5, label: 'C', tol: 0.005, hint: 'mmol Na₂CO₃ × 2 = mmol HCl; C = mmol/mL.', traps: [{ value: n / V, note: 'Falta la relación 1:2.', misconception: 'stoich-ratio' }, { value: C / 1000, note: 'Mezclaste mol con mL.', misconception: 'ml-l' }],
+            solution: [`n(Na₂CO₃) = ${dec(m * 1000, 1)} / 105,99 = ${dec(n, 4)} mmol`, `n(HCl) = 2 × ${dec(n, 4)} = ${dec(2 * n, 4)} mmol`, `C = ${dec(2 * n, 4)} / ${fix(V, 2)} = ${dec(C, 4)} M`], explain: `${dec(C, 4)} M.` }); }
       const m = between(rng, 0.3, 0.9, 0.0001), V = between(rng, 15, 45, 0.01), n = m * 1000 / 204.22, C = n / V;
       return number(`${level === 5 ? 'Estilo PEP: ' : ''}Se pesan ${fix(m, 4)} g de KHP (204,22 g/mol, 1:1 con NaOH) y se titulan con ${fix(V, 2)} mL de NaOH. ¿Concentración del NaOH?`, C, 'M',
         { concept: 'ana.patron', slide: 5, label: 'C', tol: 0.005, hint: 'n = m/MM (en mmol); C = n/V (mL).', traps: [{ value: C / 1000, note: 'Mezclaste mol con mL.', misconception: 'ml-l' }, { value: m / V, note: 'Falta pasar la masa a moles.' }],

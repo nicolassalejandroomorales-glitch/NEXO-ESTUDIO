@@ -152,6 +152,8 @@
     GEN_CACHE.set(key, item);
     return item;
   }
+  // Huella del contenido de un ejercicio generado: dos semillas que arman la misma pregunta tienen la misma huella.
+  const genSignature = it => it ? `${String(it.prompt).replace(/(Mujer|Hombre|Paciente|Niña|Niño) de \d+ años/g, 'P')}|${it.options ? it.options.map(o => o.text).sort().join('/') : it.cards ? it.cards.map(c => c.text).sort().join('/') : it.answer}` : '';
   const gensFor = (cls, concept) => (GEN(cls)?.generators || []).filter(g => g.concepts.includes(concept));
   const genConcepts = cls => (cls.concepts || []).filter(c => gensFor(cls, c.id).length).map(c => c.id);
   // Nivel de partida de un concepto: según lo que ya demostraste sin ayuda en las misiones (o en un caso estilo prueba).
@@ -181,10 +183,17 @@
   function genFor(cls, s, concept, seedKey, level) {
     const gs = gensFor(cls, concept);
     if (!gs.length) return null;
-    const g = gs[hashStr(seedKey) % gs.length], lv = level ?? levelOf(cls, s, concept);
-    for (let salt = 0; salt < 20; salt++) {
+    const lv = level ?? levelOf(cls, s, concept);
+    // Nunca repetir un ejercicio ya respondido: ni el mismo id ni el mismo contenido con otra semilla
+    // (si no, una pregunta memorizada contaría como evidencia nueva). Se prueba con todos los generadores del concepto.
+    const seen = new Set(Object.keys(s.answers).filter(k => k.startsWith('gen:')).map(k => genSignature(genItem(cls, k.split('@')[0]))).filter(Boolean));
+    const start = hashStr(seedKey) % gs.length;
+    for (let salt = 0; salt < 40; salt++) {
+      const g = gs[(start + salt) % gs.length];
       const id = `gen:${g.id}:${lv}:${hashStr(`${seedKey}~${salt}`).toString(36)}${g.concepts.length > 1 ? `:${concept}` : ''}`;
-      if (!Object.keys(s.answers).some(k => k.split('@')[0] === id)) return id;
+      if (Object.keys(s.answers).some(k => k.split('@')[0] === id)) continue;
+      const it = genItem(cls, id);
+      if (it && !seen.has(genSignature(it))) return id;
     }
     return null;
   }

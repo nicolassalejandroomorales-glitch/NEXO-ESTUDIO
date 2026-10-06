@@ -8,6 +8,7 @@
   const R = 8.314;
   const pick = (rng, list) => list[Math.floor(rng() * list.length)];
   const shuffle = (rng, list) => { const a = [...list]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const take = (rng, list, n) => shuffle(rng, list).slice(0, n);
   const between = (rng, a, b, step) => Math.round((a + rng() * (b - a)) / step) * step;
   const dec = (x, d = 2) => Number(x).toLocaleString('es-CL', { minimumFractionDigits: 0, maximumFractionDigits: d }).replace('-', '−'); // sin ceros de más: 310 K, 298,15 K
   const sci = x => { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); const m = x / 10 ** e; return Math.abs(e) <= 2 ? dec(x, Math.abs(x) < 1 ? 3 : 2) : `${Number(m).toLocaleString('es-CL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} × 10^${e}`.replace('^-', '^−'); };
@@ -171,20 +172,34 @@
 
   /* ════════ Le Châtelier ════════ */
   const LC = [
-    { eq: 'N₂(g) + 3H₂(g) ⇌ 2NH₃(g)', dn: -2, dh: -1 }, { eq: '2SO₂(g) + O₂(g) ⇌ 2SO₃(g)', dn: -1, dh: -1 }, { eq: 'N₂O₄(g) ⇌ 2NO₂(g)', dn: 1, dh: 1 },
-    { eq: 'H₂(g) + I₂(g) ⇌ 2HI(g)', dn: 0, dh: -1 }, { eq: 'CaCO₃(s) ⇌ CaO(s) + CO₂(g)', dn: 1, dh: 1 }, { eq: 'PCl₅(g) ⇌ PCl₃(g) + Cl₂(g)', dn: 1, dh: 1 }
+    { eq: 'N₂(g) + 3H₂(g) ⇌ 2NH₃(g)', dn: -2, dh: -1, R: 'H₂', P: 'NH₃' }, { eq: '2SO₂(g) + O₂(g) ⇌ 2SO₃(g)', dn: -1, dh: -1, R: 'O₂', P: 'SO₃' }, { eq: 'N₂O₄(g) ⇌ 2NO₂(g)', dn: 1, dh: 1, R: 'N₂O₄', P: 'NO₂' },
+    { eq: 'H₂(g) + I₂(g) ⇌ 2HI(g)', dn: 0, dh: -1, R: 'I₂', P: 'HI' }, { eq: 'CaCO₃(s) ⇌ CaO(s) + CO₂(g)', dn: 1, dh: 1, R: null, P: 'CO₂', solid: 'CaCO₃' }, { eq: 'PCl₅(g) ⇌ PCl₃(g) + Cl₂(g)', dn: 1, dh: 1, R: 'PCl₅', P: 'Cl₂' },
+    { eq: 'CO(g) + 2H₂(g) ⇌ CH₃OH(g)', dn: -2, dh: -1, R: 'CO', P: 'CH₃OH' }, { eq: 'C(s) + H₂O(g) ⇌ CO(g) + H₂(g)', dn: 1, dh: 1, R: 'H₂O', P: 'H₂', solid: 'C' }
   ];
   const lechatelier = {
     id: 'lechatelier', title: 'Le Châtelier', mission: 'm4', concepts: ['eq.lechatelier'],
     make(rng, level) {
-      const r = pick(rng, LC), H = r.dh < 0 ? 'exotérmica' : 'endotérmica';
+      const r = pick(rng, LC), H = r.dh < 0 ? 'exotérmica' : 'endotérmica', side = d => d < 0 ? 'right' : d > 0 ? 'left' : 'none';
       const actions = [
-        { t: 'aumentas la presión total (comprimiendo)', ans: r.dn < 0 ? 'right' : r.dn > 0 ? 'left' : 'none', why: r.dn === 0 ? 'Δn = 0: la presión no cambia la composición.' : `Se favorece el lado con menos moles de gas (Δn = ${r.dn}).` },
-        { t: 'agregas argón a volumen constante', ans: 'none', why: 'No cambian las presiones parciales: Q no cambia.', mc: 'inert-shift' },
-        { t: 'agregas un catalizador', ans: 'none', why: 'El catalizador no cambia K ni la composición.', mc: 'catalyst-shift' },
-        { t: 'calientas', ans: r.dh > 0 ? 'right' : 'left', why: `Es ${H}: calentar ${r.dh > 0 ? 'sube' : 'baja'} K.`, mc: 'vh-sign' }];
-      const a = level <= 2 ? pick(rng, actions.slice(1, 3).concat(actions[3])) : pick(rng, actions);
+        { t: 'aumentas la presión total comprimiendo el recipiente', ans: side(r.dn), why: r.dn === 0 ? 'Δn = 0: la presión no cambia la composición.' : `Se favorece el lado con menos moles de gas (Δn = ${r.dn}).`, k: 'igual' },
+        { t: 'duplicas el volumen del recipiente', ans: side(-r.dn), why: r.dn === 0 ? 'Δn = 0: el volumen no cambia la composición.' : `Al bajar la presión se favorece el lado con más moles de gas (Δn = ${r.dn}).`, k: 'igual' },
+        { t: 'agregas argón a volumen constante', ans: 'none', why: 'No cambian las presiones parciales: Q no cambia.', mc: 'inert-shift', k: 'igual' },
+        { t: 'agregas argón a presión constante (el volumen crece)', ans: side(-r.dn), why: r.dn === 0 ? 'Δn = 0: diluir no cambia Q.' : 'Al crecer el volumen bajan las presiones parciales: es como expandir.', mc: 'inert-shift', k: 'igual' },
+        { t: 'agregas un catalizador', ans: 'none', why: 'El catalizador no cambia K ni la composición.', mc: 'catalyst-shift', k: 'igual' },
+        { t: 'calientas', ans: r.dh > 0 ? 'right' : 'left', why: `Es ${H}: calentar ${r.dh > 0 ? 'sube' : 'baja'} K.`, mc: 'vh-sign', k: r.dh > 0 ? 'sube' : 'baja' },
+        { t: 'enfrías', ans: r.dh > 0 ? 'left' : 'right', why: `Es ${H}: enfriar ${r.dh > 0 ? 'baja' : 'sube'} K.`, mc: 'vh-sign', k: r.dh > 0 ? 'baja' : 'sube' },
+        { t: `retiras ${r.P} a medida que se forma`, ans: 'right', why: `Al sacar ${r.P}, Q < K: la reacción avanza para reponerlo.`, mc: 'q-k-direction', k: 'igual' },
+        ...(r.R ? [{ t: `agregas más ${r.R} a volumen constante`, ans: 'right', why: `Más ${r.R} baja Q (Q < K): avanza hacia productos.`, mc: 'q-k-direction', k: 'igual' }] : []),
+        ...(r.solid ? [{ t: `agregas más ${r.solid} sólido`, ans: 'none', why: 'Un sólido puro tiene actividad 1: no aparece en Q.', k: 'igual' }] : [])
+      ];
+      const a = level <= 2 ? pick(rng, actions.filter(x => !x.t.includes('presión constante'))) : pick(rng, actions);
       const lbl = { right: 'Se forma más producto', left: 'Se forma más reactivo', none: 'No se desplaza' };
+      if (level >= 4) { // dos cosas a la vez: hacia dónde va y qué le pasa a K
+        const kTxt = { igual: 'K no cambia', sube: 'K aumenta', baja: 'K disminuye' }, right = `${lbl[a.ans]} y ${kTxt[a.k]}`;
+        const wrong = [];
+        for (const d of Object.keys(lbl)) for (const k of Object.keys(kTxt)) if (`${lbl[d]} y ${kTxt[k]}` !== right) wrong.push({ text: `${lbl[d]} y ${kTxt[k]}`, note: a.why, misconception: k !== a.k ? (a.k === 'igual' ? 'catalyst-shift' : 'vh-sign') : a.mc });
+        return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}Para ${r.eq} (${H}), en equilibrio, ${a.t}. ¿Qué pasa con la composición y con K?`, right, take(rng, wrong, 3),
+          { concept: 'eq.lechatelier', slide: 3, hint: 'Solo la temperatura cambia K; lo demás cambia Q.', explain: `${right}: ${a.why}` }); }
       return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}Para ${r.eq} (${H}), en equilibrio, ${a.t}. ¿Qué pasa?`, lbl[a.ans], Object.entries(lbl).filter(([k]) => k !== a.ans).map(([, text]) => ({ text, note: a.why, misconception: a.mc })),
         { concept: 'eq.lechatelier', slide: 3, hint: 'Solo la temperatura cambia K; la presión mueve hacia menos moles de gas.', explain: `${lbl[a.ans]}: ${a.why}` });
     }
@@ -250,6 +265,12 @@
       const nA = between(rng, 0.5, 4, 0.5), nB = between(rng, 0.5, 4, 0.5), P = between(rng, 1, 20, 0.5);
       if (level <= 2) return number(`Una mezcla tiene ${dec(nA, 1)} mol de A y ${dec(nB, 1)} mol de B. ¿Cuál es la fracción molar de A?`, nA / (nA + nB), '', { concept: 'base.gases', slide: 3, label: 'x(A)', tol: 0.01, hint: 'x = n_A / n_total.',
         traps: [{ value: nA / nB, note: 'Divide por el total, no por B.' }], solution: [`x(A) = ${dec(nA, 1)} / ${dec(nA + nB, 1)} = ${dec(nA / (nA + nB), 3)}`], explain: `x(A) = ${dec(nA / (nA + nB), 3)}.` });
+      if (level === 4) { const n = between(rng, 0.2, 3, 0.05), T = between(rng, 300, 800, 5), V = between(rng, 2, 20, 0.5), pp = n * 0.08314 * T / V, g = pick(rng, ['NH₃', 'NO₂', 'SO₃', 'HI', 'Cl₂']);
+        return number(`En un recipiente de ${dec(V, 1)} L a ${T} K hay ${dec(n, 2)} mol de ${g} (gas ideal). ¿Cuál es su presión parcial en bar? (R = 0,08314 L·bar/(mol·K))`, pp, 'bar', { concept: 'base.gases', slide: 3, label: `p(${g})`, tol: 0.01, hint: 'p = nRT/V.',
+          traps: [{ value: n * 8.314 * T / V, note: 'Usaste R = 8,314 (unidades de J): con L y bar es 0,08314.' }, { value: n * 0.08314 * (T - 273.15) / V, note: 'La T va en kelvin.' }], solution: [`p = ${dec(n, 2)} × 0,08314 × ${T} / ${dec(V, 1)} = ${dec(pp, 3)} bar`], explain: `${dec(pp, 3)} bar.` }); }
+      if (level === 3) { const pA = between(rng, 0.2, 6, 0.05), pB = between(rng, 0.2, 6, 0.05), tot = pA + pB;
+        return number(`Una mezcla de N₂ y H₂ tiene p(N₂) = ${dec(pA, 2)} bar y p(H₂) = ${dec(pB, 2)} bar. ¿Fracción molar del H₂?`, pB / tot, '', { concept: 'base.gases', slide: 3, label: 'x(H₂)', tol: 0.01, hint: 'x = p/P_total (Dalton).',
+          traps: [{ value: pA / tot, note: 'Esa es la del N₂.' }, { value: pB / pA, note: 'Divide por la presión total.' }], solution: [`P = ${dec(pA, 2)} + ${dec(pB, 2)} = ${dec(tot, 2)} bar`, `x(H₂) = ${dec(pB, 2)}/${dec(tot, 2)} = ${dec(pB / tot, 3)}`], explain: `${dec(pB / tot, 3)}.` }); }
       const p = nA / (nA + nB) * P;
       return number(`${level === 5 ? 'Estilo PEP: ' : ''}${dec(nA, 1)} mol de A y ${dec(nB, 1)} mol de B a P = ${dec(P, 1)} bar. Calcula p(A).`, p, 'bar', { concept: 'base.gases', slide: 3, label: 'p(A)', tol: 0.01, hint: 'p(A) = x(A) · P.',
         traps: [{ value: nA * P, note: 'Usa la fracción molar, no los moles.' }, { value: nB / (nA + nB) * P, note: 'Esa es la de B.' }], solution: [`x(A) = ${dec(nA / (nA + nB), 3)}`, `p(A) = ${dec(nA / (nA + nB), 3)} × ${dec(P, 1)} = ${dec(p, 3)} bar`], explain: `p(A) = ${dec(p, 3)} bar.` });

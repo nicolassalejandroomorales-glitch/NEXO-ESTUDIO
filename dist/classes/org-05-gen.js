@@ -29,6 +29,37 @@
   const WHY = { 1: 'dona un par por resonancia al complejo σ', 2: 'dona densidad (alquilo o amida) y estabiliza la carga en orto/para', 3: 'saca electrones por σ (más lento) pero dona un par por resonancia (orto/para)', 4: 'tiene carga + o δ+ junto al anillo: en orto/para pondría dos cargas + juntas' };
   const E = ['Br₂/FeBr₃', 'HNO₃/H₂SO₄', 'Cl₂/AlCl₃', 'SO₃/H₂SO₄'];
 
+  /* Afirmaciones (cátedra + McMurry cap. 16): hechos verdaderos (T) y errores típicos (F: [texto, por qué, error típico]).
+     Se preguntan como "¿cuál es correcta?", "¿cuál es INCORRECTA?" o "¿cuántas son verdaderas?" (formato V/F de la PEP). */
+  function statements(rng, level, bank, extra) {
+    if (level >= 4 && rng() < 0.4) {
+      const nT = 1 + Math.floor(rng() * 3), list = shuffle(rng, [...sample(rng, bank.T, nT).map(t => [t, true]), ...sample(rng, bank.F, 4 - nT).map(f => [f[0], false, f[1]])]);
+      return { type: 'number', prompt: `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}. ¿Cuántas de estas afirmaciones son verdaderas? ${list.map((x, i) => `(${i + 1}) ${x[0]}`).join(' ')}`, answer: nT, unit: '', tol: 0, label: 'verdaderas',
+        traps: [{ value: 4, note: 'No todas son verdaderas: revisa cada una.' }].filter(t => t.value !== nT), solution: list.map((x, i) => `(${i + 1}) ${x[1] ? 'V' : `F: ${x[2]}`}`), ...extra, explain: `${nT} verdadera(s).` }; }
+    if (level >= 3 && rng() < 0.5) { const [f, why, mis] = pick(rng, bank.F);
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es INCORRECTA?`, f, sample(rng, bank.T, 3).map(t => ({ text: t, note: 'Esta es verdadera.' })), { ...extra, misconception: mis, explain: `Es falsa: ${why}` }); }
+    const t = pick(rng, bank.T);
+    return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es correcta?`, t, sample(rng, bank.F, 3).map(([text, why, mis]) => ({ text, note: why, misconception: mis })), { ...extra, explain: t });
+  }
+  const BANK = {
+    halogenos: { topic: 'Halógenos como sustituyentes', T: ['Los halógenos desactivan el anillo frente a la SEA.', 'Los halógenos orientan a orto y para.', 'El clorobenceno reacciona más lento que el benceno.', 'El efecto inductivo de los halógenos saca densidad del anillo.', 'Un par libre del halógeno estabiliza el complejo σ en orto/para.', 'La nitración del clorobenceno da sobre todo p-cloronitrobenceno.'],
+      F: [['Los halógenos orientan a meta porque desactivan.', 'desactivan, pero orientan a orto/para por su par libre.', 'halogen-meta'], ['Los halógenos activan el anillo como el –OH.', 'su efecto inductivo gana: desactivan.', 'halogen-meta'], ['El bromobenceno reacciona más rápido que el benceno.', 'reacciona más lento.', 'halogen-meta'], ['Todo grupo que desactiva orienta a meta.', 'los halógenos son la excepción: desactivan y orientan a orto/para.', 'halogen-meta']] },
+    mecanismo: { topic: 'Mecanismo de la SEA', T: ['El paso lento de la SEA es la formación del complejo σ.', 'El complejo σ es un carbocatión no aromático.', 'En el complejo σ la carga + queda en los C orto y para al C atacado.', 'La pérdida del H⁺ es rápida porque devuelve la aromaticidad.', 'El anillo actúa como nucleófilo con sus electrones π.', 'Sin catalizador, el Br₂ no es suficientemente electrófilo para el benceno.'],
+      F: [['El complejo σ sigue siendo aromático.', 'el C atacado es sp³: se corta el anillo de orbitales p.', 'sigma-aromatic'], ['El paso lento es la pérdida del H⁺.', 'el lento es formar el complejo σ.', 'sigma-aromatic'], ['El benceno da adición porque el Br⁻ ataca el complejo σ.', 'pierde H⁺ y vuelve a ser aromático: sustitución.', 'adds-not-subs'], ['En el complejo σ la carga + queda en los C meta.', 'queda en orto y para al C atacado.', 'sigma-aromatic'], ['El catalizador FeBr₃ actúa como nucleófilo.', 'es un ácido de Lewis que activa al Br₂.', 'no-lewis']] },
+    friedel: { topic: 'Friedel-Crafts', T: ['La alquilación de Friedel-Crafts puede dar reordenamientos del carbocatión.', 'El ion acilio no se reordena.', 'La acilación se detiene en un solo grupo porque la cetona desactiva el anillo.', 'La alquilación puede dar polialquilación porque el alquilo activa el anillo.', 'Friedel-Crafts no funciona sobre nitrobenceno.', 'Con anilina falla: el NH₂ se une al AlCl₃ y desactiva el anillo.', 'Acilar y luego reducir con Zn(Hg)/HCl da una cadena lineal sin reordenar.'],
+      F: [['El ion acilio se reordena igual que un carbocatión primario.', 'el acilio está estabilizado por resonancia y no se reordena.', 'fc-rearrange'], ['La acilación da muchos productos poliacilados.', 'la cetona desactiva el anillo: se detiene en uno.', 'fc-rearrange'], ['Friedel-Crafts funciona bien sobre nitrobenceno.', 'el anillo está demasiado desactivado.', 'fc-deactivated'], ['CH₃CH₂CH₂Cl/AlCl₃ da propilbenceno sin reordenar.', 'el primario se reordena: da isopropilbenceno.', 'fc-rearrange'], ['El AlCl₃ es la fuente del grupo alquilo.', 'el AlCl₃ es el ácido de Lewis; el alquilo viene del haluro.', 'no-lewis']] },
+    sna: { topic: 'Sustitución nucleofílica aromática (SNA)', T: ['La SNA necesita grupos atractores (como NO₂) en orto o para al grupo saliente.', 'El intermedio de la SNA es un carbanión (complejo de Meisenheimer).', 'Un NO₂ en meta casi no activa la SNA.', 'Más NO₂ en orto/para, más rápida la SNA.', 'El clorobenceno solo no da SNA en condiciones suaves.', 'En la SNA el nucleófilo ataca el C que lleva el grupo saliente.'],
+      F: [['La SNA funciona igual de bien sin grupos atractores.', 'sin atractores en orto/para no se estabiliza el carbanión.', 'sna-no-ewg'], ['El intermedio de la SNA es un carbocatión.', 'es un carbanión: el nucleófilo trae electrones.', 'sna-no-ewg'], ['Un NO₂ en meta activa la SNA tanto como en para.', 'en meta la carga negativa no llega al NO₂.', 'sna-no-ewg'], ['La SNA necesita grupos donadores como –OCH₃.', 'los donadores la frenan: se necesitan atractores.', 'sna-no-ewg']] },
+    halogenacion: { topic: 'Halogenación del benceno', T: ['La bromación del benceno necesita FeBr₃ como ácido de Lewis.', 'La cloración usa Cl₂ con AlCl₃ o FeCl₃.', 'La yodación necesita un oxidante como HNO₃ para formar I⁺.', 'La halogenación aromática es una sustitución, no una adición.', 'El subproducto de la bromación es HBr.'],
+      F: [['El Br₂ solo broma el benceno a temperatura ambiente.', 'sin ácido de Lewis no hay electrófilo suficiente.', 'no-lewis'], ['La bromación del benceno da 1,2-dibromociclohexadieno.', 'da bromobenceno (sustitución).', 'adds-not-subs'], ['El I₂ solo yoda el benceno sin ayuda.', 'necesita un oxidante para formar I⁺.', 'no-lewis'], ['El FeBr₃ se consume en la reacción.', 'es catalizador: se regenera.', 'no-lewis']] },
+    nitracion: { topic: 'Nitración y sulfonación', T: ['El electrófilo de la nitración es el ion nitronio, NO₂⁺.', 'El H₂SO₄ protona al HNO₃ para formar NO₂⁺.', 'La sulfonación es reversible: se revierte con ácido diluido y calor.', 'El nitrobenceno se reduce a anilina con Fe/HCl o H₂/Pd.', 'El grupo SO₃H puede usarse como grupo bloqueador temporal.'],
+      F: [['El electrófilo de la nitración es el HNO₃ sin cambios.', 'el electrófilo es el NO₂⁺.', 'nitronium'], ['El H₂SO₄ es el que aporta el grupo nitro.', 'el H₂SO₄ solo protona; el nitro viene del HNO₃.', 'nitronium'], ['La sulfonación es irreversible.', 'es reversible.', 'nitronium'], ['El nitrobenceno se reduce a anilina con NaBH₄.', 'se usa Fe/HCl, Sn/HCl o H₂/Pd.', 'nitronium']] }
+  };
+  const CARBO = { topic: 'Estabilidad de carbocationes', T: ['Un carbocatión terciario es más estable que uno secundario.', 'Los grupos alquilo estabilizan la carga + por hiperconjugación.', 'El carbocatión bencílico se estabiliza por resonancia con el anillo.', 'El carbocatión alílico es más estable que uno primario común.', 'Un O vecino con pares libres estabiliza mucho un carbocatión.', 'Un carbocatión primario tiende a reordenarse a uno más estable.', 'El carbocatión metilo es el menos estable de la serie.'],
+    F: [['El carbocatión metilo es el más estable porque es el más pequeño.', 'es el menos estable: no tiene alquilos que lo estabilicen.', 'fc-rearrange'], ['Un carbocatión primario nunca se reordena.', 'se reordena si un desplazamiento 1,2 da uno más estable.', 'fc-rearrange'], ['Los alquilos desestabilizan la carga +.', 'la estabilizan (hiperconjugación).', 'fc-rearrange'], ['Un grupo NO₂ vecino estabiliza un carbocatión.', 'lo desestabiliza: es atractor.', 'nitro-op'], ['La resonancia no influye en la estabilidad de un carbocatión.', 'repartir la carga por resonancia estabiliza.', 'fc-rearrange']] };
+  const SLIDES = { halogenos: 31, mecanismo: 4, friedel: 41, sna: 49, halogenacion: 6, nitracion: 11 };
+  const stm = (rng, level, key, concept, hint) => statements(rng, level, BANK[key], { concept, slide: SLIDES[key], hint });
+
   const orientar = {
     id: 'orientar', title: 'Dónde entra y qué tan rápido', mission: 'm2', concepts: ['sea.activadores', 'sea.halogenos'],
     make(rng, level, want) {
@@ -48,6 +79,7 @@
         return choice(rng, `Frente a la SEA, el ${s.name} reacciona…`, `${speed(s).charAt(0).toUpperCase() + speed(s).slice(1)} que el benceno`, [{ text: `${speed(s) === 'más rápido' ? 'Más lento' : 'Más rápido'} que el benceno`, note: `${s.g} ${WHY[s.cls]}.`, misconception: s.cls === 3 ? 'halogen-meta' : 'nitro-op' }, { text: 'Igual que el benceno', note: 'Todo sustituyente cambia la velocidad.' }],
           { concept: c, slide: 34, hint: '¿Dona o saca electrones?', explain: `${speed(s)}: ${WHY[s.cls]}.` });
       }
+      if (c === 'sea.halogenos' && (level === 4 || (level === 3 && rng() < 0.5))) return stm(rng, level, 'halogenos', c, 'Desactivan (inductivo) pero orientan a orto/para (par libre).');
       const e = pick(rng, E), combo = `${speed(s)}, en ${where(s)}`;
       const all = ['más rápido, en orto y para', 'más lento, en orto y para', 'más rápido, en meta', 'más lento, en meta'];
       return choice(rng, `${level === 4 ? 'Con dos datos: ' : ''}El ${s.name} (${s.g}) con ${e}: ¿cómo reacciona respecto al benceno y dónde entra?`, combo.charAt(0).toUpperCase() + combo.slice(1),
@@ -79,14 +111,12 @@
     id: 'reactivos', title: 'Reactivos y mecanismo', mission: 'm1', concepts: ['sea.mecanismo', 'sea.halogenacion', 'sea.nitracion'],
     make(rng, level, want) {
       const c = want || pick(rng, this.concepts);
-      if (c === 'sea.mecanismo') {
-        const bank = [['El paso lento de la SEA es…', 'Formar el complejo σ', [['Perder el H⁺', 'Ese es rápido: devuelve la aromaticidad.'], ['Formar el producto', 'El producto sale del paso rápido.']]],
-          ['En el complejo σ, la carga + queda en…', 'Los C orto y para al C atacado', [['El C atacado', 'Ese C es sp³ y no lleva la carga.'], ['Los C meta', 'La resonancia la reparte en orto y para.']]],
-          ['¿Por qué la SEA termina en sustitución?', 'El complejo σ pierde H⁺ para recuperar la aromaticidad', [['Porque el Br⁻ no alcanza a llegar', 'No es por eso: recuperar la aromaticidad manda.', 'adds-not-subs'], ['Porque el benceno no tiene π', 'Sí los tiene; son los que atacan.']]],
-          ['El complejo σ es…', 'Un carbocatión no aromático', [['Un anillo aromático con carga', 'Un C es sp³: se corta el anillo de p.', 'sigma-aromatic'], ['Un radical', 'Es un catión.']]]];
-        const [p, a, ds] = pick(rng, level <= 2 ? bank.slice(0, 2) : bank);
-        return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${p}`, a, ds.map(([text, note, mc]) => ({ text, note, misconception: mc })), { concept: c, slide: 4, hint: 'Piensa en el complejo σ.', explain: a + '.' });
-      }
+      if (c === 'sea.mecanismo') return stm(rng, Math.max(level, 2), 'mecanismo', c, 'Piensa en el complejo σ: paso lento, carga en orto/para, pérdida de H⁺.');
+      if (level >= 3 && rng() < 0.5) return stm(rng, level, c === 'sea.halogenacion' ? 'halogenacion' : 'nitracion', c, '¿Cuál es el electrófilo real y quién lo genera?');
+      if (level === 2) { const EL = [['HNO₃ / H₂SO₄', 'NO₂⁺ (ion nitronio)'], ['Br₂ / FeBr₃', 'Br⁺ (Br₂ activado por FeBr₃)'], ['Cl₂ / AlCl₃', 'Cl⁺ (Cl₂ activado por AlCl₃)'], ['SO₃ / H₂SO₄', 'SO₃ (o HSO₃⁺)'], ['I₂ / HNO₃', 'I⁺ (I₂ oxidado)'], ['CH₃COCl / AlCl₃', 'CH₃C≡O⁺ (ion acilio)']];
+        const mine = EL.filter(x => c === 'sea.halogenacion' ? /Br₂|Cl₂|I₂/.test(x[0]) : /HNO₃ \/ H₂SO₄|SO₃/.test(x[0])), [rg, el] = pick(rng, mine);
+        return choice(rng, `¿Cuál es el electrófilo real cuando el benceno reacciona con ${rg}?`, el, sample(rng, EL.filter(x => x[1] !== el), 3).map(x => ({ text: x[1], note: `Ese se forma con ${x[0]}.`, misconception: c === 'sea.nitracion' ? 'nitronium' : 'no-lewis' })),
+          { concept: c, slide: c === 'sea.halogenacion' ? 6 : 11, hint: 'El catalizador o el ácido fuerte genera un electrófilo más potente.', explain: `${rg} → ${el}.` }); }
       const pool = TARGET.filter(x => x.c === c), x = pick(rng, pool), others = TARGET.filter(y => y.r !== x.r);
       return choice(rng, `${level === 5 ? 'Estilo PEP (P5): ' : ''}¿Qué reactivo convierte benceno en ${x.t}?`.replace('benceno en anilina (desde nitrobenceno)', 'nitrobenceno en anilina'), x.r,
         [...sample(rng, others, 2).map(y => ({ text: y.r, note: `${y.r} da ${y.t}.` })), { text: x.r.split(' / ')[0] + ' solo', note: 'Falta el catalizador (ácido de Lewis o H₂SO₄) o el oxidante.', misconception: x.mc }],
@@ -102,12 +132,19 @@
   const friedel = {
     id: 'friedel', title: 'Friedel-Crafts', mission: 'm3', concepts: ['sea.friedel'],
     make(rng, level) {
-      if (level === 1) { const s = pick(rng, SUB.filter(x => x.cls === 4)); return choice(rng, `¿Funciona una acilación de Friedel-Crafts sobre ${s.name}?`, 'No: el anillo está fuertemente desactivado', [{ text: 'Sí, entra en meta', note: 'Friedel-Crafts falla con anillos fuertemente desactivados.', misconception: 'fc-deactivated' }, { text: 'Sí, entra en orto y para', note: 'Ni siquiera reacciona.' }],
-        { concept: 'sea.friedel', slide: 41, hint: 'Limitación 1.', explain: 'No funciona: anillo desactivado.' }); }
+      if (level === 1) { const x = pick(rng, SUB), amine = /NH₂|N\(CH₃\)₂/.test(x.g), works = x.cls !== 4 && !amine;
+        const right = works ? `Sí: el anillo no está fuertemente desactivado (entra en ${where(x)})` : amine ? 'No: el N se une al AlCl₃ y el anillo queda desactivado' : 'No: el anillo está fuertemente desactivado';
+        return choice(rng, `¿Funciona una acilación de Friedel-Crafts (CH₃COCl / AlCl₃) sobre ${x.name}?`, right,
+          ['Sí: el anillo no está fuertemente desactivado (entra en orto y para)', 'Sí: el anillo no está fuertemente desactivado (entra en meta)', 'No: el anillo está fuertemente desactivado', 'No: el N se une al AlCl₃ y el anillo queda desactivado'].filter(t => t !== right).map(text => ({ text, note: `${x.g} ${WHY[x.cls]}.`, misconception: 'fc-deactivated' })),
+          { concept: 'sea.friedel', slide: 41, hint: 'Falla con desactivadores fuertes y con aminas (se complejan con el AlCl₃).', explain: right + '.' }); }
+      if (level === 4 && rng() < 0.6) return stm(rng, level, 'friedel', 'sea.friedel', 'Reordenamientos, polialquilación, anillos desactivados y el acilio que no se reordena.');
+      if (level === 2 && rng() < 0.5) { const AC = [['CH₃COCl', 'acetofenona'], ['CH₃CH₂COCl', 'propiofenona'], ['C₆H₅COCl', 'benzofenona'], ['(CH₃)₂CHCOCl', 'isobutirofenona']], [ac, prod] = pick(rng, AC);
+        return choice(rng, `Benceno + ${ac} / AlCl₃: ¿producto?`, prod.charAt(0).toUpperCase() + prod.slice(1), sample(rng, AC.filter(x => x[1] !== prod), 2).map(x => ({ text: x[1].charAt(0).toUpperCase() + x[1].slice(1), note: `Eso sale con ${x[0]}.` })).concat([{ text: 'Una cetona reordenada (el acilio se reordena)', note: 'El ion acilio no se reordena.', misconception: 'fc-rearrange' }]),
+          { concept: 'sea.friedel', slide: 43, hint: 'Acilación: entra el grupo R–C=O completo, sin reordenar.', explain: `${prod}.` }); }
       const ch = pick(rng, level === 2 ? CHAINS.slice(0, 5) : CHAINS);
       const cap = t => t.charAt(0).toUpperCase() + t.slice(1);
       if (level <= 3) return choice(rng, `Benceno + ${ch.rx} / AlCl₃: ¿producto principal?`, cap(ch.ok ? ch.p : ch.gets),
-        [ch.ok ? { text: 'No reacciona', note: 'Sí reacciona: es una alquilación normal (este carbocatión no se reordena).' } : { text: cap(ch.p), note: 'El carbocatión primario se reordena a uno más estable.', misconception: 'fc-rearrange' }, { text: 'Un producto de adición al anillo', note: 'Es una SEA: sustitución.' }],
+        [ch.ok ? { text: 'No reacciona', note: 'Sí reacciona: es una alquilación normal (este carbocatión no se reordena).' } : { text: cap(ch.p), note: 'El carbocatión primario se reordena a uno más estable.', misconception: 'fc-rearrange' }, { text: 'Un producto de adición al anillo', note: 'Es una SEA: sustitución.' }, { text: `${cap(ch.ok ? ch.p : ch.gets)} como único producto, sin polialquilación posible`, note: 'Es el principal, pero el alquilo activa el anillo y puede entrar otro (polialquilación).' }],
         { concept: 'sea.friedel', slide: 41, hint: '¿El carbocatión puede reordenarse a uno más estable?', explain: ch.ok ? 'Sin reordenamiento posible.' : `El carbocatión se reordena: ${ch.gets}.` });
       const lin = pick(rng, CHAINS.filter(x => !x.ok));
       return choice(rng, `${level === 5 ? 'Estilo PEP (P5): ' : ''}¿Cómo preparas ${lin.p} (cadena sin ramificar) desde benceno?`, `${lin.acyl} / AlCl₃ y después Zn(Hg) / HCl`, [{ text: `${lin.rx} / AlCl₃`, note: `Se reordena y da ${lin.gets}.`, misconception: 'fc-rearrange' }, { text: `${lin.acyl} / AlCl₃ solo`, note: 'Eso deja la cetona: falta reducir con Clemmensen.' }, { text: `${lin.rx} con luz`, note: 'Eso es halogenación radicalaria, no una alquilación.' }],
@@ -146,7 +183,9 @@
       if (level >= 4) { const set = sample(rng, SNA.filter(x => x.r !== 2.1), level === 5 ? 4 : 3), sorted = [...set].sort((a, b) => a.r - b.r);
         return order(`${level === 5 ? 'Estilo PEP: ' : ''}Ordena de MENOS a MÁS reactivo frente a NaOH (SNA):`, set.map((x, i) => ({ id: 'x' + i, text: x.n })), sorted.map(x => 'x' + set.indexOf(x)),
           { concept: 'sea.sna', slide: 49, direction: 'De menos a más reactivo.', hint: 'Cuenta NO₂ en orto/para.', explain: sorted.map(x => x.n).join(' < ') + '.' }); }
-      const [a, b] = sample(rng, SNA, 2), hi = a.r > b.r ? a : b, lo = hi === a ? b : a;
+      if (level === 3 || (level === 2 && rng() < 0.4)) return stm(rng, level, 'sna', 'sea.sna', 'Atractores en orto/para estabilizan el carbanión.');
+      let a, b; do { [a, b] = sample(rng, SNA, 2); } while (Math.abs(a.r - b.r) < 0.5);
+      const hi = a.r > b.r ? a : b, lo = hi === a ? b : a;
       return choice(rng, `¿Cuál reacciona más rápido con NaOH (SNA): ${a.n} o ${b.n}?`, hi.n.charAt(0).toUpperCase() + hi.n.slice(1), [{ text: lo.n.charAt(0).toUpperCase() + lo.n.slice(1), note: 'Más NO₂ en orto/para estabiliza mejor la carga negativa.', misconception: 'sna-no-ewg' }, { text: 'Ninguno reacciona', note: hi.r > 0 ? 'Con NO₂ en orto/para sí hay SNA.' : 'Revisa los NO₂.' }],
         { concept: 'sea.sna', slide: 49, hint: '¿Cuántos NO₂ hay en orto o para al Cl?', explain: `${hi.n}: más atractores en orto/para.` });
     }
@@ -157,11 +196,24 @@
     id: 'bases', title: 'Electrófilos y carbocationes', mission: null, concepts: ['base.electrofilo', 'base.carbocation'],
     make(rng, level, want) {
       const c = want || pick(rng, this.concepts);
-      if (c === 'base.electrofilo') { const x = pick(rng, [['NO₂⁺', 'e'], ['OH⁻', 'n'], ['NH₃', 'n'], ['SO₃', 'e'], ['(CH₃)₃C⁺', 'e'], ['CH₃O⁻', 'n'], ['CH₃C≡O⁺ (acilio)', 'e'], ['H₂O', 'n'], ['Br⁺ (del Br₂/FeBr₃)', 'e']]);
-        return choice(rng, `${x[0]} es…`, x[1] === 'e' ? 'Un electrófilo' : 'Un nucleófilo', [{ text: x[1] === 'e' ? 'Un nucleófilo' : 'Un electrófilo', note: 'Electrófilo: pobre en electrones (+ o δ+). Nucleófilo: tiene pares o π para dar.' }, { text: 'Ninguno', note: 'Es uno de los dos.' }], { concept: c, slide: 6, hint: '¿Busca o da electrones?', explain: x[1] === 'e' ? 'Busca electrones.' : 'Da electrones.' }); }
+      if (c === 'base.electrofilo') {
+        const X = [['NO₂⁺', 'e'], ['OH⁻', 'n'], ['NH₃', 'n'], ['SO₃', 'e'], ['(CH₃)₃C⁺', 'e'], ['CH₃O⁻', 'n'], ['CH₃C≡O⁺ (acilio)', 'e'], ['H₂O', 'n'], ['Br⁺ (del Br₂/FeBr₃)', 'e'], ['AlCl₃', 'e'], ['el anillo de benceno (sus π)', 'n'], ['BF₃', 'e'], ['CN⁻', 'n'], ['H⁺', 'e'], ['un alqueno (su π)', 'n']];
+        if (level <= 2) { const x = pick(rng, X);
+          return choice(rng, `${x[0]} actúa como…`, x[1] === 'e' ? 'Electrófilo (busca electrones)' : 'Nucleófilo (da electrones)', [{ text: x[1] === 'e' ? 'Nucleófilo (da electrones)' : 'Electrófilo (busca electrones)', note: 'Electrófilo: pobre en electrones (+, δ+ o con octeto incompleto). Nucleófilo: tiene pares o π para dar.' }, { text: 'Radical libre', note: 'No tiene un electrón desapareado.' }, { text: 'Ni electrófilo ni nucleófilo: es un solvente inerte', note: 'Tiene un rol claro en la reacción.' }], { concept: c, slide: 6, hint: '¿Tiene carga +, octeto incompleto o pares para dar?', explain: x[1] === 'e' ? 'Busca electrones.' : 'Da electrones.' }); }
+        const want2 = pick(rng, ['e', 'n']), right = pick(rng, X.filter(x => x[1] === want2));
+        return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}¿Cuál de estas especies es ${want2 === 'e' ? 'un electrófilo' : 'un nucleófilo'}?`, right[0], sample(rng, X.filter(x => x[1] !== want2), 3).map(x => ({ text: x[0], note: `Es ${x[1] === 'e' ? 'electrófilo' : 'nucleófilo'}.` })), { concept: c, slide: 6, hint: 'Electrófilo = pobre en electrones; nucleófilo = rico.', explain: `${right[0]}.` });
+      }
       const set = [['CH₃⁺', 0], ['CH₃CH₂⁺ (1°)', 1], ['(CH₃)₂CH⁺ (2°)', 2], ['(CH₃)₃C⁺ (3°)', 3], ['CH₃O–CH₂⁺ (O vecino comparte su par)', 4]];
-      const pickS = sample(rng, level <= 2 ? set.slice(0, 4) : set, level <= 2 ? 3 : 4), sorted = [...pickS].sort((a, b) => a[1] - b[1]);
-      return order('Ordena de MENOS a MÁS estable:', pickS.map(([t], i) => ({ id: 'x' + i, text: t })), sorted.map(x => 'x' + pickS.indexOf(x)), { concept: c, slide: 17, direction: 'De menos a más estable.', hint: 'Alquilos, resonancia y pares vecinos estabilizan.', explain: sorted.map(x => x[0]).join(' < ') + '.' });
+      if (level === 3) { const RE = [['CH₃CH₂CH₂⁺ (propilo, 1°)', '(CH₃)₂CH⁺ (2°), por desplazamiento de hidruro'], ['(CH₃)₂CHCH₂⁺ (isobutilo, 1°)', '(CH₃)₃C⁺ (3°), por desplazamiento de hidruro'], ['(CH₃)₃CCH₂⁺ (neopentilo, 1°)', '(CH₃)₂C⁺CH₂CH₃ (3°), por desplazamiento de metilo'], ['CH₃CH₂CH₂CH₂⁺ (butilo, 1°)', 'CH₃CH₂CH⁺CH₃ (2°), por desplazamiento de hidruro'], ['(CH₃)₃C⁺ (t-butilo, 3°)', 'No se reordena: ya es terciario']];
+        const [from, to] = pick(rng, RE);
+        return choice(rng, `¿Qué le pasa al carbocatión ${from} antes de reaccionar?`, to, sample(rng, RE.filter(x => x[1] !== to).map(x => x[1]), 3).map(text => ({ text, note: 'Busca el desplazamiento 1,2 que da un carbocatión más estable.', misconception: 'fc-rearrange' })),
+          { concept: c, slide: 17, hint: 'Un H o un CH₃ vecino salta si así queda un carbocatión más sustituido.', explain: `${from} → ${to}.` }); }
+      if (level === 2 && rng() < 0.5) return statements(rng, 2, CARBO, { concept: c, slide: 17, hint: 'Más sustituido, resonancia o un par vecino = más estable.' });
+      if (level === 5 && rng() < 0.5) return statements(rng, 4, CARBO, { concept: c, slide: 17, hint: 'Más sustituido, resonancia o un par vecino = más estable.' });
+      if (level === 4) { const four = sample(rng, set, 4), best = four.reduce((a, b) => a[1] > b[1] ? a : b);
+        if (four.filter(x => x[1] === best[1]).length === 1) return choice(rng, '¿Cuál de estos carbocationes es el más estable?', best[0], four.filter(x => x !== best).map(x => ({ text: x[0], note: 'Menos estabilizado: cuenta alquilos, resonancia y pares vecinos.' })), { concept: c, slide: 17, hint: 'Pares vecinos y resonancia > 3° > 2° > 1° > metilo.', explain: `${best[0]}.` }); }
+      const pickS = sample(rng, level <= 2 ? set.slice(0, 4) : set, level <= 2 ? 3 : 4).filter((x, i, arr) => arr.findIndex(y => y[1] === x[1]) === i), sorted = [...pickS].sort((a, b) => a[1] - b[1]);
+      return order(`${level === 5 ? 'Estilo PEP: ' : ''}Ordena de MENOS a MÁS estable:`, pickS.map(([t], i) => ({ id: 'x' + i, text: t })), sorted.map(x => 'x' + pickS.indexOf(x)), { concept: c, slide: 17, direction: 'De menos a más estable.', hint: 'Alquilos, resonancia y pares vecinos estabilizan.', explain: sorted.map(x => x[0]).join(' < ') + '.' });
     }
   };
 

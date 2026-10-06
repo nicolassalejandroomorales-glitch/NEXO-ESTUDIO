@@ -33,33 +33,68 @@
     }
   };
 
-  /* ════════ Núcleo y penumbra ════════ */
-  const PEN = [['Necrosis irreversible', 'Núcleo'], ['Flujo casi nulo', 'Núcleo'], ['Neuronas que no funcionan pero siguen vivas', 'Penumbra'], ['Se recupera si se reperfunde a tiempo', 'Penumbra'], ['Blanco de la trombolisis', 'Penumbra']];
+  const take = (rng, list, n) => shuffle(rng, list).slice(0, n);
+  const AGE = rng => pick(rng, ['Mujer de 58 años', 'Hombre de 66 años', 'Mujer de 74 años', 'Hombre de 49 años', 'Hombre de 81 años']);
+  // "Señale la correcta / la incorrecta" desde bancos de hechos (T) y errores típicos (F: [texto, por qué, error típico]).
+  function statements(rng, level, bank, extra) {
+    const askFalse = level >= 3 ? rng() < 0.5 : false;
+    if (askFalse) { const [f, why, mis] = pick(rng, bank.F);
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es INCORRECTA?`, f, take(rng, bank.T, 3).map(t => ({ text: t, note: 'Esta es verdadera.' })), { ...extra, misconception: mis, explain: `Es falsa: ${why}` }); }
+    const t = pick(rng, bank.T);
+    return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${bank.topic}: ¿cuál afirmación es correcta?`, t, take(rng, bank.F, 3).map(([text, why, mis]) => ({ text, note: why, misconception: mis })), { ...extra, explain: t });
+  }
+
+  /* ════════ Núcleo, penumbra y la decisión de trombolizar ════════
+     Variables reales de la decisión: tiempo desde la última vez visto bien, TAC y contraindicaciones (no se tromboliza con sangrado,
+     fuera de 4,5 h, anticoagulación con INR > 1,7, cirugía mayor reciente ni con PA > 185/110 sin controlar). */
+  const PEN_BANK = { topic: 'Núcleo y penumbra', T: ['La penumbra no funciona, pero sigue viva y se puede salvar.', 'El núcleo del infarto ya tiene muerte celular irreversible.', 'Si no se reperfunde, la penumbra pasa a formar parte del núcleo.', 'La trombolisis busca salvar la penumbra, no el núcleo.', 'Antes de trombolizar hay que descartar una hemorragia con TAC.', 'En un ACV de inicio desconocido se cuenta desde la última vez que se vio bien al paciente.'],
+    F: [['La trombolisis recupera el núcleo del infarto.', 'el núcleo ya murió; se rescata la penumbra.', 'core-penumbra'], ['La penumbra tiene flujo cero.', 'tiene flujo reducido; el que tiene flujo casi nulo es el núcleo.', 'core-penumbra'], ['Si el paciente despertó con el déficit, se cuenta desde la hora en que despertó.', 'se cuenta desde la última vez que se le vio bien (la noche anterior).', 'core-penumbra'], ['Un TAC normal en la primera hora descarta el infarto.', 'el infarto isquémico suele no verse en el TAC las primeras horas; el TAC sirve para descartar sangre.', 'core-penumbra'], ['La trombolisis es útil en el ACV hemorrágico.', 'está contraindicada: aumenta el sangrado.', 'core-penumbra']] };
+  const DECIDE = ['Trombolizar ahora (dentro de 4,5 h y sin contraindicaciones)', 'No trombolizar: hay hemorragia', 'No trombolizar con rtPA: fuera de la ventana de 4,5 h (evaluar trombectomía)', 'Primero bajar la presión bajo 185/110; luego trombolizar si sigue en ventana', 'No trombolizar: está anticoagulado con INR alto'];
   const penumbra = {
     id: 'penumbra', title: 'Núcleo, penumbra y tiempo', mission: 'm1', concepts: ['fis.penumbra'],
     make(rng, level) {
-      if (level <= 2) { const [t, r] = pick(rng, PEN);
-        return choice(rng, `"${t}". ¿Núcleo o penumbra?`, r, [{ text: r === 'Núcleo' ? 'Penumbra' : 'Núcleo', note: 'Núcleo: muerto. Penumbra: aturdida pero viva.', misconception: 'core-penumbra' }, { text: 'Edema vasogénico', note: 'Es otra cosa.' }], { concept: 'fis.penumbra', slide: 3, hint: '¿Se puede salvar?', explain: r + '.' }); }
-      const h0 = between(rng, 0.5, 8, 0.5), h = h0 === 4.5 ? 4 : h0, hem = level >= 4 && rng() < 0.4;
-      const right = hem ? 'No trombolizar: es una hemorragia' : h <= 4.5 ? 'Trombolisis (si el TAC descarta hemorragia)' : 'Fuera de la ventana de trombolisis endovenosa: evaluar otras terapias';
-      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}Paciente con déficit neurológico de inicio hace ${dec(h)} h. ${hem ? 'El TAC muestra sangre en el parénquima.' : 'El TAC no muestra sangre.'} ¿Qué corresponde?`, right,
-        ['Trombolisis (si el TAC descarta hemorragia)', 'Fuera de la ventana de trombolisis endovenosa: evaluar otras terapias', 'No trombolizar: es una hemorragia', 'Esperar 24 h para ver si mejora'].filter(t => t !== right).map(text => ({ text, note: 'La ventana de rtPA es de 4,5 h y nunca en hemorragias.', misconception: 'core-penumbra' })),
-        { concept: 'fis.penumbra', slide: 3, hint: 'Ventana de 4,5 h y descartar sangrado.', explain: `${right}.` });
+      if (level <= 2) return statements(rng, level, PEN_BANK, { concept: 'fis.penumbra', slide: 3, hint: 'Núcleo: muerto. Penumbra: aturdida pero viva.' });
+      const kind = pick(rng, level === 3 ? [0, 1, 2] : [0, 1, 2, 3, 4]);
+      const h = kind === 2 ? pick(rng, [5, 6, 7.5, 9]) : pick(rng, [1, 1.5, 2, 2.5, 3, 3.5]);
+      const wake = kind === 2 && rng() < 0.5;
+      const when = wake ? `despertó con el déficit; la última vez que se le vio bien fue hace ${String(h).replace('.', ',')} h` : `inició el déficit hace ${String(h).replace('.', ',')} h`;
+      const pa = kind === 3 ? `${pick(rng, [195, 205, 215, 220])}/${pick(rng, [112, 118, 125])}` : `${pick(rng, [150, 160, 170, 175])}/${pick(rng, [85, 90, 95, 100])}`;
+      const tac = kind === 1 ? pick(rng, ['El TAC muestra sangre en el parénquima.', 'El TAC muestra un hematoma de 3 cm.']) : 'El TAC no muestra sangre.';
+      const extra = kind === 4 ? ` Toma warfarina y su INR es ${pick(rng, ['2,8', '3,1', '3,5'])}.` : '';
+      const deficit = pick(rng, ['debilidad del brazo y la cara derechos', 'dificultad para hablar y debilidad izquierda', 'desviación de la boca y no mueve la mano derecha']);
+      const right = DECIDE[kind];
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${AGE(rng)} con ${deficit}; ${when}. PA ${pa} mmHg. ${tac}${extra} ¿Qué corresponde?`, right,
+        take(rng, DECIDE.filter(x => x !== right), 3).map(text => ({ text, note: 'Revisa: ¿hay sangre? ¿cuántas horas? ¿PA sobre 185/110? ¿anticoagulado?', misconception: 'core-penumbra' })),
+        { concept: 'fis.penumbra', slide: 3, hint: 'Revisa en orden: sangre en el TAC, tiempo (4,5 h), presión y anticoagulación.', explain: `${right}.` });
     }
   };
 
-  /* ════════ Edema ════════ */
-  const ED = [['Primeras horas de un infarto cerebral', 'Citotóxico'], ['Hiponatremia aguda', 'Citotóxico'], ['Paro cardíaco con hipoxia global', 'Citotóxico'], ['Alrededor de un tumor cerebral', 'Vasogénico'], ['Absceso cerebral', 'Vasogénico'], ['Contusión por un trauma', 'Vasogénico'], ['Hidrocefalia obstructiva', 'Intersticial']];
+  /* ════════ Edema: tipo, mecanismo y tratamiento según la causa ════════ */
+  const ED = [
+    { c: 'Primeras 6 horas de un infarto cerebral', t: 'Citotóxico', tx: 'Reperfundir y medidas generales; los corticoides no sirven' },
+    { c: 'Hiponatremia aguda (Na⁺ 115 mmol/L en 24 h)', t: 'Citotóxico', tx: 'Corregir el sodio con suero hipertónico, sin subirlo demasiado rápido' },
+    { c: 'Paro cardíaco con 10 minutos de hipoxia', t: 'Citotóxico', tx: 'Soporte y control de temperatura; los corticoides no sirven' },
+    { c: 'Insuficiencia hepática aguda con amonio muy alto', t: 'Citotóxico', tx: 'Bajar el amonio y soporte; los corticoides no sirven' },
+    { c: 'Metástasis cerebral con un halo de edema', t: 'Vasogénico', tx: 'Dexametasona (estabiliza la barrera hematoencefálica)' },
+    { c: 'Absceso cerebral', t: 'Vasogénico', tx: 'Antibióticos y drenaje; corticoides solo si hay mucho efecto de masa' },
+    { c: 'Contusión cerebral por un accidente', t: 'Vasogénico', tx: 'Controlar la PIC (cabecera elevada, osmoterapia); los corticoides no sirven en el TEC' },
+    { c: 'Encefalopatía hipertensiva (PA 240/140)', t: 'Vasogénico', tx: 'Bajar la presión de forma controlada' },
+    { c: 'Hidrocefalia por un tumor que tapa el acueducto', t: 'Intersticial', tx: 'Derivar el LCR (válvula o ventriculostomía)' }
+  ];
+  const lc = t => t.charAt(0).toLowerCase() + t.slice(1);
+  const ED_WHY = { 'Citotóxico': 'Fallan las bombas: la célula se hincha con la barrera hematoencefálica intacta', 'Vasogénico': 'Se rompe la barrera hematoencefálica: sale plasma al espacio extracelular', 'Intersticial': 'El LCR a presión pasa al tejido alrededor de los ventrículos' };
   const edema = {
-    id: 'edema', title: 'Tipo de edema', mission: 'm2', concepts: ['fis.edema'],
+    id: 'edema', title: 'Edema: tipo y tratamiento', mission: 'm2', concepts: ['fis.edema'],
     make(rng, level) {
-      const [t, r] = pick(rng, level <= 2 ? ED.slice(0, 5) : ED);
-      const opts = ['Citotóxico', 'Vasogénico', 'Intersticial'];
-      if (level >= 4) { const why = r === 'Citotóxico' ? 'Fallan las bombas: la célula se hincha con BHE intacta' : r === 'Vasogénico' ? 'Se rompe la BHE: sale líquido al espacio extracelular' : 'El LCR a presión pasa al tejido periventricular';
-        return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${t}: ¿qué mecanismo explica el edema?`, why, ['Fallan las bombas: la célula se hincha con BHE intacta', 'Se rompe la BHE: sale líquido al espacio extracelular', 'El LCR a presión pasa al tejido periventricular'].filter(x => x !== why).map(text => ({ text, note: 'Piensa si el agua está dentro de la célula o fuera.', misconception: 'edema-type' })),
-          { concept: 'fis.edema', slide: 4, hint: '¿Dentro o fuera de la célula? ¿Se rompió la barrera?', explain: `${r}: ${why.toLowerCase()}.` }); }
-      return choice(rng, `${t}: ¿qué tipo de edema predomina?`, r, opts.filter(o => o !== r).map(text => ({ text, note: 'Citotóxico: bombas; vasogénico: BHE rota; intersticial: LCR.', misconception: 'edema-type' })),
-        { concept: 'fis.edema', slide: 4, hint: '¿Fallan las bombas o se rompe la barrera?', explain: `${r}.` });
+      const e = pick(rng, level <= 2 ? ED.filter(x => x.t !== 'Intersticial') : ED);
+      if (level <= 2) return choice(rng, `${e.c}: ¿qué edema predomina y por qué?`, `${e.t}: ${lc(ED_WHY[e.t])}`, Object.entries(ED_WHY).filter(([t]) => t !== e.t).map(([t, w]) => ({ text: `${t}: ${lc(w)}`, note: `No calza con: ${e.c.toLowerCase()}.`, misconception: 'edema-type' })).concat([{ text: `${e.t}: ${lc(ED_WHY[e.t === 'Citotóxico' ? 'Vasogénico' : 'Citotóxico'])}`, note: 'El tipo está bien, pero el mecanismo es el del otro.', misconception: 'edema-type' }]),
+        { concept: 'fis.edema', slide: 4, hint: '¿Fallan las bombas o se rompe la barrera?', explain: `${e.t}: ${lc(ED_WHY[e.t])}.` });
+      if (level === 3) { const pair = take(rng, ED.filter(x => x.t !== e.t), 3);
+        return choice(rng, `¿En cuál de estas situaciones predomina un edema ${e.t.toLowerCase()}?`, e.c, pair.map(x => ({ text: x.c, note: `Ahí es ${x.t.toLowerCase()}.`, misconception: 'edema-type' })),
+          { concept: 'fis.edema', slide: 4, hint: ED_WHY[e.t] + '.', explain: `${e.c}: ${e.t.toLowerCase()}.` }); }
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}${AGE(rng)} con ${e.c.charAt(0).toLowerCase()}${e.c.slice(1)} y signos de PIC alta. ¿Qué manejo del edema corresponde?`, e.tx,
+        take(rng, [...new Set(ED.filter(x => x.tx !== e.tx).map(x => x.tx))], 3).map(text => ({ text, note: 'Ese manejo corresponde a otra causa de edema.', misconception: 'edema-type' })),
+        { concept: 'fis.edema', slide: 4, hint: 'Primero el tipo de edema; los corticoides solo sirven en el vasogénico de tumores.', explain: `${e.t}: ${lc(e.tx)}.` });
     }
   };
 
@@ -79,35 +114,52 @@
     }
   };
 
-  /* ════════ Signos de hipertensión intracraneal ════════ */
+  /* ════════ Signos vitales e hipertensión intracraneal ════════
+     Patrones con números que cambian: Cushing (HTA + bradicardia + respiración irregular), shock (hipotensión + taquicardia),
+     crisis hipertensiva sin HIC (HTA + taquicardia, consciente) e HIC temprana (cefalea, vómitos, papiledema, vitales normales). */
+  const PATTERNS = {
+    cushing: { label: 'Hipertensión intracraneal grave (tríada de Cushing): riesgo de herniación', vit: rng => [between(rng, 185, 225, 5), between(rng, 100, 125, 5), between(rng, 38, 52, 1)], extra: ['respiración irregular con pausas', 'pupila derecha dilatada', 'Glasgow 7'], mis: 'cushing' },
+    shock: { label: 'Shock (hipoperfusión sistémica), no hipertensión intracraneal', vit: rng => [between(rng, 70, 88, 2), between(rng, 40, 55, 1), between(rng, 118, 145, 1)], extra: ['piel fría y sudorosa', 'llene capilar lento', 'orina escasa'], mis: 'cushing' },
+    crisis: { label: 'Crisis hipertensiva sin signos de hipertensión intracraneal', vit: rng => [between(rng, 190, 220, 5), between(rng, 105, 120, 5), between(rng, 92, 110, 1)], extra: ['consciente y orientado', 'dolor de cabeza leve', 'fondo de ojo sin papiledema'], mis: 'cushing' },
+    temprana: { label: 'Hipertensión intracraneal temprana: vigilar y bajar la PIC', vit: rng => [between(rng, 125, 145, 5), between(rng, 75, 90, 5), between(rng, 68, 88, 1)], extra: ['cefalea que empeora en la mañana', 'vómitos sin náuseas previas', 'papiledema en el fondo de ojo'], mis: 'cushing' }
+  };
   const signos = {
-    id: 'signos', title: 'Signos de ↑ PIC', mission: 'm2', concepts: ['fis.pic'],
+    id: 'signos', title: 'Signos vitales y PIC', mission: 'm2', concepts: ['fis.pic'],
     make(rng, level) {
-      const early = ['cefalea matinal', 'vómitos', 'papiledema'], late = ['hipertensión arterial', 'bradicardia', 'respiración irregular'];
-      if (level <= 2) { const s = pick(rng, [...early, ...late]), isLate = late.includes(s);
-        return choice(rng, `¿"${s}" es un signo temprano o tardío de hipertensión intracraneal?`, isLate ? 'Tardío (tríada de Cushing)' : 'Temprano', [{ text: isLate ? 'Temprano' : 'Tardío (tríada de Cushing)', note: 'La tríada de Cushing anuncia herniación.', misconception: 'cushing' }], { concept: 'fis.pic', slide: 7, hint: 'Cushing = HTA, bradicardia, respiración irregular.', explain: isLate ? 'Tardío.' : 'Temprano.' }); }
-      const fc = between(rng, 38, 52, 1), pa = `${between(rng, 180, 220, 5)}/${between(rng, 95, 120, 5)}`;
-      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}Paciente con un hematoma cerebral: PA ${pa} mmHg, FC ${fc} lpm y respiración irregular. ¿Interpretación y conducta?`, 'Tríada de Cushing: herniación inminente; bajar la PIC (no bajar bruscamente la PA)',
-        [{ text: 'Crisis hipertensiva: bajar la PA rápido a 120/80', note: 'Bajar la PAM reduce la PPC y empeora la isquemia.', misconception: 'cushing' }, { text: 'Bloqueo AV por fármacos: dar atropina y observar', note: 'La causa es intracraneal.', misconception: 'cushing' }, { text: 'Respuesta normal al dolor', note: 'El dolor da taquicardia, no bradicardia.' }],
-        { concept: 'fis.pic', slide: 7, hint: 'Tres signos juntos en un paciente con lesión cerebral.', explain: 'Tríada de Cushing.' });
+      const k = pick(rng, Object.keys(PATTERNS)), P = PATTERNS[k], [pas, pad, fc] = P.vit(rng);
+      const ctx = pick(rng, ['tras un TEC', 'con un tumor cerebral conocido', 'con un hematoma intracerebral', 'tras una caída en bicicleta']);
+      const extra = take(rng, P.extra, level <= 2 ? 2 : 1);
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}Paciente ${ctx}: PA ${pas}/${pad} mmHg, FC ${fc} lpm, ${extra.join(', ')}. ¿Cómo lo interpretas?`, P.label,
+        Object.entries(PATTERNS).filter(([kk]) => kk !== k).map(([, o]) => ({ text: o.label, note: 'Mira juntos la presión, la frecuencia y la conciencia.', misconception: P.mis })),
+        { concept: 'fis.pic', slide: 7, hint: 'Cushing = presión alta con frecuencia BAJA. Shock = presión baja con frecuencia alta.', explain: `${P.label}.` });
     }
   };
 
   /* ════════ Bases ════════ */
+  const EN_BANK = { topic: 'Energía y bombas iónicas', T: ['La Na⁺/K⁺-ATPasa saca 3 Na⁺ y mete 2 K⁺ por cada ATP.', 'Sin ATP, el Na⁺ entra a la célula y el agua lo sigue.', 'El cerebro casi no tiene reservas de glucógeno ni de O₂.', 'Sin O₂, la glucólisis anaeróbica acumula lactato.', 'La despolarización sostenida libera glutamato.', 'El edema citotóxico se explica por la falla de las bombas.'],
+    F: [['Sin ATP la bomba Na⁺/K⁺ trabaja más rápido.', 'necesita ATP: sin él se detiene.', 'excito-gaba'], ['Sin ATP la célula se encoge porque sale agua.', 'entra Na⁺ y el agua lo sigue: se hincha.', 'edema-type'], ['El cerebro guarda glucógeno para varias horas.', 'casi no tiene reservas: depende del flujo minuto a minuto.', 'core-penumbra'], ['La bomba saca 2 Na⁺ y mete 3 K⁺.', 'es al revés: 3 Na⁺ afuera, 2 K⁺ adentro.', 'excito-gaba'], ['La falta de O₂ disminuye el lactato.', 'lo aumenta (glucólisis anaeróbica).', 'excito-gaba']] };
   const energia = {
     id: 'energia', title: 'ATP y bombas', mission: null, concepts: ['base.energia'],
     make(rng, level) {
-      const C = [['Se detiene la Na⁺/K⁺-ATPasa', 'Falta ATP'], ['Entra Na⁺ a la neurona', 'Se detiene la Na⁺/K⁺-ATPasa'], ['La célula se hincha', 'Entra Na⁺ y lo sigue el agua'], ['Se acumula lactato', 'Glucólisis anaeróbica sin O₂']];
+      if (level >= 2) return statements(rng, level, EN_BANK, { concept: 'base.energia', slide: 1, hint: 'Sin ATP: sin bomba → entra Na⁺ y agua.' });
+      const C = [['Se detiene la Na⁺/K⁺-ATPasa', 'Falta ATP'], ['Entra Na⁺ a la neurona', 'Se detiene la Na⁺/K⁺-ATPasa'], ['La célula se hincha', 'Entra Na⁺ y lo sigue el agua'], ['Se acumula lactato', 'Glucólisis anaeróbica sin O₂'], ['Se libera glutamato', 'La neurona se despolariza']];
       const [eff, cause] = pick(rng, C);
-      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}¿Cuál es la causa inmediata de: "${eff}"?`, cause, C.filter(c => c[1] !== cause).map(c => ({ text: c[1], note: 'Esa es la causa de otro eslabón.' })), { concept: 'base.energia', slide: 1, hint: 'Busca el eslabón anterior.', explain: cause + '.' });
+      return choice(rng, `¿Cuál es la causa inmediata de: "${eff}"?`, cause, take(rng, C.filter(c => c[1] !== cause), 3).map(c => ({ text: c[1], note: 'Esa es la causa de otro eslabón.' })), { concept: 'base.energia', slide: 1, hint: 'Busca el eslabón anterior.', explain: cause + '.' });
     }
   };
   const pamBase = {
     id: 'pam', title: 'Presión arterial media', mission: null, concepts: ['base.presion'],
     make(rng, level) {
-      const pas = between(rng, 90, 180, 5), pad = Math.min(pas - 20, between(rng, 50, 100, 5)), pam = pad + (pas - pad) / 3;
-      return number(`${level === 5 ? 'Estilo PEP: ' : ''}PA ${pas}/${pad} mmHg. ¿PAM?`, pam, 'mmHg', { concept: 'base.presion', slide: 6, label: 'PAM', tol: 0.01, hint: 'PAD + (PAS − PAD)/3.',
-        traps: [{ value: (pas + pad) / 2, note: 'Ese es el promedio simple.' }], solution: [`${pad} + ${pas - pad}/3 = ${dec(pam)} mmHg`], explain: `${dec(pam)} mmHg.` });
+      const pas = between(rng, 80, 180, 5), pad = Math.min(pas - 20, between(rng, 45, 100, 5)), pam = pad + (pas - pad) / 3;
+      if (level <= 2) return number(`PA ${pas}/${pad} mmHg. ¿PAM?`, pam, 'mmHg', { concept: 'base.presion', slide: 6, label: 'PAM', tol: 0.01, hint: 'PAD + (PAS − PAD)/3.',
+        traps: [{ value: (pas + pad) / 2, note: 'Ese es el promedio simple.' }, { value: pas - pad, note: 'Esa es la presión de pulso.' }], solution: [`${pad} + ${pas - pad}/3 = ${dec(pam)} mmHg`], explain: `${dec(pam)} mmHg.` });
+      if (level === 3) { const target = between(rng, 70, 100, 1), d2 = between(rng, 50, 80, 2), s2 = 3 * target - 2 * d2;
+        return number(`Un paciente tiene PAM ${target} mmHg y PAD ${d2} mmHg. ¿Cuál es su presión sistólica?`, s2, 'mmHg', { concept: 'base.presion', slide: 6, label: 'PAS', tol: 0.01, hint: 'Despeja de PAM = PAD + (PAS − PAD)/3.',
+          traps: [{ value: 2 * target - d2, note: 'Usaste el promedio simple.' }], solution: [`PAS = 3·PAM − 2·PAD = ${3 * target} − ${2 * d2} = ${s2} mmHg`], explain: `${s2} mmHg.` }); }
+      const pts = take(rng, [[between(rng, 85, 100, 5), between(rng, 40, 50, 2)], [between(rng, 110, 130, 5), between(rng, 70, 80, 2)], [between(rng, 95, 105, 5), between(rng, 55, 62, 1)], [between(rng, 140, 160, 5), between(rng, 85, 95, 5)]], 3);
+      const withPam = pts.map(([a, b]) => ({ t: `${a}/${b} mmHg`, pam: b + (a - b) / 3 })), low = withPam.reduce((x, y) => x.pam < y.pam ? x : y);
+      return choice(rng, `${level === 5 ? 'Estilo PEP: ' : ''}¿Cuál de estos pacientes tiene la PAM más baja (y por eso más riesgo de mala perfusión de los órganos)?`, low.t, withPam.filter(x => x !== low).map(x => ({ text: x.t, note: `Su PAM es ${dec(x.pam)} mmHg.` })),
+        { concept: 'base.presion', slide: 6, hint: 'Calcula la PAM de cada uno; la diastólica pesa el doble.', explain: `${low.t}: PAM ${dec(low.pam)} mmHg.` });
     }
   };
 

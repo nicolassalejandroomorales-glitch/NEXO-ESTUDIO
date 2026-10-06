@@ -277,6 +277,12 @@ for (const [id, file] of Object.entries(catalog)) {
       const again = g.make((() => { let a = [...`t${k}`].reduce((h, ch) => Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0, 2166136261); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; })(), lv, g.concepts.length > 1 ? want : undefined);
       assert.equal(again.prompt, it.prompt, `${tag}: la misma semilla debe dar la misma pregunta`);
     }
+    // Nunca se repite contenido: 25 ejercicios seguidos del mismo concepto y nivel, todos distintos (aunque cambie la semilla o solo la edad del paciente).
+    { const sig = it => `${String(it.prompt).replace(/(Mujer|Hombre|Paciente|Niña|Niño) de \d+ años/g, 'P')}|${it.options ? it.options.map(o => o.text).sort().join('/') : it.cards ? it.cards.map(c => c.text).sort().join('/') : it.answer}`;
+      const c0 = G.generators[0].concepts[0], st0 = { answers: {} }, seenSig = new Set();
+      for (let k = 0; k < 25; k++) { const gid = NX.genFor(cls, st0, c0, `dedupe:${k}`, 3); if (!gid) break; const it = NX.genItem(cls, gid);
+        assert.ok(!seenSig.has(sig(it)), `${id}/${c0}: el motor repitió un ejercicio ya respondido (${gid})`); seenSig.add(sig(it)); st0.answers[gid] = { correct: true, at: `2026-10-06T10:00:${String(k).padStart(2, '0')}Z` }; }
+      assert.ok(seenSig.size >= 20, `${id}/${c0}: se agotaron los ejercicios nuevos demasiado pronto (${seenSig.size})`); }
     // Todo concepto de la clase tiene ejercicios infinitos.
     for (const c of cls.concepts) assert.ok(G.generators.some(g => g.concepts.includes(c.id)), `${c.id}: sin generador`);
     // Basicidad: el orden siempre coincide con la tabla de pKa (lo que se muestra entre paréntesis en el nivel 2).
