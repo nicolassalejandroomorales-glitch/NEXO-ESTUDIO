@@ -19,7 +19,7 @@
   function cleanup() { current?.tower?.destroy(); current?.off?.(); current = null; document.body.classList.remove('in-willow'); }
 
   function data(ctx) {
-    const cls = ctx.cls, NX = window.NexoClassroom, E = window.NexoEvidence;
+    const cls = ctx.cls, NX = window.NexoClassroom, E = window.NexoClassEvidence;
     if (!cls || !NX) return null;
     const state = ctx.getState(), s = state.classSessions?.[cls.id] || { answers: {} };
     s.answers ||= {};
@@ -51,8 +51,11 @@
     </section>`;
     const canvas = app.querySelector('.wv-canvas'), card = app.querySelector('[data-wv-card]'), hint = app.querySelector('[data-wv-hint]');
     // Ancho del dibujo según la pantalla: más ancha que 4:3 → el paisaje sigue a los lados (sin recortar la torre).
-    const fit = () => { const vw = innerWidth, vh = innerHeight, ar = vw / vh, W = ar > 4 / 3 ? Math.min(440, Math.round(192 * ar)) : 256;
-      canvas.style.width = `${ar > 4 / 3 ? Math.max(vw, vh * W / 192) : Math.min(vh * 4 / 3, vw * 2.32)}px`; return W; };
+    // Celular vertical: un lienzo angosto con la torre entera arriba y la tarjeta abajo.
+    const fit = () => { const vw = innerWidth, vh = innerHeight, ar = vw / vh, tall = ar < 0.8;
+      const W = ar > 4 / 3 ? Math.min(440, Math.round(192 * ar)) : tall ? 148 : 256;
+      app.querySelector('.wv')?.classList.toggle('is-tall', tall);
+      canvas.style.width = `${ar > 4 / 3 ? Math.max(vw, vh * W / 192) : tall ? vw : Math.min(vh * 4 / 3, vw * 2.32)}px`; return W; };
     const width = fit();
     const tower = window.NexoWillowTower.mount(canvas, { ...look, width, stage: d ? (d.s.willowSeen ?? d.w.stage) : 0, states: d ? d.w.states : [], roots: d ? d.w.roots : 0 });
     if (d) { tower.update({ stage: d.w.stage }); d.s.willowSeen = d.w.stage; }

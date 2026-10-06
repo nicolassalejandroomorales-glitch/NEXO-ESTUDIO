@@ -11,8 +11,8 @@
 function mount(cv, opts = {}) {
 /* Versión 2: fondo con magia (aurora, islas flotantes, círculo rúnico), sauce grueso y con contorno,
    luz real: haces de sol que el sauce bloquea (sombras), caras iluminadas según de dónde viene la luz y resplandor (bloom). */
-// El dibujo se diseña en 256 × 192; si la pantalla es más ancha, el cielo y el paisaje siguen hacia los lados (OX = margen a cada lado).
-const W = Math.max(256, Math.round((opts.width || 256) / 2) * 2), H = 192, OX = (W - 256) / 2;
+// El dibujo se diseña en 256 × 192; si la pantalla es más ancha, el cielo y el paisaje siguen hacia los lados (OX = margen a cada lado; negativo = se recorta).
+const W = Math.max(140, Math.round((opts.width || 256) / 4) * 4), H = 192, OX = (W - 256) / 2; // en celular vertical, más angosto: solo la torre
 cv.width = W; cv.height = H;
 const ctx = cv.getContext('2d');
 const img = ctx.createImageData(W, H), px = img.data, N = W * H;

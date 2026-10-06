@@ -923,7 +923,7 @@
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
       return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=22'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=22')),
-        window.NexoLoader.script('./classes/willow-tower.js?v=3').catch(() => null), // Torre del Sauce (etapa 10); sin ella, quedan las hojas en lista
+        window.NexoLoader.script('./classes/willow-tower.js?v=4').catch(() => null), // Torre del Sauce (etapa 10); sin ella, quedan las hojas en lista
         window.NexoLoader.script(`./classes/${file}?v=16`),
         // Motor de evidencia y repaso espaciado (FSRS); si no cargan, la clase funciona igual sin agendar repasos.
         window.NexoLoader.script('./classes/evidence.js?v=4'), window.NexoLoader.script('./classes/molecule.js?v=2'), window.NexoLoader.script('./classes/editor.js?v=5'), window.NexoLoader.script('./academic/reviews.js?v=14').catch(() => null)])
@@ -966,8 +966,8 @@
     if (!window.NexoWillowView) app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Subiendo a la torre…</p></div></section>';
     Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
       const id = lessonIds.find(l => window.NexoClassCatalog?.[l]);
-      return Promise.all([window.NexoLoader.style('./classes/willow.css?v=2'), window.NexoLoader.script('./classes/willow-tower.js?v=3'), id ? loadClassroom(id) : null])
-        .then(() => window.NexoLoader.script('./classes/willow-view.js?v=2')).then(() => id);
+      return Promise.all([window.NexoLoader.style('./classes/willow.css?v=3'), window.NexoLoader.script('./classes/willow-tower.js?v=4'), id ? loadClassroom(id) : null])
+        .then(() => window.NexoLoader.script('./classes/willow-view.js?v=4')).then(() => id);
     }).then(id => {
       const route = parseRoute(); if (route[0] !== 'torre' || (route[1] || 'organica') !== subjectId) return;
       window.NexoWillowView.render(app, { subject: { id: subject.id, name: subject.name, color: subject.color }, cls: id ? window.NexoClasses?.[id] : null,

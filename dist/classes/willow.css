@@ -39,6 +39,10 @@ body.in-willow .companion-presence { display: none !important; }
 .wv-leaf i { width: 11px; height: 11px; border-radius: 50% 0; background: #9aa18b; transform: rotate(45deg); }
 .wv-leaf.is-brote i, .wv-leaf.is-clara i { background: #b9df85; } .wv-leaf.is-verde i, .wv-leaf.is-intensa i { background: #3f9a52; }
 .wv-leaf.is-flor i { background: var(--acc); border-radius: 50%; box-shadow: 0 0 8px var(--acc); } .wv-leaf.is-amarilla i { background: #e6bd3c; } .wv-leaf.is-seca i { background: #8a6a45; }
+/* Celular vertical: la torre arriba, entera; abajo, el suelo y la tarjeta. */
+.wv.is-tall .wv-stage { background: linear-gradient(#0b0a18 0 40%, #241914 100%); }
+.wv.is-tall .wv-canvas { top: calc(58px + env(safe-area-inset-top, 0px)); bottom: auto; }
+.wv.is-tall .wv-card { max-height: min(42%, calc(100% - 58px - 100vw * 192 / 148 + 40px)); min-height: 0; }
 @media (max-width: 700px) {
   .wv-top { padding-inline: 12px; gap: 8px; }
   .wv-card { left: 12px; right: 12px; width: auto; top: auto; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-height: 52%; }
