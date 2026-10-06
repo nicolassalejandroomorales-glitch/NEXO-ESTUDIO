@@ -920,7 +920,7 @@
   const classroomLoads = new Map();
   function loadClassroom(id) {
     if (classroomLoads.has(id)) return classroomLoads.get(id);
-    const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=4')).then(() => {
+    const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=5')).then(() => {
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
       return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=23'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=24')),
@@ -967,7 +967,7 @@
     if (!window.NexoWillowView) app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Subiendo a la torre…</p></div></section>';
     // La torre junta las clases de la PEP 1 del ramo que ya existen (Orgánica: Aminas, Aromaticidad y SEA).
     const pepIds = (subject.peps?.[0]?.lessons || lessonIds);
-    Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=4')).then(() => {
+    Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=5')).then(() => {
       const ids = pepIds.filter(l => window.NexoClassCatalog?.[l]);
       return Promise.all([window.NexoLoader.style('./classes/willow.css?v=4'), window.NexoLoader.script('./classes/willow-tower.js?v=4'), ...ids.map(loadClassroom)])
         .then(() => window.NexoLoader.script('./classes/willow-view.js?v=5')).then(() => ids);

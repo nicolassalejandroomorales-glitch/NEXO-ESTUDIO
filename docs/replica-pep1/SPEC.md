@@ -19,7 +19,7 @@ pero solo para la PEP 1. Primero se mide si Nexo sirve (experimento, `docs/repli
    escalón 5 (producir solo). Lo necesitan Fisicoquímica y Analítica. En la plantilla y en las pruebas.
 2. **Calendario** (hecho): PEP 1 de Fisiopatología el 12 de noviembre (el programa dice "2024-II" en el título del calendario:
    confirmar) y la PEP 1 de FQ II confirmada el miércoles 21 de octubre.
-3. **Catálogo de temas de Fisiopatología mal armado** (por decidir): la app dice "PEP 1 · SNC y endocrino", pero la PEP 1 real es
+3. **Catálogo de temas de Fisiopatología mal armado** (hecho): la app dice "PEP 1 · SNC y endocrino", pero la PEP 1 real es
    nervioso, respiratorio y digestivo (endocrino va a la PEP 2). Hay que rehacer los temas fis-01…fis-09 según el programa.
 4. **Fisiopatología no es química**: sin editor de moléculas, flechas ni laboratorio de reacciones. Se usa el caso clínico
    (causa → mecanismo → signo) con las actividades que ya existen (ordenar cadenas, clasificar, el aprendiz que se equivocó, escrita).
@@ -38,6 +38,6 @@ pero solo para la PEP 1. Primero se mide si Nexo sirve (experimento, `docs/repli
 ## Avance (6 oct 2026)
 
 - [x] Fisicoquímica `fq-01` · [x] Orgánica `org-04`, `org-05` · [x] Analítica `ana-01`, `ana-02`, `ana-03` (ver `docs/clase-ana-pep1/SPEC.md`)
-- [ ] Fisiopatología (catálogo y clases)
+- [x] Fisiopatología: catálogo rehecho y clases `fis-01`, `fis-02`, `fis-06`, `fis-09` (ver `docs/clase-fis-pep1/SPEC.md`)
 
 Cada clase: SPEC corto, contenido con fuente por diapositiva, generadores, pruebas, ANTES/AHORA y revisión humana de la química.
