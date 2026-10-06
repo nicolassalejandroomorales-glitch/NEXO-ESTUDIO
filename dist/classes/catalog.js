@@ -3,5 +3,6 @@
 window.NexoClassCatalog = Object.freeze({
   'org-01': 'org-01.js',
   'fq-01': 'fq-01.js',
-  'org-04': 'org-04.js'
+  'org-04': 'org-04.js',
+  'org-05': 'org-05.js'
 });

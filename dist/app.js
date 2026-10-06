@@ -965,13 +965,16 @@
     const subject = SUBJECTS.find(x => x.id === subjectId) || SUBJECTS[0];
     const lessonIds = (subject.peps || []).flatMap(p => p.lessons || []);
     if (!window.NexoWillowView) app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Subiendo a la torre…</p></div></section>';
+    // La torre junta las clases de la PEP 1 del ramo que ya existen (Orgánica: Aminas, Aromaticidad y SEA).
+    const pepIds = (subject.peps?.[0]?.lessons || lessonIds);
     Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=3')).then(() => {
-      const id = lessonIds.find(l => window.NexoClassCatalog?.[l]);
-      return Promise.all([window.NexoLoader.style('./classes/willow.css?v=3'), window.NexoLoader.script('./classes/willow-tower.js?v=4'), id ? loadClassroom(id) : null])
-        .then(() => window.NexoLoader.script('./classes/willow-view.js?v=4')).then(() => id);
-    }).then(id => {
+      const ids = pepIds.filter(l => window.NexoClassCatalog?.[l]);
+      return Promise.all([window.NexoLoader.style('./classes/willow.css?v=3'), window.NexoLoader.script('./classes/willow-tower.js?v=4'), ...ids.map(loadClassroom)])
+        .then(() => window.NexoLoader.script('./classes/willow-view.js?v=5')).then(() => ids);
+    }).then(ids => {
+      const id = ids[0];
       const route = parseRoute(); if (route[0] !== 'torre' || (route[1] || 'organica') !== subjectId) return;
-      window.NexoWillowView.render(app, { subject: { id: subject.id, name: subject.name, color: subject.color }, cls: id ? window.NexoClasses?.[id] : null,
+      window.NexoWillowView.render(app, { subject: { id: subject.id, name: subject.name, color: subject.color }, cls: id ? window.NexoClasses?.[id] : null, classes: ids.map(x => window.NexoClasses?.[x]).filter(Boolean),
         getState: () => state, saveState: () => saveState({ backup: false }), subjectName: sid => subjectFor(sid).name,
         go: sid => routeTo('torre', sid), back: () => routeTo('home'), rerender: () => renderTower(subjectId),
         openClass: (cid, intent) => { if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {}; (state.classSessions[cid] ||= {}).intent = intent; saveState({ backup: false }); routeTo('lesson', cid); } });
