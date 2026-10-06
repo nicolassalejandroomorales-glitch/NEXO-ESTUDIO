@@ -2,6 +2,8 @@
    Viene del boceto aprobado (docs/etapa-10-arte/boceto-torre-del-sauce.html). Uso:
      const t = NexoWillowTower.mount(canvas, { color, stone, others: [{ color, stone }], stage, states, roots });
      t.update({ stage, states })   ·   se detiene sola cuando el lienzo sale de la página.
+     t.pick(x, y) → qué hay en ese punto del lienzo (256 × 192): { kind: 'strand', idx } · 'floor' (k) · 'roots' · 'pot' · 'crystal' · 'tower' (id).
+     t.select(sel) / t.hover(sel) → lo ilumina con la magia del ramo (sel = lo que devolvió pick, o null).
    stage: 0 dormida · 1 semilla y raíces · 2–5 pisos · 6 techo roto (puede tener decimales: crece de a poco).
    states: un estado por concepto ('none', 'bud', 'green', 'yellow', 'dry', 'flower'); cada hilo del sauce toma uno. */
 (() => {
@@ -9,7 +11,10 @@
 function mount(cv, opts = {}) {
 /* Versión 2: fondo con magia (aurora, islas flotantes, círculo rúnico), sauce grueso y con contorno,
    luz real: haces de sol que el sauce bloquea (sombras), caras iluminadas según de dónde viene la luz y resplandor (bloom). */
-const W = 256, H = 192, ctx = cv.getContext('2d');
+// El dibujo se diseña en 256 × 192; si la pantalla es más ancha, el cielo y el paisaje siguen hacia los lados (OX = margen a cada lado).
+const W = Math.max(256, Math.round((opts.width || 256) / 2) * 2), H = 192, OX = (W - 256) / 2;
+cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d');
 const img = ctx.createImageData(W, H), px = img.data, N = W * H;
 const AR = new Float32Array(N), AG = new Float32Array(N), AB = new Float32Array(N); // color base
 const LR = new Float32Array(N), LG = new Float32Array(N), LB = new Float32Array(N); // luz de faroles y farolitos
@@ -18,7 +23,7 @@ const KIND = new Uint8Array(N);  // 0 cielo, 1 interior, 2 exterior, 3 emisivo
 const NX = new Float32Array(N);  // hacia dónde mira la superficie (−1 izquierda, +1 derecha): sirve para iluminar un solo lado
 const OCC = new Uint8Array(N);   // 1 hoja (deja pasar algo de luz), 2 tronco (bloquea)
 const SH = new Float32Array(N);  // sombra en el suelo exterior
-const BW = 128, BH = 96, BLA = new Float32Array(BW * BH * 3), BLB = new Float32Array(BW * BH * 3); // resplandor
+const BW = W / 2, BH = 96, BLA = new Float32Array(BW * BH * 3), BLB = new Float32Array(BW * BH * 3); // resplandor
 const reducedNow = () => matchMedia('(prefers-reduced-motion: reduce)').matches || document.body.classList.contains('reduce-motion') || document.body.dataset.nexoAmbientMotion === 'reduced';
 let reduced = reducedNow();
 
@@ -37,11 +42,12 @@ const hash = (a, b = 0) => { let h = Math.imul((a | 0) * 374761393 + (b | 0) * 6
 const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => v / 16 - 0.5);
 const shade = (c, k) => [c[0] * k, c[1] * k, c[2] * k];
 const mix = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-function put(x, y, c, kind, nx = 0) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; AR[i] = c[0]; AG[i] = c[1]; AB[i] = c[2]; KIND[i] = kind; NX[i] = nx; }
-function blend(x, y, c, a) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; AR[i] = lerp(AR[i], c[0], a); AG[i] = lerp(AG[i], c[1], a); AB[i] = lerp(AB[i], c[2], a); }
+function put(x, y, c, kind, nx = 0) { x = Math.round(x) + OX; y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; AR[i] = c[0]; AG[i] = c[1]; AB[i] = c[2]; KIND[i] = kind; NX[i] = nx; }
+function blend(x, y, c, a) { x = Math.round(x) + OX; y = Math.round(y); if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; AR[i] = lerp(AR[i], c[0], a); AG[i] = lerp(AG[i], c[1], a); AB[i] = lerp(AB[i], c[2], a); }
 function rect(x0, y0, x1, y1, c, kind, nx = 0) { for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) put(x, y, c, kind, nx); }
 function disc(cx, cy, r, c, kind) { for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++) if (x * x + y * y <= r * r) put(cx + x, cy + y, c, kind); }
 function addLight(cx, cy, r, col, I) {
+  cx += OX;
   const x0 = Math.max(0, cx - r | 0), x1 = Math.min(W - 1, cx + r | 0), y0 = Math.max(0, cy - r | 0), y1 = Math.min(H - 1, cy + r | 0), r2 = r * r;
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
     const d2 = (x - cx) ** 2 + (y - cy) ** 2; if (d2 > r2) continue; const i = y * W + x;
@@ -76,15 +82,15 @@ function sunInfo(h) {
   const sp = (h - 6) / 12, alt = Math.sin(clamp(sp, 0, 1) * Math.PI);
   const day = clamp(alt * 2.2), warm = clamp(Math.exp(-((h - 7) ** 2) / 1.4) + Math.exp(-((h - 18) ** 2) / 1.4));
   return { sp, alt, day, warm, night: clamp(1 - day * 1.6), fromLeft: sp < 0.5,
-    sx: lerp(-10, W + 10, sp), sy: 118 - alt * 100, col: mix([1, 0.97, 0.88], [1, 0.6, 0.34], warm) };
+    sx: lerp(-10 - OX, W - OX + 10, sp), sy: 118 - alt * 100, col: mix([1, 0.97, 0.88], [1, 0.6, 0.34], warm) };
 }
 
 /* ── fondo con magia ── */
 function drawSky(sky, sun, time) {
   const acc = hex(subject.color), night = sun.night;
-  for (let y = 0; y < H; y++) { const c = mix(sky.top, sky.bot, clamp(y / 150)); for (let x = 0; x < W; x++) put(x, y, c, 0); }
+  for (let y = 0; y < H; y++) { const c = mix(sky.top, sky.bot, clamp(y / 150)); for (let x = -OX; x < W - OX; x++) put(x, y, c, 0); }
   // Nebulosa y aurora (de noche, con el color del ramo)
-  if (night > 0.02) for (let x = 0; x < W; x++) {
+  if (night > 0.02) for (let x = -OX; x < W - OX; x++) {
     const cy = 36 + Math.sin(x * 0.028 + time * 0.15) * 10 + Math.sin(x * 0.07 - time * 0.1) * 4;
     const wave = 0.55 + 0.45 * Math.sin(x * 0.09 + time * 0.6);
     for (let y = 4; y < 80; y++) {
@@ -96,24 +102,24 @@ function drawSky(sky, sun, time) {
   }
   // Estrellas: las grandes con cruz que titila
   for (let k = 0; k < 110; k++) {
-    const x = hash(k, 1) * W, y = hash(k, 2) * 120, big = hash(k, 3) > 0.9, tw = 0.55 + 0.45 * Math.sin(time * (1.5 + hash(k, 4) * 2) + k);
+    const x = hash(k, 1) * W - OX, y = hash(k, 2) * 120, big = hash(k, 3) > 0.9, tw = 0.55 + 0.45 * Math.sin(time * (1.5 + hash(k, 4) * 2) + k);
     if (night < 0.25) continue; const c = mix(sky.top, [1, 0.97, 0.9], (night - 0.25) / 0.75 * tw);
     put(x, y, c, 0); if (big && tw > 0.7) { put(x + 1, y, shade(c, 0.6), 0); put(x - 1, y, shade(c, 0.6), 0); put(x, y + 1, shade(c, 0.6), 0); put(x, y - 1, shade(c, 0.6), 0); }
   }
   // Rayos del sol en el cielo
   if (sun.day > 0.05 && sun.sp > -0.05 && sun.sp < 1.05) {
-    for (let y = 0; y < 150; y++) for (let x = 0; x < W; x++) {
+    for (let y = 0; y < 150; y++) for (let x = -OX; x < W - OX; x++) {
       const dx = x - sun.sx, dy = y - sun.sy, d = Math.hypot(dx, dy), an = Math.atan2(dy, dx);
       const ray = Math.max(0, Math.sin(an * 9 + time * 0.1)) ** 6, a = (Math.exp(-d / 40) * 0.5 + ray * Math.exp(-d / 90) * 0.18) * sun.day;
       if (a > 0.01) blend(x, y, sun.col, a);
     }
     disc(sun.sx, sun.sy, 7, mix(sun.col, [1, 1, 0.95], 0.5), 3); disc(sun.sx, sun.sy, 5, [1, 1, 0.94], 3);
   }
-  const mp = ((hour + 12) % 24 - 6) / 12, mx = lerp(-10, W + 10, mp), my = 118 - Math.sin(clamp(mp, 0, 1) * Math.PI) * 95;
+  const mp = ((hour + 12) % 24 - 6) / 12, mx = lerp(-10 - OX, W - OX + 10, mp), my = 118 - Math.sin(clamp(mp, 0, 1) * Math.PI) * 95;
   if (mp > -0.05 && mp < 1.05) { for (let y = -14; y <= 14; y++) for (let x = -14; x <= 14; x++) { const d = Math.hypot(x, y); if (d < 14) blend(mx + x, my + y, [0.75, 0.8, 1], (1 - d / 14) ** 2 * 0.35 * night); }
     disc(mx, my, 5, [0.93, 0.94, 1], 3); disc(mx + 2, my - 1, 4, mix(sky.top, sky.bot, clamp(my / 150)), 0); }
   // Nubes con borde iluminado
-  for (let k = 0; k < 4; k++) { const cx = ((hash(k, 7) * W + time * (1.5 + k)) % (W + 60)) - 30, cy = 20 + k * 14;
+  for (let k = 0; k < 4; k++) { const cx = ((hash(k, 7) * W + time * (1.5 + k)) % (W + 60)) - 30 - OX, cy = 20 + k * 14;
     for (let j = 0; j < 26; j++) { const dx = j - 13, hgt = 4 - Math.abs(dx) / 4.5; for (let yy = 0; yy < hgt; yy++)
       put(cx + dx, cy - yy, mix(sky.bot, yy > hgt - 2 ? [1, 0.95, 0.9] : [0.85, 0.85, 0.95], yy > hgt - 2 ? 0.55 : 0.3), 2, dx > 0 ? 0.5 : -0.5); } }
 }
@@ -134,7 +140,7 @@ function island(cx, cy, w, time, seed) {
 function drawLandscape(sun, time) {
   const acc = hex(subject.color), side = sun.fromLeft ? -1 : 1;
   // montañas lejanas con nieve, iluminadas del lado del sol
-  for (let x = 0; x < W; x++) {
+  for (let x = -OX; x < W - OX; x++) {
     const m = 122 + Math.sin(x * 0.035) * 12 + Math.sin(x * 0.11 + 1) * 5, slope = Math.cos(x * 0.035) * 0.42 + Math.cos(x * 0.11 + 1) * 0.55;
     for (let y = m | 0; y < GROUND; y++) { const snow = y < m + 4 && m < 120; put(x, y, snow ? [0.82, 0.86, 0.95] : [0.27, 0.3, 0.46], 2, -slope * 0.8); }
     const m2 = 140 + Math.sin(x * 0.05 + 3) * 8 + Math.sin(x * 0.17) * 3, s2 = Math.cos(x * 0.05 + 3) * 0.4;
@@ -143,10 +149,10 @@ function drawLandscape(sun, time) {
     for (let y = hill | 0; y < GROUND; y++) put(x, y, shade([0.22, 0.38, 0.27], 0.9 + hash(x >> 2, y >> 2) * 0.15), 2, -Math.cos(x * 0.05 + 2) * 0.3);
   }
   // pinos en la loma
-  for (let k = 0; k < 18; k++) { const x = hash(k, 60) * W | 0; if (x > TL - 10 && x < TR + 10) continue; const base = 160 + Math.sin(x * 0.05 + 2) * 6 + 2, hgt = 8 + hash(k, 61) * 7;
+  for (let k = 0; k < 18; k++) { const x = (hash(k, 60) * W | 0) - OX; if (x > TL - 10 && x < TR + 10) continue; const base = 160 + Math.sin(x * 0.05 + 2) * 6 + 2, hgt = 8 + hash(k, 61) * 7;
     for (let y = 0; y < hgt; y++) { const half = Math.floor((y / hgt) * 3.5); for (let dx = -half; dx <= half; dx++) put(x + dx, base - hgt + y, shade([0.12, 0.26, 0.2], 1 - y / hgt * 0.2), 2, dx / 3); } }
   // niebla baja
-  for (let y = 150; y < GROUND; y++) for (let x = 0; x < W; x++) { const a = Math.exp(-(((y - 163) / 7) ** 2)) * (0.18 + 0.1 * Math.sin(x * 0.04 + time * 0.3)); blend(x, y, mix([0.8, 0.85, 1], acc, 0.15), a); }
+  for (let y = 150; y < GROUND; y++) for (let x = -OX; x < W - OX; x++) { const a = Math.exp(-(((y - 163) / 7) ** 2)) * (0.18 + 0.1 * Math.sin(x * 0.04 + time * 0.3)); blend(x, y, mix([0.8, 0.85, 1], acc, 0.15), a); }
   // islas flotantes con cristales
   islandsLights.length = 0;
   islandsLights.push(island(36, 74, 12, time, 1), island(222, 62, 9, time, 2));
@@ -159,8 +165,8 @@ function drawLandscape(sun, time) {
     put(x, y - 21, c, 3); put(x, y - 20, c, 3); put(x - 2, y - 12, mix(c, [1, 0.8, 0.5], 0.5), 3); put(x, y - 41, c, 3);
     otherBeacons.push([x, y - 41, c]); });
   // suelo, pasto y flores
-  for (let x = 0; x < W; x++) for (let y = GROUND; y < H; y++) { const top = y < GROUND + 2; put(x, y, top ? [0.3, 0.52, 0.29] : [0.28, 0.2, 0.16].map(v => v * (0.85 + hash(x, y) * 0.25)), 2); }
-  for (let x = 0; x < W; x++) { const r = hash(x, 99); if (r > 0.55) put(x, GROUND - 1, [0.34, 0.6, 0.3], 2); if (r > 0.85) put(x, GROUND - 2, [0.38, 0.66, 0.32], 2);
+  for (let x = -OX; x < W - OX; x++) for (let y = GROUND; y < H; y++) { const top = y < GROUND + 2; put(x, y, top ? [0.3, 0.52, 0.29] : [0.28, 0.2, 0.16].map(v => v * (0.85 + hash(x, y) * 0.25)), 2); }
+  for (let x = -OX; x < W - OX; x++) { const r = hash(x, 99); if (r > 0.55) put(x, GROUND - 1, [0.34, 0.6, 0.3], 2); if (r > 0.85) put(x, GROUND - 2, [0.38, 0.66, 0.32], 2);
     if (r > 0.97 && (x < TL - 4 || x > TR + 4)) put(x, GROUND - 2, hash(x, 7) > 0.5 ? [0.95, 0.8, 0.9] : [0.9, 0.9, 0.5], 2); }
   // hongos que brillan de noche
   mushrooms.length = 0;
@@ -185,7 +191,7 @@ function drawTower(stage, crack, sun, time) {
     put(x, y, shade(stone, ((y >> 2) % 2 ? 0.95 : 0.85) * n * (edge ? 0.8 : 1)), 2, nx);
   }
   for (let k = 0; k < 4; k++) { const [a, b] = winY(k); for (const x0 of [TL, IR]) for (let y = a; y < b; y++) for (let x = x0 + 1; x < x0 + WALL - 1; x++) {
-    if (y - a < 2 && (x === x0 + 1 || x === x0 + WALL - 2)) continue; const i = y * W + x, sky = skyAt(hour), c = mix(sky.top, sky.bot, clamp(y / 150));
+    if (y - a < 2 && (x === x0 + 1 || x === x0 + WALL - 2)) continue; const i = y * W + x + OX, sky = skyAt(hour), c = mix(sky.top, sky.bot, clamp(y / 150));
     AR[i] = c[0]; AG[i] = c[1]; AB[i] = c[2]; KIND[i] = 0; } }
   // runas talladas en los muros: brillan con la magia del ramo
   for (let k = 0; k < 4; k++) for (const x of [TL + 3, TR - 4]) { const y = FLOORS[k] - 5, glow = 0.5 + 0.5 * Math.sin(time * 1.5 + k + x);
@@ -256,7 +262,8 @@ function strandState(seed) {
   if (!states.length) return 'bud';
   return states[Math.floor(hash(seed, 11) * states.length)] || 'bud';
 }
-const lanterns = [], leafSpots = [];
+const lanterns = [], leafSpots = [], hitStrands = [], extraLights = [];
+let selected = null, hovered = null;
 function leafTone(tone, state, depth) {
   let c = LEAF[tone];
   if (TINT[state]) c = mix(c, shade(TINT[state], tone === 'dark' ? 0.55 : tone === 'mid' ? 0.75 : 1), 0.65);
@@ -270,13 +277,14 @@ function clump(cx, cy, r, seed, kind, depth, state = 'green') {
     const x = Math.round(cx + dx), y = Math.round(cy + dy); if (x < 0 || y < 0 || x >= W || y >= H) continue;
     const v = 0.55 - dy / r * 0.45 - dx / r * 0.08 + (hash(x, y * 3 + seed) - 0.5) * 0.35 + BAYER[(y & 3) * 4 + (x & 3)] * 0.18;
     const tone = d > r - 1.1 && dy > 0 ? 'dark' : v > 0.82 ? 'hi' : v > 0.55 ? 'light' : v > 0.3 ? 'mid' : 'dark';
-    put(x, y, leafTone(tone, state, depth), kind, clamp(dx / r * 1.2, -1, 1)); OCC[y * W + x] = 1;
+    put(x, y, leafTone(tone, state, depth), kind, clamp(dx / r * 1.2, -1, 1)); OCC[y * W + x + OX] = 1;
     if (tone === 'hi' && hash(x * 7, y + seed) > 0.8) leafSpots.push([x, y, seed + x]);
   }
 }
 // Un hilo de sauce: 1 pixel de ancho, con hojitas alternadas a cada lado y la punta más clara.
 function strand(x0, y0, len, seed, state, kind, depth, time, maxY) {
   let last = null;
+  const idx = states.length ? Math.floor(hash(seed, 11) * states.length) : -1, pts = [];
   if (state === 'none') { len *= 0.35; state = 'bud'; depth *= 0.8; }
   for (let j = 0; j < len; j++) {
     const y = y0 + j; if (y >= maxY) break;
@@ -284,11 +292,12 @@ function strand(x0, y0, len, seed, state, kind, depth, time, maxY) {
     const x = x0 + sway, tipT = j / len;
     if (hash(seed, j) > 0.94) continue; // pequeños huecos: se ve liviano
     const tone = tipT > 0.78 ? 'hi' : tipT > 0.45 ? 'light' : 'mid';
-    put(x, y, leafTone(tone, state, depth), kind, 0.3); OCC[Math.round(y) * W + Math.round(x)] = 1;
+    put(x, y, leafTone(tone, state, depth), kind, 0.3); OCC[Math.round(y) * W + Math.round(x) + OX] = 1;
     if (j % 4 === 1) put(x - 1, y, leafTone(tipT > 0.6 ? 'hi' : 'light', state, depth), kind, -0.8);
     if (j % 4 === 3) put(x + 1, y, leafTone(tipT > 0.6 ? 'light' : 'mid', state, depth * 0.9), kind, 0.8);
-    last = [x, y];
+    last = [x, y]; pts.push(last);
   }
+  if (idx >= 0 && pts.length) hitStrands.push({ idx, pts });
   return last;
 }
 // Una rama de madera que sale del tronco, sube un poco y se arquea hacia afuera. Devuelve puntos a lo largo de ella.
@@ -296,7 +305,7 @@ function bough(x0, y0, x1, y1, lift, thick, kind) {
   const pts = [];
   for (let j = 0; j <= 24; j++) { const t = j / 24, x = lerp(x0, x1, t), y = lerp(y0, y1, t) - Math.sin(t * Math.PI) * lift;
     const w = thick * (1 - t * 0.7);
-    for (let k = 0; k < w; k++) { put(x, y + k, shade([0.4, 0.27, 0.17], k === 0 ? 1.1 : 0.72), kind, (x1 - x0) > 0 ? 0.6 : -0.6); OCC[Math.round(y + k) * W + Math.round(x)] = 2; }
+    for (let k = 0; k < w; k++) { put(x, y + k, shade([0.4, 0.27, 0.17], k === 0 ? 1.1 : 0.72), kind, (x1 - x0) > 0 ? 0.6 : -0.6); OCC[Math.round(y + k) * W + Math.round(x) + OX] = 2; }
     put(x, y + Math.ceil(w), [0.14, 0.09, 0.06], kind); pts.push([x, y]); }
   return pts;
 }
@@ -342,7 +351,7 @@ function youngCrown(top, k, gv, time, stage) {
 }
 function treeTop(gv) { return gv <= 5 ? 166 - clamp(gv - 1.5, 0, 3.5) * 29.5 : lerp(62.75, 20, clamp(gv - 5)); }
 function drawTree(gv, time, stage, sun) {
-  lanterns.length = 0; leafSpots.length = 0;
+  lanterns.length = 0; leafSpots.length = 0; hitStrands.length = 0;
   const acc = hex(subject.color);
   for (let y = 168; y < 176; y++) for (let x = 121 + (y - 168) * 0.25; x < 135 - (y - 168) * 0.25; x++) put(x, y, shade([0.62, 0.36, 0.24], x < 126 ? 0.8 : 1.05), 1, (x - 128) / 7);
   rect(119, 166, 137, 168, [0.7, 0.42, 0.28], 1); rect(121, 166, 135, 167, [0.22, 0.15, 0.1], 1);
@@ -366,7 +375,7 @@ function drawTree(gv, time, stage, sun) {
       const tone = nx < -0.45 ? 0.62 : nx > 0.5 ? 1.12 : 0.88;
       let c = shade([0.43, 0.3, 0.2], tone * (ridge ? 0.72 : 1) * (0.92 + hash(ix, iy >> 1) * 0.14));
       if (hash(ix >> 1, iy >> 3) > 0.9 && nx < -0.2) c = mix(c, [0.3, 0.48, 0.28], 0.55);
-      put(ix, iy, c, kind, nx); OCC[iy * W + ix] = 2;
+      put(ix, iy, c, kind, nx); OCC[iy * W + ix + OX] = 2;
     }
     for (const vx of [-0.3, 0.35]) { const pulse = Math.max(0, Math.sin((y + time * 16) * 0.16 + vx * 9)) ** 3;
       if (pulse > 0.2 && ww > 2.2) put(128 + off + vx * ww, y, mix([0.43, 0.3, 0.2], mix(acc, [1, 1, 1], 0.35), pulse), 3); }
@@ -393,7 +402,7 @@ function drawTree(gv, time, stage, sun) {
 /* ── pisos sin abrir: niebla ── */
 function fogLocked(gv, time) {
   for (let k = 0; k < 4; k++) { const open = clamp(gv - (1.6 + k) + 0.6); if (open >= 1) continue;
-    for (let y = floorTop(k); y < FLOORS[k] - 3; y++) for (let x = IL; x < IR; x++) { const i = y * W + x; if (KIND[i] !== 1) continue;
+    for (let y = floorTop(k); y < FLOORS[k] - 3; y++) for (let x = IL; x < IR; x++) { const i = y * W + x + OX; if (KIND[i] !== 1) continue;
       const f = (1 - open) * (0.6 + 0.2 * Math.sin(x * 0.08 + y * 0.05 + time * 0.4)); AR[i] = lerp(AR[i], 0.2, f); AG[i] = lerp(AG[i], 0.2, f); AB[i] = lerp(AB[i], 0.32, f); } }
 }
 
@@ -408,8 +417,8 @@ function computeShafts(sun, gv) {
       const tt = (x - wallX) / dx; if (tt <= 0) continue; const wy = y - dy * tt; if (wy < a + 1 || wy > b) continue;
       // el rayo viaja desde la ventana: si cruza el tronco o las hojas, deja sombra
       let trans = 1;
-      for (let s = 1.5; s < tt; s += 1.5) { const o = OCC[Math.round(y - dy * s) * W + Math.round(x - dx * s)]; if (o === 2) { trans = 0; break; } if (o === 1) trans *= 0.72; if (trans < 0.08) break; }
-      shaft[y * W + x] = clamp(Math.min(wy - a, b - wy) / 3) * (1 - tt / 240) * trans;
+      for (let s = 1.5; s < tt; s += 1.5) { const o = OCC[Math.round(y - dy * s) * W + Math.round(x - dx * s) + OX]; if (o === 2) { trans = 0; break; } if (o === 1) trans *= 0.72; if (trans < 0.08) break; }
+      shaft[y * W + x + OX] = clamp(Math.min(wy - a, b - wy) / 3) * (1 - tt / 240) * trans;
     } }
   return shaft;
 }
@@ -437,9 +446,10 @@ function computeLight(sun, time, gv) {
   // farolitos del sauce
   const lc = mix(acc, [1, 0.95, 0.8], 0.35);
   for (const [x, y, seed] of lanterns) { const pulse = 0.75 + 0.25 * Math.sin(time * 2 + seed);
-    put(x, y - 1, [0.25, 0.18, 0.12], KIND[Math.round(y) * W + Math.round(x)] === 2 ? 2 : 1);
+    put(x, y - 1, [0.25, 0.18, 0.12], KIND[Math.round(y) * W + Math.round(x) + OX] === 2 ? 2 : 1);
     put(x, y, mix(lc, [1, 1, 0.92], 0.5), 3); put(x, y + 1, lc, 3); put(x - 1, y + 1, shade(lc, 0.75), 3); put(x + 1, y + 1, shade(lc, 0.75), 3); put(x, y + 2, shade(lc, 0.7), 3);
     lights.push([x, y + 1, 14, lc, (0.3 + 0.65 * sun.night) * pulse]); }
+  for (const l of extraLights) lights.push(l);
   return { shaft, lights };
 }
 
@@ -447,12 +457,12 @@ function computeLight(sun, time, gv) {
 function particles(sun, light, time, stage) {
   const acc = hex(subject.color);
   for (let k = 0; k < 60; k++) { const x = IL + hash(k, 30) * (IR - IL) + (reduced ? 0 : Math.sin(time * 0.7 + k) * 2), y = ATTIC + ((hash(k, 31) * 120 + time * (1.5 + hash(k, 32) * 2)) % 120);
-    const i = Math.round(y) * W + Math.round(x); if (light.shaft[i] > 0.2) put(x, y, mix(sun.col, [1, 1, 1], 0.5), 3); }
+    const i = Math.round(y) * W + Math.round(x) + OX; if (light.shaft[i] > 0.2) put(x, y, mix(sun.col, [1, 1, 1], 0.5), 3); }
   if (stage >= 2) for (let k = 0; k < 14; k++) { const life = (time * 0.25 + hash(k, 70)) % 1, x = 128 + (hash(k, 71) - 0.5) * 70 + Math.sin(time + k) * 3, y = GROUND - 8 - life * (40 + stage * 20);
     if (y > ATTIC || stage >= 6) { put(x, y, mix(acc, [1, 1, 1], 0.4), 3); light.lights.push([x, y, 5, acc, 0.2 * (1 - life)]); } }
   if (stage >= 3) for (let k = 0; k < 5; k++) { const fall = (time * 8 + hash(k, 40) * 100) % 100, x = 108 + hash(k, 41) * 40 + Math.sin(time * 2 + k) * 4, y = 60 + fall;
     if (y < GROUND - 2) put(x, y, k % 2 ? [0.95, 0.75, 0.3] : [0.6, 0.42, 0.25], 1, 0.5); }
-  if (sun.night > 0.25) for (let k = 0; k < 16; k++) { const x = hash(k, 50) * W + Math.sin(time * 0.7 + k) * 8, y = 145 + hash(k, 51) * 30 + Math.cos(time * 0.9 + k) * 4;
+  if (sun.night > 0.25) for (let k = 0; k < 16; k++) { const x = hash(k, 50) * W - OX + Math.sin(time * 0.7 + k) * 8, y = 145 + hash(k, 51) * 30 + Math.cos(time * 0.9 + k) * 4;
     if ((x < TL - 2 || x > TR + 2) && Math.sin(time * 3 + k * 2) > 0) { put(x, y, [0.85, 1, 0.5], 3); light.lights.push([x, y, 6, [0.8, 1, 0.4], 0.3 * sun.night]); } }
   // runas que orbitan la torre de noche
   if (sun.night > 0.1) for (let k = 0; k < 6; k++) { const an = time * 0.35 + k / 6 * Math.PI * 2, x = 128 + Math.cos(an) * 68, y = 112 + Math.sin(an) * 10 - k * 3;
@@ -473,7 +483,7 @@ function compose(sun, light, low) {
   // sombra de la torre sobre el pasto (larga al amanecer y al atardecer)
   SH.fill(0);
   if (sun.day > 0.05) { const len = 10 + (1 - sun.alt) * 70; for (let y = GROUND - 2; y < H; y++) for (let x = 0; x < W; x++) {
-    const d = side < 0 ? x - TR : TL - x; if (d > 0 && d < len && y < GROUND + 10) SH[y * W + x] = 0.45 * sun.day * (1 - d / len); } }
+    const d = side < 0 ? x - OX - TR : TL - (x - OX); if (d > 0 && d < len && y < GROUND + 10) SH[y * W + x] = 0.45 * sun.day * (1 - d / len); } }
   for (let i = 0; i < N; i++) {
     const k = KIND[i]; let r = AR[i], g2 = AG[i], b = AB[i];
     if (k === 1) {
@@ -536,12 +546,47 @@ function frame(nowMs) {
     for (let k = 0; k < 4; k++) drawProps(k, g >= 1.6 + k - 0.3, time);
     drawTree(g, time, stage, sun);
     fogLocked(g, time);
+    extraLights.length = 0;
+    if (hovered && !same(hovered, selected)) highlight(hovered, 0.45, time);
+    if (selected) highlight(selected, 1, time);
     const light = computeLight(sun, time, g);
     particles(sun, light, time, stage);
     compose(sun, light, low);
     ctx.putImageData(img, 0, 0);
   }
   raf = requestAnimationFrame(frame);
+}
+/* ── tocar cosas: qué hay en un punto y cómo se ilumina lo elegido ── */
+const same = (a, b) => Boolean(a && b) && a.kind === b.kind && a.idx === b.idx && a.k === b.k && a.id === b.id;
+function pick(x, y) {
+  x -= OX;
+  if (Math.hypot(x - beacon[0], y - beacon[1]) < 9) return { kind: 'crystal' };
+  for (let i = 0; i < otherBeacons.length; i++) { const [bx, by] = otherBeacons[i]; if (Math.abs(x - bx) < 8 && y > by - 4 && y < by + 46) return { kind: 'tower', id: others[i]?.id }; }
+  let best = null, bd = 2.6;
+  for (const h of hitStrands) for (const [px, py] of h.pts) { const d = Math.hypot(px - x, py - y); if (d < bd) { bd = d; best = h.idx; } }
+  if (best != null) return { kind: 'strand', idx: best };
+  if (x >= 117 && x <= 139 && y >= 160 && y <= 177) return { kind: 'pot' };
+  if (x >= IL && x <= IR && y >= GROUND && y < H) return { kind: 'roots' };
+  for (let k = 0; k < 4; k++) if (x >= IL && x <= IR && y >= floorTop(k) && y < FLOORS[k]) return { kind: 'floor', k };
+  return null;
+}
+function highlight(sel, a, time) {
+  const acc = hex(subject.color), glow = mix(acc, [1, 1, 0.92], 0.45), pulse = 0.75 + 0.25 * Math.sin(time * 4);
+  if (sel.kind === 'strand') {
+    let n = 0;
+    for (const h of hitStrands) if (h.idx === sel.idx) { for (const [x, y] of h.pts) { if (a >= 1) put(x, y, glow, 3); else blend(x, y, glow, a); }
+      if (n++ % 2 === 0) { const [x, y] = h.pts[h.pts.length >> 1]; extraLights.push([x, y, 14, acc, 0.5 * a * pulse]); } }
+  } else if (sel.kind === 'floor') {
+    const y0 = floorTop(sel.k), y1 = FLOORS[sel.k] - 3;
+    for (let x = IL; x < IR; x++) { if ((x + Math.floor(time * 8)) % 4 < 2) { put(x, y0, glow, a >= 1 ? 3 : 1); put(x, y1, glow, a >= 1 ? 3 : 1); } }
+    for (let y = y0; y < y1; y++) if ((y + Math.floor(time * 8)) % 4 < 2) { put(IL, y, glow, a >= 1 ? 3 : 1); put(IR - 1, y, glow, a >= 1 ? 3 : 1); }
+    extraLights.push([128, (y0 + y1) / 2, 46, acc, 0.45 * a * pulse]);
+  } else if (sel.kind === 'roots') {
+    for (let x = IL; x < IR; x++) if ((x + Math.floor(time * 8)) % 4 < 2) put(x, GROUND + 1, glow, 3);
+    extraLights.push([128, GROUND + 8, 50, acc, 0.8 * a * pulse]);
+  } else if (sel.kind === 'pot') extraLights.push([128, 168, 22, acc, 0.9 * a * pulse]);
+  else if (sel.kind === 'crystal') extraLights.push([beacon[0], beacon[1], 40, acc, 1 * a * pulse]);
+  else if (sel.kind === 'tower') { const i = others.findIndex(o => o.id === sel.id), b = otherBeacons[i]; if (b) extraLights.push([b[0], b[1] + 18, 26, b[2], 0.9 * a * pulse]); }
 }
 function destroy() { alive = false; if (raf) cancelAnimationFrame(raf); raf = 0; io?.disconnect(); }
 function update(o = {}) {
@@ -553,7 +598,7 @@ function update(o = {}) {
   if (o.others) others = o.others;
 }
 raf = requestAnimationFrame(frame);
-return { update, destroy, get stage() { return g; } };
+return { update, destroy, pick, select(sel) { selected = sel || null; }, hover(sel) { hovered = sel || null; }, get stage() { return g; } };
 }
 // Piedra y color de magia de cada ramo (color de dist/data.js).
 const SUBJECTS = {
@@ -561,6 +606,6 @@ const SUBJECTS = {
   fisico: { color: '#8c7cff', stone: [0.52, 0.5, 0.62] }, fisio: { color: '#ff6d8d', stone: [0.62, 0.5, 0.51] }
 };
 // Atajo: la torre de un ramo, con las otras tres a lo lejos.
-function forSubject(id) { const me = SUBJECTS[id] || SUBJECTS.organica; return { ...me, others: Object.entries(SUBJECTS).filter(([k]) => k !== id).map(([, v]) => v) }; }
+function forSubject(id) { const me = SUBJECTS[id] || SUBJECTS.organica; return { ...me, others: Object.entries(SUBJECTS).filter(([k]) => k !== id).map(([k, v]) => ({ id: k, ...v })) }; }
 window.NexoWillowTower = Object.freeze({ mount, forSubject, SUBJECTS });
 })();

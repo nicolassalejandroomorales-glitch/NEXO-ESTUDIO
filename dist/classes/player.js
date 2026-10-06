@@ -769,20 +769,19 @@
     return { stage, states, roots: started ? Math.max(0.3, rootsShown) : 0, green, lit, total: states.length,
       floor: stage >= 6 ? 'el sauce rompió el techo' : stage >= 2 ? `piso ${Math.min(4, Math.floor(stage - 1))} de 4` : stage >= 1 ? 'semilla y raíces' : 'torre dormida' };
   }
+  // Acceso a la torre del ramo (su propio lugar, #/torre/<ramo>): el sauce no se pega chico dentro de un panel.
   function willowMarkup(cls, api, s) {
-    if (!window.NexoWillowTower) return '';
     const w = willowOf(cls, api, s);
-    return `<figure class="cr-willow"><canvas data-willow width="256" height="192" role="img" aria-label="Tu sauce en la torre de ${esc(cls.title)}: ${esc(w.floor)}, ${w.green} de ${w.total} conceptos verdes o con farolito"></canvas>
-      <figcaption><b>Tu sauce · ${esc(w.floor)}</b> ${w.green} de ${w.total} hilos verdes${w.lit ? `, ${w.lit} con farolito` : ''}. Cada hilo es un concepto: amarillo o seco si toca repasar.</figcaption></figure>`;
+    return `<button class="cr-willow-link" data-cr="willow"><span aria-hidden="true">🌳</span><span><b>Ver tu torre</b><small>${esc(w.floor)} · ${w.green} de ${w.total} hilos verdes${w.lit ? ` · ${w.lit} farolitos` : ''}</small></span><span aria-hidden="true">▸</span></button>`;
   }
-  // Se monta después de dibujar la pantalla; el sauce viejo se apaga solo al salir de la página.
-  function mountWillow(cls, api, s) {
-    const canvas = api.app.querySelector('canvas[data-willow]');
-    if (!canvas || !window.NexoWillowTower) return;
-    const w = willowOf(cls, api, s), look = window.NexoWillowTower.forSubject(cls.subject);
-    const t = window.NexoWillowTower.mount(canvas, { ...look, stage: s.willowSeen ?? w.stage, states: w.states, roots: w.roots });
-    t.update({ stage: w.stage }); // si creció desde la última vez, se ve crecer
-    s.willowSeen = w.stage;
+  // Al volver de la torre: abre lo que elegiste allá (una misión, un camino o el Camino al 7).
+  function applyIntent(cls, s, api, id) {
+    const it = s.intent; if (!it) return; s.intent = null; s.panel = null; s.slideOpen = null;
+    if (it.panel === 'goal') { s.panel = 'goal'; return; }
+    if (it.path === 'misiones' && it.mission && missionById(cls, it.mission)) {
+      s.path = 'misiones'; s.mission = it.mission; const far = s.far[s.mission] || 0, n = beats(cls, s).length; s.beat = far > 1 && far < n - 1 ? far : 1; return; }
+    if (it.path && PATHS[it.path]) { s.path = it.path; s.mission = null; s.beat = 1;
+      if (s.path === 'alba') { const key = `${today()}:4`; s.albaKey = key; if (!s.rounds[key]) s.rounds[key] = roundPick(cls, s, EV()?.storeFor(api.getState(), id), 4); } }
   }
   function calibrationLine(cls, api, id) {
     const E = EV();
@@ -1439,6 +1438,7 @@
     const cls = window.NexoClasses?.[id];
     if (window.NexoClassSlides?.[id]) cls.slideImages = window.NexoClassSlides[id]; // imágenes reales del PPT (tools/classroom-art/slides.py)
     const s = sessionFor(api, id);
+    applyIntent(cls, s, api, id);
     if (s.path && !PATHS[s.path]) s.path = null;
     const list = beats(cls, s);
     s.beat = Math.max(0, Math.min(s.beat, list.length - 1));
@@ -1561,7 +1561,6 @@
       if (box) { const it = findItem(cls, box.dataset.crText); if (it) workOf(s, it, box.dataset.retry === '1').text = box.value; }
     });
     root.addEventListener('keydown', event => { if (event.key === 'Escape' && (s.slideOpen || s.panel)) { s.slideOpen = null; s.panel = null; rerender(id, api); } });
-    mountWillow(cls, api, s);
     (root.querySelector('.cr-lightbox [data-cr="panel-close"]') || root.querySelector('.cr-option:not(:disabled)') || root.querySelector('.cr-next, .cr-actions .cr-primary') || root.querySelector('.cr-path'))?.focus({ preventScroll: true });
   }
 
@@ -1659,6 +1658,7 @@
     }
     if (action === 'conf-why') { const k = button.dataset.item; s.confWhy[k] = s.confWhy[k] === button.dataset.why ? null : button.dataset.why; return rerender(id, api); }
     if (action === 'goal') { s.slideOpen = null; s.panel = 'goal'; return rerender(id, api); }
+    if (action === 'willow') { s.panel = null; api.saveState(); location.hash = `#/torre/${encodeURIComponent(cls.subject || 'organica')}`; return; }
     if (action === 'mission') {
       s.panel = null; s.path = 'misiones'; s.mission = button.dataset.mission;
       const far = s.far[s.mission] || 0, n = beats(cls, s).length; // retomar donde quedaste (si no la terminaste)

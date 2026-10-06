@@ -580,6 +580,7 @@
     document.body.classList.remove('in-classroom');
     clearInterval(timerTicker);
     window.NexoWorkbench?.cleanup();
+    window.NexoWillowView?.cleanup();
     window.NexoAcademicTraining?.cleanup();
     window.NexoMascotController?.cleanup();
     window.NexoAvatarRenderer?.cleanup(app);
@@ -636,6 +637,7 @@
       performance: () => renderWorkbench('performance'),
       shop: () => { if (route[1]) ui.shopTab = route[1]; renderShop(); },
       mascot: renderMascot,
+      torre: () => renderTower(route[1] || 'organica'),
       settings: renderSettings
     };
     try { (renderers[route[0]] || renderHome)(); app.dataset.renderedRoute = route.join('/'); }
@@ -920,8 +922,8 @@
     const promise = Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
       const file = window.NexoClassCatalog?.[id];
       if (!file) return false;
-      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=21'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=21')),
-        window.NexoLoader.script('./classes/willow-tower.js?v=1').catch(() => null), // Torre del Sauce (etapa 10); sin ella, quedan las hojas en lista
+      return Promise.all([window.NexoLoader.style('./classes/classroom.css?v=22'), window.NexoLoader.script('./classes/tower-art.js?v=1').then(() => window.NexoLoader.script('./classes/player.js?v=22')),
+        window.NexoLoader.script('./classes/willow-tower.js?v=3').catch(() => null), // Torre del Sauce (etapa 10); sin ella, quedan las hojas en lista
         window.NexoLoader.script(`./classes/${file}?v=16`),
         // Motor de evidencia y repaso espaciado (FSRS); si no cargan, la clase funciona igual sin agendar repasos.
         window.NexoLoader.script('./classes/evidence.js?v=4'), window.NexoLoader.script('./classes/molecule.js?v=2'), window.NexoLoader.script('./classes/editor.js?v=5'), window.NexoLoader.script('./academic/reviews.js?v=14').catch(() => null)])
@@ -955,6 +957,24 @@
       <button class="back-btn" data-open-subject="${subject.id}">← Ruta de ${subject.name}</button>
       <div class="panel lesson-soon-card"><p class="eyebrow">${esc(subject.short)} · CLASE</p><h1>${esc(source.title)}</h1><p><b>Disponible próximamente</b></p><p>Estamos rehaciendo esta clase desde cero para que enseñe de verdad. Vuelve pronto.</p><div class="button-row"><button class="primary-btn" data-open-subject="${subject.id}">Volver a ${subject.name}</button><button class="secondary-btn" data-route="home">Ir al refugio</button></div></div>
     </section>`;
+  }
+
+  /* La torre de cada ramo (etapa 10): un lugar propio donde el sauce crece con lo que demuestras. */
+  function renderTower(subjectId) {
+    const subject = SUBJECTS.find(x => x.id === subjectId) || SUBJECTS[0];
+    const lessonIds = (subject.peps || []).flatMap(p => p.lessons || []);
+    if (!window.NexoWillowView) app.innerHTML = '<section class="page"><div class="app-loader" role="status"><span></span><p>Subiendo a la torre…</p></div></section>';
+    Promise.resolve(window.NexoClassCatalog || window.NexoLoader.script('./classes/catalog.js?v=1')).then(() => {
+      const id = lessonIds.find(l => window.NexoClassCatalog?.[l]);
+      return Promise.all([window.NexoLoader.style('./classes/willow.css?v=2'), window.NexoLoader.script('./classes/willow-tower.js?v=3'), id ? loadClassroom(id) : null])
+        .then(() => window.NexoLoader.script('./classes/willow-view.js?v=2')).then(() => id);
+    }).then(id => {
+      const route = parseRoute(); if (route[0] !== 'torre' || (route[1] || 'organica') !== subjectId) return;
+      window.NexoWillowView.render(app, { subject: { id: subject.id, name: subject.name, color: subject.color }, cls: id ? window.NexoClasses?.[id] : null,
+        getState: () => state, saveState: () => saveState({ backup: false }), subjectName: sid => subjectFor(sid).name,
+        go: sid => routeTo('torre', sid), back: () => routeTo('home'), rerender: () => renderTower(subjectId),
+        openClass: (cid, intent) => { if (!state.classSessions || typeof state.classSessions !== 'object') state.classSessions = {}; (state.classSessions[cid] ||= {}).intent = intent; saveState({ backup: false }); routeTo('lesson', cid); } });
+    }).catch(() => { app.innerHTML = '<section class="page"><div class="panel error-boundary"><h1>No se pudo abrir la torre</h1><p>Revisa tu conexión y vuelve a intentarlo.</p></div></section>'; });
   }
 
   function stageIntro(kicker, title, text) { return `<div class="stage-intro"><p class="eyebrow">${kicker}</p><h2 id="stageTitle">${title}</h2><p>${text}</p></div>`; }

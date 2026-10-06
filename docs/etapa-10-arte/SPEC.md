@@ -54,6 +54,14 @@ Parte del plan de `docs/clase-viva/DISENO.md` (§11, etapa 10). Diseño aprobado
   crecer. Lee la hora de `body[data-nexo-hour]` (lo escribe `ambient/time.js`), así `NexoAmbientTime.preview(21)` también la mueve.
   Se pausa fuera de pantalla, a 20 cuadros/s (10 en calidad baja y sin resplandor; 2 con menos movimiento). Prueba en `classroom-test.cjs`.
 
+- **Paso 3 (6 oct, a pedido de Niquito: "que tenga su apartado propio, como el bosque, y seleccionar las cosas"):** el sauce ya no va
+  pegado chico en el panel. Ahora la torre es **un lugar propio de pantalla completa**, `#/torre/<ramo>` (`dist/classes/willow-view.js`,
+  `willow.css`, `renderTower` en `app.js`). Se puede tocar: un **hilo** (se iluminan todos los del mismo concepto; tarjeta con su hoja, qué
+  significa y "Ir a su misión" o "Ronda del alba"), un **piso** (sus misiones con avance), las **raíces** (bases y Repaso desde cero),
+  la **maceta** (diagnóstico si aún no empiezas), el **cristal** (Camino al 7) y las **otras torres** (te lleva a esa torre). En el
+  computador las cosas brillan al pasar el mouse. Desde el aula se entra con el botón "Ver tu torre" (cierre de misión y Camino al 7);
+  al elegir algo en la torre, el aula abre justo eso (`s.intent`).
+
 ## Criterios de aceptación
 
 - Con los datos reales de Aminas, el sauce muestra un hilo por concepto con su estado y crece al completar misiones.
